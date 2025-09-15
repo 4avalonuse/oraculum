@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@source "./index.html";
+@source "./src/**/*.js";
+
+/* Dark mode overrides (outside @layer) */
+.dark body { background:#0b0f19; color:#e5e7eb; }
+.dark .bg-white { background:#0f172a !important; }
+.dark .bg-gray-50 { background:#0b0f19 !important; }
+.dark .text-gray-900 { color:#e5e7eb !important; }
+.dark .border,
+.dark .border-b,
+.dark .border-l,
+.dark header { border-color:#1f2937 !important; }
+.dark input,
+.dark select,
+.dark button { background:#0f172a; color:#e5e7eb; border-color:#334155; }

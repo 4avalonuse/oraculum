@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Oraculum</title>
+  <link rel="stylesheet" href="./assets/app.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="border-b bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+      <nav class="flex items-center gap-4">
+        <a href="#/dashboard" class="font-medium hover:underline">Dashboard</a>
+        <a href="#/bots" class="font-medium hover:underline">Bots</a>
+      </nav>
+      <button id="btn-settings" class="text-sm px-3 py-1 rounded border hover:bg-gray-100" title="Settings">⚙️ Settings</button>
+    </div>
+  </header>
+
+  <main id="app" class="mx-auto max-w-6xl p-4"></main>
+
+  <div id="settings-root"></div>
+  <div id="dev-hud-root"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
