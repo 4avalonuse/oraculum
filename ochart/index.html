@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ochart — visualizador</title>
+  <link rel="icon" href="data:image/svg+xml,
+<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22>
+  <text x=%224%22 y=%2212%22 font-size=%2212%22>📈</text>
+</svg>">
+
+  <!-- Núcleo Chart.js e plugins (UMD) -->
+  <script src="./libs/chart.umd.js"></script>
+  <script src="./libs/chartjs-adapter-date-fns.bundle.js"></script>
+  <script src="./libs/chartjs-chart-financial.min.js"></script>
+  <script src="./libs/chartjs-plugin-zoom.min.js"></script>
+  <script src="./libs/chartjs-plugin-annotation.min.js"></script>
+
+  <!-- Estilos principais do app -->
+  <link rel="stylesheet" href="./src/style/app.css">
+</head>
+<body class="ui-surface">
+
+  <section class="box row">
+    <div class="inline">
+      <label>TF</label>
+      <select id="sel-tf">
+        <option value="1h">1h</option>
+        <option value="1d" selected>1d</option>
+        <option value="1w">1w</option>
+        <option value="1mo">1mo</option>
+      </select>
+    </div>
+
+    <div class="inline">
+      <label class="muted">Janela (offsets do fim)</label>
+      <div id="ow"></div>
+    </div>
+
+    <div class="inline">
+      <label class="muted">Tipo</label>
+      <div class="seg">
+        <button id="btn-type-line" class="active">Line</button>
+        <button id="btn-type-candle">Candle</button>
+      </div>
+    </div>
+
+    <div class="inline">
+      <label class="muted">Escala</label>
+      <div class="seg">
+        <button id="btn-scale-linear">Linear</button>
+        <button id="btn-scale-log" class="active">Log</button>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button id="btn-table">📊 Tabela</button>
+    <button id="btn-sync">🔄 Sync</button>
+    <button id="btn-theme"><span>🌙</span> Dark</button>
+    <span id="status" class="muted">—</span>
+  </section>
+
+  <section class="box chart-main">
+    <div class="chart-shell">
+      <canvas id="ch"></canvas>
+    </div>
+  </section>
+
+  <section class="box row metrics">
+    <div><div class="muted">Preço (close)</div><div id="k-close" class="big price-value">—</div></div>
+    <div><div class="muted">Máx (janela)</div><div id="k-max" class="big price-value">—</div></div>
+    <div><div class="muted">Mín (janela)</div><div id="k-min" class="big price-value">—</div></div>
+  </section>
+
+  <div id="dev-hud-root"></div>
+
+  <script type="module" src="./src/app.js"></script>
+
+</body>
+</html>
