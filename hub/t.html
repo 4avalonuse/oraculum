@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Hub Test with OChartHubAdapter</title>
+</head>
+<body>
+  <h1>Hub ↔ OChart Test</h1>
+  <pre id="log">Loading...</pre>
+  <script type="module">
+    import { OChartHubAdapter } from '../ochart/src/core/ochart-hub-adapter.js';
+
+    (async () => {
+      const { data, stats, meta } = await OChartHubAdapter.loadSeries('1d');
+      document.getElementById("log").textContent =
+        `⚡ Data points: ${data.length}\nSource: ${meta.source}\nLast price: ${data[data.length-1]?.c}`;
+      console.log("📊 Full stats:", stats);
+    })();
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 /**
  * ChartEngine - Motor de renderização de gráficos financeiros
  * Gerencia a criação, atualização e interação com gráficos Chart.js
+ * v.1.3 (adds addAnnotation/updateOverlay for Hub adapter)
  */
 import { sma, ema } from '../utils/indicators.js';
 import { drawingsToAnnotations } from '../ui/annotations.js';
@@ -27,6 +28,7 @@ export class ChartEngine {
     this._overlays = []; 
     this._drawings = [];
     this._cache = new Map();
+    this._overlayIndex = new Map(); // id -> dataset index
   }
 
   create(data, config = {}) {
@@ -40,7 +42,7 @@ export class ChartEngine {
       const cfg = this._buildChartConfig(
         this._datasetFromState(),
         this._maDatasets(),
-        drawingsToAnnotations(this._drawings)   // ✅ vem do módulo ui/annotations
+        drawingsToAnnotations(this._drawings)
       );
 
       const ctx = this.canvas.getContext('2d');
@@ -83,7 +85,6 @@ export class ChartEngine {
     if (!this.chart.options.plugins.annotation) {
       this.chart.options.plugins.annotation = {};
     }
-    // ✅ usa conversor externo para anotações
     this.chart.options.plugins.annotation.annotations = drawingsToAnnotations(this._drawings);
     
     this.chart.update('none');
@@ -94,6 +95,7 @@ export class ChartEngine {
       this.chart.destroy();
       this.chart = null;
       this._cache.clear();
+      this._overlayIndex.clear();
     }
   }
 
@@ -159,6 +161,104 @@ export class ChartEngine {
   setDrawings(drawings) {
     this._drawings = Array.isArray(drawings) ? drawings : [];
     this.update(this.currentData);
+  }
+
+  // === Adições para integração com o Hub ===
+
+  /**
+   * Adiciona/atualiza uma anotação usando chartjs-plugin-annotation
+   * @param {{id:string,type:string,x?:number,y?:number,content?:string,style?:object}} a
+   */
+  addAnnotation(a){
+    if (!this.chart) return;
+    if (!this.chart.options.plugins.annotation) {
+      this.chart.options.plugins.annotation = { annotations: {} };
+    }
+    const ann = this.chart.options.plugins.annotation.annotations || (this.chart.options.plugins.annotation.annotations = {});
+
+    // Mapeia tipos simples (label/line)
+    let node;
+    if (a.type === 'label') {
+      node = {
+        type: 'label',
+        xValue: a.x,
+        yValue: a.y,
+        content: a.content ?? '',
+        backgroundColor: a.style?.backgroundColor ?? 'rgba(0,0,0,0.4)',
+        color: a.style?.color ?? '#fff',
+        padding: 6,
+        font: { size: 12 },
+        borderRadius: 4
+      };
+    } else if (a.type === 'line') {
+      node = {
+        type: 'line',
+        xMin: a.x1 ?? a.x,
+        xMax: a.x2 ?? a.x,
+        yMin: a.y1 ?? a.y,
+        yMax: a.y2 ?? a.y,
+        borderColor: a.style?.color ?? '#6b7280',
+        borderWidth: a.style?.width ?? 1.2,
+        borderDash: a.style?.dash ?? []
+      };
+    } else {
+      // fallback: ignore tipos desconhecidos sem quebrar
+      return;
+    }
+    ann[a.id] = node;
+    this.chart.update('none');
+  }
+
+  /**
+   * Atualiza/cria um overlay (dataset extra) de linha/área.
+   * overlay: { id, type:'line'|'area', label, data:[{x,y}], append?, style:{color, fill, width, opacity} }
+   */
+  updateOverlay(overlay){
+    if (!this.chart) return;
+    const dsIndex = this._overlayIndex.has(overlay.id) ? this._overlayIndex.get(overlay.id) : -1;
+
+    const base = {
+      type: 'line',
+      label: overlay.label || overlay.id,
+      parsing: false,
+      pointRadius: 0,
+      borderColor: overlay.style?.color || '#2196f3',
+      borderWidth: overlay.style?.width ?? 2,
+      backgroundColor: (overlay.type === 'area')
+        ? (overlay.style?.fill || (overlay.style?.color || '#2196f3') + '33')
+        : 'transparent',
+      fill: overlay.type === 'area',
+      tension: 0.12,
+      data: []
+    };
+
+    if (dsIndex === -1) {
+      const idx = this.chart.data.datasets.length;
+      this._overlayIndex.set(overlay.id, idx);
+      this.chart.data.datasets.push({ ...base });
+    }
+    const target = this.chart.data.datasets[this._overlayIndex.get(overlay.id)];
+
+    if (overlay.append && Array.isArray(overlay.data) && overlay.data.length) {
+      // acrescenta pontos
+      target.data.push(...overlay.data);
+    } else if (Array.isArray(overlay.data)) {
+      // substitui série
+      target.data = overlay.data.slice();
+    }
+
+    // atualiza estilos caso venham novos
+    if (overlay.style?.color) target.borderColor = overlay.style.color;
+    if (overlay.style?.width != null) target.borderWidth = overlay.style.width;
+    if (overlay.type === 'area') {
+      target.fill = true;
+      target.backgroundColor = overlay.style?.fill || (target.borderColor + '33');
+    } else {
+      target.fill = false;
+      target.backgroundColor = 'transparent';
+    }
+
+    this.chart.update('none');
   }
 
   getZoomState() {

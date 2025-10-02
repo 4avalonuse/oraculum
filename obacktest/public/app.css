@@ -1,0 +1,4 @@
+body { font-family: sans-serif; background: #111; color: #eee; }
+.container { max-width: 800px; margin: auto; padding: 20px; }
+button { padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+pre { background: #222; padding: 10px; border-radius: 5px; }

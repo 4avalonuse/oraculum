@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>OAlgo Modo Lado a Lado</title>
+  <!-- JSONEditor CSS (via CDN) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.4.1/jsoneditor.min.css">
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #container { display: flex; height: 100vh; }
+    #legoContainer, #jsoneditor {
+      flex: 1;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow: auto;
+      border: 1px solid #ccc;
+    }
+    #jsoneditor { height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="legoContainer"></div>
+    <div id="jsoneditor"></div>
+  </div>
+
+  <!-- JSONEditor JS (via CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.4.1/jsoneditor.min.js"></script>
+  <!-- Scripts locais -->
+  <script src="core/OAlgoEngine.js"></script>
+  <script src="core/Storage.js"></script>
+  <script src="core/BridgeOChart.js"></script>
+  <script src="ui/lego.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

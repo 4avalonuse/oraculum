@@ -1,3 +1,4 @@
+// hub/chart-adapter.js
 /**
  * Chart Adapter
  * Bridges backtest events to OChart (optional methods guarded).
@@ -5,6 +6,7 @@
 import { eventBus } from './bus.js';
 import { EVENTS } from './contracts.js';
 import { loggers } from './logger.js';
+
 const log = loggers.chart;
 
 export class ChartAdapter {
@@ -13,14 +15,14 @@ export class ChartAdapter {
     this.annotations = new Map(); // runId -> array
   }
 
-  wire(engine){
+  wire(engine) {
     this.engine = engine;
     this._wireEvents();
     log.info('wired to engine');
     return this;
   }
 
-  _wireEvents(){
+  _wireEvents() {
     eventBus.on(EVENTS.BACKTEST_TRADE, ({ runId, trade }) => {
       this._addTradeLabel(runId, trade);
     });
@@ -32,19 +34,19 @@ export class ChartAdapter {
     });
   }
 
-  _addTradeLabel(runId, trade){
-    if (!this.engine || typeof this.engine.addAnnotation !== 'function'){
+  _addTradeLabel(runId, trade) {
+    if (!this.engine || typeof this.engine.addAnnotation !== 'function') {
       log.debug('engine.addAnnotation not available; skipping trade label');
       return;
     }
-    const color = trade.side==='buy' ? '#4caf50' : '#f44336';
+    const color = trade.side === 'buy' ? '#4caf50' : '#f44336';
     const ann = {
       id: `trade_${trade.id}`,
       type: 'label',
       x: trade.ts,
       y: trade.price,
-      content: (trade.side==='buy'?'🟢':'🔴') + trade.side.toUpperCase(),
-      style: { color, backgroundColor: color+'22' }
+      content: (trade.side === 'buy' ? '🟢' : '🔴') + trade.side.toUpperCase(),
+      style: { color, backgroundColor: color + '22' }
     };
     this.engine.addAnnotation(ann);
     const list = this.annotations.get(runId) || [];
@@ -52,10 +54,9 @@ export class ChartAdapter {
     this.annotations.set(runId, list);
   }
 
-  _updateEquity(runId, point){
-    if (!this.engine || typeof this.engine.updateOverlay !== 'function'){
-      // If ChartEngine hasn't overlay API, just ignore for now.
-      return;
+  _updateEquity(runId, point) {
+    if (!this.engine || typeof this.engine.updateOverlay !== 'function') {
+      return; // sem overlay API
     }
     const key = `equity_${runId}`;
     const overlay = {

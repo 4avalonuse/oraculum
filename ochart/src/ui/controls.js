@@ -1,83 +1,38 @@
-import { sync } from '../core/sync.js';
-import { themeManager } from './theme-manager.js';
-import { pushLog } from './dev-hud.js';
-
-let currentScale = 'logarithmic';
-let currentType  = 'line';
-let currentRows  = [];
+import { sync, getCurrentRows } from '../core/sync.js';
 
 export function setupControls(engine, tableModal){
-  const $ = (sel) => document.getElementById(sel);
-  const statusEl = $('status');
+  let currentScale = 'logarithmic';
+  let currentType  = 'line';
 
-  // logger seguro (não explode se pushLog não existir)
-  const log = (payload) => { try { pushLog?.(payload); } catch (_) {} };
-
-  function setScale(scale){
-    const currentScale = (scale === 'linear') ? 'linear' : 'logarithmic';
-
-    $('btn-scale-linear')?.classList.toggle('active', currentScale === 'linear');
-    $('btn-scale-log')?.classList.toggle('active', currentScale === 'logarithmic');
-
+  const setScale = (scale)=>{
+    currentScale = (scale === 'linear') ? 'linear' : 'logarithmic';
+    document.getElementById('btn-scale-linear').classList.toggle('active', currentScale==='linear');
+    document.getElementById('btn-scale-log').classList.toggle('active', currentScale==='logarithmic');
     if (engine) engine.setScale(currentScale);
+    const tag = currentScale==='logarithmic' ? 'Log' : 'Linear';
+    document.getElementById('status').textContent = `OK (${tag})`;
+  };
 
-    log({ level:'info', msg:'scale_change', ts:Date.now(), data:{ scale: currentScale } });
-
-    const tag = currentScale === 'logarithmic' ? 'Log' : 'Linear';
-    if (statusEl) statusEl.textContent = `OK (${tag})`;
-  }
-
-  function setType(type){
-    const currentType = (type === 'candlestick') ? 'candlestick' : 'line';
-
-    $('btn-type-line')?.classList.toggle('active', currentType === 'line');
-    $('btn-type-candle')?.classList.toggle('active', currentType === 'candlestick');
-
+  const setType = (type)=>{
+    currentType = (type === 'candlestick') ? 'candlestick' : 'line';
+    document.getElementById('btn-type-line').classList.toggle('active', currentType==='line');
+    document.getElementById('btn-type-candle').classList.toggle('active', currentType==='candlestick');
     if (engine) engine.setType(currentType);
+    document.getElementById('status').textContent = `OK (${currentType === 'candlestick' ? 'Candle' : 'Line'})`;
+  };
 
-    log({ level:'info', msg:'chart_type_change', ts:Date.now(), data:{ type: currentType } });
+  document.getElementById('btn-scale-linear').addEventListener('click', ()=> setScale('linear'));
+  document.getElementById('btn-scale-log').addEventListener('click',    ()=> setScale('logarithmic'));
+  document.getElementById('btn-type-line').addEventListener('click',    ()=> setType('line'));
+  document.getElementById('btn-type-candle').addEventListener('click',  ()=> setType('candlestick'));
+  document.getElementById('btn-sync').addEventListener('click', ()=> sync(engine, document.getElementById('sel-tf').value, currentScale, currentType));
+  document.getElementById('sel-tf').addEventListener('change', (e)=> sync(engine, e.target.value, currentScale, currentType));
 
-    if (statusEl) statusEl.textContent = `OK (${currentType === 'candlestick' ? 'Candle' : 'Line'})`;
-  }
-
-  // Bind: escala
-  $('btn-scale-linear')?.addEventListener('click', ()=> setScale('linear'));
-  $('btn-scale-log')?.addEventListener('click',    ()=> setScale('logarithmic'));
-
-  // Bind: tipo (line/candle)
-  $('btn-type-line')?.addEventListener('click',   ()=> setType('line'));
-  $('btn-type-candle')?.addEventListener('click', ()=> setType('candlestick'));
-
-  // Bind: sync + timeframe
-  $('btn-sync')?.addEventListener('click', ()=> {
-    const tf    = $('sel-tf')?.value || '1d';
-    const scale = engine?.currentConfig?.scale || 'logarithmic';
-    const type  = engine?.currentConfig?.type  || 'line';
-    sync(engine, tf, scale, type);
+  document.getElementById('btn-table').addEventListener('click', () => {
+    const rows = getCurrentRows();
+    tableModal.show(rows);
+    tableModal.el.querySelector('#tm-export').onclick = () => tableModal.exportCSV();
   });
 
-  $('sel-tf')?.addEventListener('change', (e)=> {
-    const tf    = e.target.value || '1d';
-    const scale = engine?.currentConfig?.scale || 'logarithmic';
-    const type  = engine?.currentConfig?.type  || 'line';
-    sync(engine, tf, scale, type);
-  });
-
-  // Bind: tabela (usa os dados atuais do engine)
-  $('btn-table')?.addEventListener('click', ()=> {
-    const rows = Array.isArray(engine?.currentData) ? engine.currentData.slice() : [];
-    tableModal?.show(rows);
-    const exportBtn = tableModal?.el?.querySelector('#tm-export');
-    if (exportBtn) exportBtn.onclick = ()=> tableModal.exportCSV();
-  });
-
-  // Bind: tema
-  $('btn-theme')?.addEventListener('click', ()=> themeManager.toggleTheme());
-
-  // Primeira sync (mantive aqui; se o app.js já chama sync no boot, remova uma das duas para evitar dupla chamada)
-  const tfInit = $('sel-tf')?.value || '1d';
-  const scaleInit = engine?.currentConfig?.scale || 'logarithmic';
-  const typeInit  = engine?.currentConfig?.type  || 'line';
-  sync(engine, tfInit, scaleInit, typeInit);
+  document.getElementById('btn-theme').addEventListener('click', ()=> themeManager.toggleTheme?.());
 }
-

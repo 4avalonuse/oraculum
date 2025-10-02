@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>OAlgo — Fase 8 (Dados Reais + Backtest)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.4.1/jsoneditor.min.css">
+  <style>
+    :root { --bg:#0b1220; --fg:#e6edf3; --muted:#8ca0c8; --border:#1f2a44; --panel:#0f172a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--fg); }
+    header { padding: 12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .muted { color: var(--muted); }
+    .wrap { display:grid; grid-template-columns: 430px 1fr; height: calc(100vh - 58px); }
+    #left { border-right:1px solid var(--border); padding:12px; overflow:auto; }
+    h3 { margin: 8px 0; }
+    #jsoneditor { height: 220px; border:1px solid var(--border); border-radius:8px; }
+    #chartBox { padding:14px; }
+    canvas { background: var(--bg); }
+    #controls { display:flex; gap:8px; flex-wrap:wrap; margin: 8px 0 12px; }
+    button, select, input { background: var(--panel); color: var(--fg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
+    button:hover { filter: brightness(1.1); }
+    .row { display:flex; gap:8px; flex-wrap:wrap; margin: 6px 0; }
+    .row > * { flex: 1; min-width: 100px; }
+    label small { display:block; color: var(--muted); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>OAlgo</strong> — Fase 8: Dados reais (Yahoo/API) + Backtest
+    <div class="muted">Endpoint configurável • CORS-friendly • Fallback se falhar</div>
+  </header>
+
+  <div class="wrap">
+    <div id="left">
+      <h3>Fonte de Dados</h3>
+      <div class="row">
+        <label style="flex:2">
+          Endpoint URL
+          <input id="endpoint" type="text" value="./api/data.php">
+          <small>Ex.: ./api/data.php?symbol=BTC-USD&count=300</small>
+        </label>
+        <label>
+          Símbolo
+          <input id="symbol" type="text" value="BTC-USD">
+        </label>
+        <label>
+          Count
+          <input id="count" type="number" value="300" min="50" step="50">
+        </label>
+      </div>
+      <div class="row">
+        <button id="btnLoad">📥 Carregar Dados</button>
+        <span class="muted" id="loadStatus"></span>
+      </div>
+
+      <h3 style="margin-top:10px;">Lego (regras)</h3>
+      <div id="lego"></div>
+
+      <h3 style="margin-top:10px;">JSON do algoritmo</h3>
+      <div id="jsoneditor"></div>
+
+      <h3 style="margin-top:10px;">Backtest</h3>
+      <div id="controls">
+        <button id="btnStart">▶️ Start</button>
+        <button id="btnPause">⏸️ Pause</button>
+        <button id="btnReset">⏮️ Reset</button>
+        <label>Velocidade(ms): <input id="speed" type="number" value="120" min="30" step="10" style="width:90px;"></label>
+      </div>
+      <div class="muted">Dica: edite as regras; Lego sempre prevalece em conflitos.</div>
+    </div>
+
+    <div id="chartBox">
+      <canvas id="btChart" height="540"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.4.1/jsoneditor.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="core/Storage.js"></script>
+  <script src="core/DataSource.js"></script>
+  <script src="core/BridgeOChart.js"></script>
+  <script src="core/OAlgoEngine.js"></script>
+  <script src="core/Backtest.js"></script>
+  <script src="ui/lego.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

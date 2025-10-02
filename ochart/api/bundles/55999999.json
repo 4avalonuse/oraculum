@@ -1,0 +1,27 @@
+{
+    "schema": {
+        "name": "ochart.drawings",
+        "version": 1
+    },
+    "meta": {
+        "exportedAt": "2025-09-28T00:02:11.339Z"
+    },
+    "config": {
+        "type": "line",
+        "scale": "logarithmic"
+    },
+    "viewport": null,
+    "overlays": [],
+    "drawings": [
+        {
+            "visible": true,
+            "id": "trend-1759017723706",
+            "type": "trend",
+            "x1": 1482778276711.108,
+            "y1": 393.29884752245044,
+            "x2": 1705493428235.71,
+            "y2": 13684.601894946385,
+            "color": "#3b82f6"
+        }
+    ]
+}
