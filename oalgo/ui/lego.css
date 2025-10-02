@@ -1,0 +1,51 @@
+/* C:\4Avalon\projetos\oraculum\oalgo\ui\lego.css */
+/* v13.2 – Estilos extraídos do lego.js */
+.lego-container { display: flex; gap: 20px; }
+.sidebar { width: 280px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+.main-area { flex: 1; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.tag { background: #eef2ff; padding: 2px 8px; border-radius: 6px; font-size: 11px; }
+.panel { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.error { color: #b91c1c; font-size: 12px; }
+.warning { color: #d97706; font-size: 12px; }
+.ok { color: #065f46; font-size: 12px; }
+.suggestion { color: #1e40af; font-size: 12px; margin: 2px 0; }
+.status { margin: 4px 0 12px 0; font-size: 12px; color: #6b7280; }
+.status.ok { color: #065f46; }
+.status.warn { color: #b45309; }
+.status.err { color: #b91c1c; }
+.blocks-container { display: flex; flex-direction: column; gap: 8px; margin: 15px 0; }
+.block { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px; position: relative; transition: all 0.2s; }
+.block:hover { border-color: #6366f1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.block-header { display: flex; justify-content: space-between; align-items: center; }
+.block-type { font-size: 11px; color: #6b7280; }
+.block-condition { font-weight: 600; color: #1f2937; margin: 5px 0; }
+.block-action { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.block-action.buy { background: #10b981; color: white; }
+.block-action.sell { background: #ef4444; color: white; }
+.block-description { font-size: 11px; color: #6b7280; margin-top: 5px; }
+.block-remove { position: absolute; top: 5px; right: 5px; background: #fee2e2; border: none; width: 20px; height: 20px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.template-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s; }
+.template-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+.template-name { font-weight: 600; font-size: 14px; color: #1f2937; }
+.template-desc { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.template-tags { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.template-tag { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #4b5563; }
+.strategy-info { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px; margin: 10px 0; }
+.strategy-name { font-weight: 600; font-size: 16px; color: #0369a1; }
+.strategy-params { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+.param-item { font-size: 12px; }
+.param-label { color: #64748b; }
+.param-value { color: #1e293b; font-weight: 500; }
+button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+button:hover { background: #f9fafb; }
+button.primary { background: #6366f1; color: white; border-color: #6366f1; }
+button.primary:hover { background: #4f46e5; }
+button.success { background: #10b981; color: white; border-color: #10b981; }
+button.danger { background: #ef4444; color: white; border-color: #ef4444; }
+textarea.code { width: 100%; height: 300px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+.stat-card { background: white; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
+.stat-label { font-size: 11px; color: #6b7280; }
+.stat-value { font-size: 18px; font-weight: 600; color: #1f2937; }
