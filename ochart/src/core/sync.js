@@ -16,6 +16,13 @@ function formatPrice(value) {
   if (!Number.isFinite(value)) return '—';
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
+function formatChange(last, previous) {
+  if (!Number.isFinite(last) || !Number.isFinite(previous) || previous === 0) return '—';
+  const delta = last - previous;
+  const pct = (delta / previous) * 100;
+  const sign = delta >= 0 ? '+' : '';
+  return { text: `${sign}${delta.toLocaleString('en-US', { maximumFractionDigits: 2 })} · ${sign}${pct.toFixed(2)}%`, positive: delta >= 0 };
+}
 
 function marketLabel(name, symbol) {
   const clean = String(name || '').replace(/\s·\s(?:1m|1h|1d|1w|1M)$/i, '').trim();
@@ -54,6 +61,13 @@ function render(engine, rows, config) {
   const highs = rows.map(r => r.h).filter(Number.isFinite);
   const lows = rows.map(r => r.l).filter(Number.isFinite);
   document.getElementById('k-close').textContent = formatPrice(last?.c);
+  const change = formatChange(last?.c, rows.at(-2)?.c);
+  const changeEl = document.getElementById('k-change');
+  if (changeEl) {
+    changeEl.textContent = typeof change === 'string' ? change : change.text;
+    changeEl.classList.toggle('positive', change !== '—' && change.positive);
+    changeEl.classList.toggle('negative', change !== '—' && !change.positive);
+  }
   document.getElementById('k-max').textContent = highs.length ? formatPrice(Math.max(...highs)) : '—';
   document.getElementById('k-min').textContent = lows.length ? formatPrice(Math.min(...lows)) : '—';
 }
