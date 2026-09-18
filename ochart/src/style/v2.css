@@ -11,12 +11,13 @@ body.ui-surface{margin:0;background:radial-gradient(900px 500px at 20% -10%,#132
 .chart-shell{height:min(66vh,720px);min-height:430px;padding:10px 14px 14px;position:relative}.chart-shell canvas{background:transparent!important}
 .insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.insight-card{background:var(--oc-panel);border:1px solid var(--oc-border);border-radius:10px;padding:12px 14px}.insight-card span{display:block;color:var(--oc-muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.insight-card strong{display:block;margin-top:5px;font-size:13px}
 #drawing-toolbar{display:none!important}
-#hud{display:none}
-#dev-hud-root:has(#hud){position:fixed;left:12px;right:auto;bottom:12px;z-index:40}
+#hud{display:block}
+#dev-hud-root:has(#hud){position:fixed;left:12px;right:12px;bottom:10px;z-index:40;pointer-events:none}
+#dev-hud-root:has(#hud) #hud{width:min(860px,100%);margin:0 auto;pointer-events:auto}
 #hud .hud-bar{display:flex;gap:8px;align-items:center;padding:7px 9px;background:rgba(12,18,32,.96);border:1px solid var(--oc-border);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.28);color:var(--oc-muted);font-size:11px}
 #hud button,#hud select{background:var(--oc-panel-2);border:1px solid var(--oc-border);color:var(--oc-text);border-radius:7px;padding:5px 8px;font-size:11px}
-#hud-body{display:none;margin-top:6px;max-height:220px;overflow:auto;background:rgba(12,18,32,.98);border:1px solid var(--oc-border);border-radius:10px}
-#hud-body.open{display:block}
+#hud-body{display:none;margin-top:6px;max-height:190px;overflow:auto;background:rgba(12,18,32,.98);border:1px solid var(--oc-border);border-radius:10px}
+#hud-body.open{display:block;box-shadow:0 -10px 30px rgba(0,0,0,.22)}
 #hud-pre{margin:0;padding:9px;color:var(--oc-text);font:10px/1.45 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap}
 
 @media(max-width:900px){.ochart-topbar{height:auto;min-height:68px;padding:10px 14px;flex-wrap:wrap;gap:10px}.brand{min-width:auto}.dataset-picker{order:3;flex-basis:100%;max-width:none}.dataset-picker select{flex:1;min-width:0}.ochart-main{padding:12px 10px 24px}.market-strip{grid-template-columns:1fr 1fr}.market-title{grid-column:1/-1}.chart-toolbar{overflow:auto}.toolbar-spacer{display:none}.chart-shell{min-height:360px;height:58vh}.insight-grid{grid-template-columns:1fr 1fr}}
@@ -162,4 +163,13 @@ body.ui-surface{margin:0;background:radial-gradient(900px 500px at 20% -10%,#132
   .timeframe-seg button{min-width:38px;height:34px}
   .seg button,.ghost{min-height:34px}
   .quick-ranges button{min-height:34px}
+}
+
+
+/* Operational log dock */
+#hud .hud-bar{background:rgba(12,18,32,.98)}
+#hud-pre{max-height:190px;overflow:auto}
+@media(max-width:520px){
+  #dev-hud-root:has(#hud){left:7px;right:7px;bottom:7px}
+  #hud-body{max-height:150px}
 }
