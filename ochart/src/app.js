@@ -5,12 +5,14 @@ import { DrawingTools } from './ui/drawing-tools.js';
 import { TableModal } from './ui/table-modal.js';
 import { themeManager } from './ui/theme-manager.js';
 import { setupControls } from './ui/controls.js';
-import { loadDatasets, sync } from './core/sync.js';
+import { loadDatasets, sync, setAnalysisPeriods } from './core/sync.js';
+import { AnalysisPeriods } from './ui/analysis-periods.js';
 
 const $ = (s) => document.querySelector(s);
 let engine = null;
 let drawingTools = null;
 const tableModal = new TableModal();
+const analysisPeriods = new AnalysisPeriods(document.getElementById('analysis-periods'));
 const QS = new URLSearchParams(location.search);
 
 if (QS.get('dev') === '1') {
@@ -32,6 +34,7 @@ async function boot() {
   if (shell && tb && tb.parentElement !== shell) shell.appendChild(tb);
   themeManager.init(engine);
   setupControls(engine, tableModal);
+  setAnalysisPeriods(analysisPeriods, engine);
 
   try {
     const datasets = await loadDatasets();
