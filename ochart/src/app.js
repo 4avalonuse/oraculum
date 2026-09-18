@@ -15,9 +15,7 @@ let engine = null;
 const tableModal = new TableModal();
 const analysisPeriods = new AnalysisPeriods(document.getElementById('analysis-periods'));
 
-if (QS.get('dev') === '1') {
-  mountHUD(document.getElementById('dev-hud-root'));
-}
+mountHUD(document.getElementById('dev-hud-root'));
 
 function setStartupState(title, meta, status) {
   document.getElementById('dataset-name').textContent = title;
