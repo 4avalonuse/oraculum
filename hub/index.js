@@ -1,4 +1,4 @@
-import { OChartHubAdapter } from '../ochart/src/core/ochart-hub-adapter.js';
+import { OChartHubAdapter } from './ochart-hub-adapter.js';
 import Bus from './bus.js';
 import DataStore from './data-store.js';
 
