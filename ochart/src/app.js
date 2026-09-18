@@ -11,8 +11,17 @@ const $ = (s) => document.querySelector(s);
 let engine = null;
 let drawingTools = null;
 const tableModal = new TableModal();
+const QS = new URLSearchParams(location.search);
 
-mountHUD(document.getElementById('dev-hud-root'));
+if (QS.get('dev') === '1') {
+  mountHUD(document.getElementById('dev-hud-root'));
+}
+
+function setStartupState(title, meta, status) {
+  document.getElementById('dataset-name').textContent = title;
+  document.getElementById('dataset-meta').textContent = meta;
+  document.getElementById('status').textContent = status;
+}
 
 async function boot() {
   engine = new ChartEngine($('#ch'));
@@ -24,16 +33,27 @@ async function boot() {
   themeManager.init(engine);
   setupControls(engine, tableModal);
 
-  const datasets = await loadDatasets();
-  if (!datasets.length) {
-    document.getElementById('status').textContent = 'API online · sem datasets';
-    return;
+  try {
+    const datasets = await loadDatasets();
+    if (!datasets.length) {
+      setStartupState(
+        'Nenhum dataset disponível',
+        'A Data API respondeu sem séries. Verifique a ingestão do backend.',
+        'API online · sem datasets'
+      );
+      return;
+    }
+    const id = document.getElementById('sel-dataset').value || datasets[0].id;
+    document.getElementById('sel-dataset').value = id;
+    await sync(engine, id, 'linear', 'line');
+  } catch (error) {
+    console.error(error);
+    setStartupState(
+      'Falha ao carregar dados',
+      error.message || 'Não foi possível conectar à Data API.',
+      'Erro de conexão'
+    );
   }
-  const id = document.getElementById('sel-dataset').value || datasets[0].id;
-  document.getElementById('sel-dataset').value = id;
-  await sync(engine, id, 'linear', 'line');
 }
-boot().catch((error) => {
-  console.error(error);
-  document.getElementById('status').textContent = 'Falha ao iniciar';
-});
+
+boot();
