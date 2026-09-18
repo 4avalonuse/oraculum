@@ -55,6 +55,8 @@ export async function loadDatasets() {
     const option = document.createElement('option');
     option.value = d.id;
     option.textContent = `${d.name} · ${d.provider}`;
+    option.dataset.interval = d.interval || '';
+    option.dataset.provider = d.provider || '';
     select.appendChild(option);
   }
 
