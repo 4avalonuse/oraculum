@@ -30,7 +30,24 @@ export function setupControls(engine, tableModal){
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
 
   document.getElementById('btn-sync').addEventListener('click', () => syncCurrent(true));
-  document.getElementById('sel-dataset').addEventListener('change', () => syncCurrent(false));
+  document.getElementById('sel-dataset').addEventListener('change', () => {
+    const selected = document.getElementById('sel-dataset').selectedOptions[0];
+    const interval = selected?.dataset?.interval || '';
+    const tf = document.getElementById('sel-timeframe');
+    if (tf && interval) {
+      tf.value = interval === '1M' ? '1M' : interval;
+    }
+    syncCurrent(false);
+  });
+
+  document.getElementById('sel-timeframe')?.addEventListener('change', (event) => {
+    const interval = event.target.value;
+    const dataset = document.getElementById('sel-dataset');
+    const option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
+    if (!option) return;
+    dataset.value = option.value;
+    syncCurrent(false);
+  });
 
   document.getElementById('sel-candles').addEventListener('change', (event) => {
     setCandleLimit(event.target.value, engine);
