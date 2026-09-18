@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="theme-color" content="#070b14"/>
-  <title>OChart — Oraculum · v2026.09.17.03</title>
+  <title>OChart — Oraculum · v2026.09.18.01</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text x=%222%22 y=%2213%22 font-size=%2212%22>◈</text></svg>">
   <script src="./libs/chart.umd.js?v=2026.09.17.03"></script>
   <script src="./libs/chartjs-adapter-date-fns.bundle.js?v=2026.09.17.03"></script>
@@ -18,7 +18,7 @@
   <header class="ochart-topbar">
     <div class="brand">
       <div class="brand-mark">◈</div>
-      <div><strong>OChart <small>v2026.09.17<span class="version-suffix">.03</span></small></strong><span>Oraculum market viewer</span></div>
+      <div><strong>OChart <small>v2026.09.17<span class="version-suffix"> .01</span></small></strong><span>Oraculum market viewer</span></div>
     </div>
     <div class="dataset-picker">
       <label for="sel-dataset">Mercado</label>
@@ -51,6 +51,16 @@
             <button id="btn-type-line" class="active">Linha</button>
             <button id="btn-type-candle">Candles</button>
           </div>
+        </div>
+        <div class="toolbar-group">
+          <span class="toolbar-label">Intervalo</span>
+          <select id="sel-timeframe" class="toolbar-select" aria-label="Intervalo da série">
+            <option value="1m">m</option>
+            <option value="1h" selected>h</option>
+            <option value="1d">d</option>
+            <option value="1w">w</option>
+            <option value="1M">M</option>
+          </select>
         </div>
         <div class="toolbar-group">
           <span class="toolbar-label">Velas</span>
