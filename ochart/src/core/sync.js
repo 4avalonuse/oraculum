@@ -63,33 +63,53 @@ export async function loadDatasets() {
   return datasets;
 }
 
-export async function sync(engine, datasetId, scale, type) {
+export async function sync(engine, datasetId, scale, type, { refresh = false } = {}) {
   currentConfig = { scale, type };
   const status = document.getElementById('status');
-  status.textContent = 'Carregando…';
+  status.textContent = refresh ? 'Atualizando…' : 'Carregando…';
+
   try {
-    const payload = await fetchSeries(datasetId);
+    const payload = await fetchSeries(datasetId, { refresh });
     const { data, meta = {} } = payload;
     const result = sanitizeLine(data || [], { requirePositive: scale === 'logarithmic' });
     const rows = result.data || [];
     fullRows = rows;
+
     if (periodController) periodController.setDataset(datasetId, rows);
+
     const visibleRows = getVisibleRows();
     render(engine, visibleRows, { type, scale });
     updateMeta(meta, visibleRows);
-    try { setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, { source: meta.source || 'oraculum-api' }); } catch (_) {}
+
+    try {
+      setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, {
+        source: meta.source || 'oraculum-api'
+      });
+    } catch (_) {}
 
     status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${visibleRows.length} barras`;
+
     pushLog({
       level: result.stats?.droppedInvalid ? 'warn' : 'info',
-      msg: 'api_sync_ok',
+      msg: refresh ? 'api_refresh_ok' : 'api_sync_ok',
       ts: Date.now(),
-      data: { datasetId, bars: visibleRows.length, totalBars: rows.length, rejected: result.stats?.droppedInvalid || 0, source: meta.source || 'oraculum-api' }
+      data: {
+        datasetId,
+        bars: visibleRows.length,
+        totalBars: rows.length,
+        rejected: result.stats?.droppedInvalid || 0,
+        source: meta.source || 'oraculum-api'
+      }
     });
   } catch (error) {
     console.error(error);
     status.textContent = 'Erro de conexão';
-    pushLog({ level: 'error', msg: 'api_sync_fail', ts: Date.now(), data: { error: String(error) } });
+    pushLog({
+      level: 'error',
+      msg: refresh ? 'api_refresh_fail' : 'api_sync_fail',
+      ts: Date.now(),
+      data: { error: String(error) }
+    });
     throw error;
   }
 }
@@ -108,7 +128,9 @@ export function getCurrentRows(){ return currentRows; }
 export function setAnalysisPeriods(controller, engine) {
   periodController = controller || null;
   if (!periodController) return;
+
   publishAnalysisPeriods(periodController.get());
+
   periodController.onChange = (state) => {
     publishAnalysisPeriods(state);
     const rows = getVisibleRows();
