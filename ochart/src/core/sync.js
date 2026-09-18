@@ -8,7 +8,7 @@ let currentRows = [];
 let fullRows = [];
 let periodController = null;
 let currentConfig = { scale: 'linear', type: 'line' };
-let candleLimit = 1000;
+let candleLimit = 10000;
 let syncSequence = 0;
 const QS = new URLSearchParams(location.search);
 
