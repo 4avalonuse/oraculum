@@ -30,20 +30,32 @@ export function setupControls(engine, tableModal){
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
 
   document.getElementById('btn-sync').addEventListener('click', () => syncCurrent(true));
+
   document.getElementById('sel-dataset').addEventListener('change', () => {
     const selected = document.getElementById('sel-dataset').selectedOptions[0];
     const interval = selected?.dataset?.interval || '';
     const tf = document.getElementById('sel-timeframe');
-    if (tf && interval) {
-      tf.value = interval === '1M' ? '1M' : interval;
-    }
+    if (tf && interval) tf.value = interval;
     syncCurrent(false);
   });
 
   document.getElementById('sel-timeframe')?.addEventListener('change', (event) => {
     const interval = event.target.value;
     const dataset = document.getElementById('sel-dataset');
-    const option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
+    const current = dataset.selectedOptions[0];
+    const provider = current?.dataset?.provider || '';
+    const symbol = current?.dataset?.symbol || '';
+
+    let option = Array.from(dataset.options).find(o =>
+      o.dataset.interval === interval &&
+      o.dataset.provider === provider &&
+      o.dataset.symbol === symbol
+    );
+
+    if (!option) {
+      option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
+    }
+
     if (!option) return;
     dataset.value = option.value;
     syncCurrent(false);
