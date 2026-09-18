@@ -62,20 +62,16 @@ async function boot() {
 
     controls.refreshIntervalButtons();
 
-    const selected = document.getElementById('sel-dataset').selectedOptions[0];
     const available = readAvailable(document.getElementById('sel-dataset'));
     const requested = QS.get('dataset');
     const requestedDataset = datasets.find(d => d.id === requested);
 
     let interval = requestedDataset?.interval || controls.getInterval() || '1h';
     if (!available[interval]) {
-      interval = Object.keys(available).find(value => ['1m', '1h', '1d', '1w', '1M'].includes(value)) || '1d';
+      interval = ['1h', '1d', '1w', '1M', '1m'].find(value => available[value]) || '1d';
     }
 
-    if (!controls.setInterval(interval)) {
-      controls.refreshIntervalButtons();
-    }
-
+    controls.setInterval(interval);
     await syncSelected(engine, 'linear', 'line', { interval });
   } catch (error) {
     console.error(error);
