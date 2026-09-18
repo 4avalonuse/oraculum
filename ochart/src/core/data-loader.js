@@ -4,9 +4,8 @@
  * OChart não acessa Yahoo/Binance diretamente.
  */
 const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev/api';
-const QS = new URLSearchParams(location.search);
-const DATASETS_CACHE = 'ochart:datasets';
-const cacheKey = (id) => `ochart:dataset:${id}`;
+const DATASETS_CACHE = 'ochart:datasets:v3';
+const cacheKey = (id) => `ochart:dataset:v3:${id}`;
 
 async function fetchJSON(url, timeoutMs = 30000) {
   const controller = new AbortController();
