@@ -1,7 +1,7 @@
 import { fetchDatasets, fetchSeries } from './data-loader.js';
 import { sanitizeLine } from './sanitizer.js';
 import { pushLog } from '../ui/dev-hud.js';
-import { setSeries } from '../../../hub/data-store.js';
+import { setSeries, setAnalysisPeriods as publishAnalysisPeriods } from '../../../hub/data-store.js';
 
 let currentRows = [];
 let fullRows = [];
@@ -89,7 +89,9 @@ export function getCurrentRows(){ return currentRows; }
 export function setAnalysisPeriods(controller, engine) {
   periodController = controller || null;
   if (!periodController) return;
-  periodController.onChange = () => {
+  publishAnalysisPeriods(periodController.get());
+  periodController.onChange = (state) => {
+    publishAnalysisPeriods(state);
     const rows = periodController.filter(fullRows);
     render(engine, rows, currentConfig);
     currentRows = rows.slice();
