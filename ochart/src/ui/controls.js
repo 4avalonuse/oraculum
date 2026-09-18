@@ -1,4 +1,4 @@
-import { sync, getCurrentRows } from '../core/sync.js';
+import { sync, getCurrentRows, setCandleLimit } from '../core/sync.js';
 import { themeManager } from './theme-manager.js';
 
 export function setupControls(engine, tableModal){
@@ -30,6 +30,10 @@ export function setupControls(engine, tableModal){
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
   document.getElementById('btn-sync').addEventListener('click', syncCurrent);
   document.getElementById('sel-dataset').addEventListener('change', syncCurrent);
+
+  document.getElementById('sel-candles').addEventListener('change', (event) => {
+    setCandleLimit(event.target.value, engine);
+  });
 
   document.getElementById('btn-table').addEventListener('click', () => {
     const rows = getCurrentRows();
