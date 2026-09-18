@@ -90,6 +90,7 @@
         <span id="status" class="status-pill">Conectando…</span>
       </div>
 
+      <div id="data-notice" class="data-notice" role="status" aria-live="polite" hidden><div class="data-notice-icon">!</div><div><strong data-notice-title>Não foi possível carregar</strong><span data-notice-detail>A Data API não conseguiu entregar esta série agora.</span></div><button type="button" class="data-notice-action" onclick="document.getElementById('btn-sync')?.click()">Tentar novamente</button></div>
       <div id="analysis-periods" class="analysis-periods"></div>
       <div class="chart-shell">
         <canvas id="ch"></canvas>
