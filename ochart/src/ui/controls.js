@@ -1,6 +1,17 @@
 import { syncSelected, getDatasetForInterval, getCurrentRows, setCandleLimit } from '../core/sync.js';
 import { themeManager } from './theme-manager.js';
 
+function readAvailable(select) {
+  const selected = select?.selectedOptions?.[0];
+  if (!selected?.dataset?.datasets) return {};
+  try {
+    const parsed = JSON.parse(selected.dataset.datasets);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
 export function setupControls(engine, tableModal){
   let currentScale = 'linear';
   let currentType = 'line';
@@ -27,22 +38,26 @@ export function setupControls(engine, tableModal){
   };
 
   const syncIntervalButtons = () => {
-    const selected = document.getElementById('sel-dataset').selectedOptions[0];
-    const available = selected?.dataset?.datasets ? JSON.parse(selected.dataset.datasets) : {};
+    const select = document.getElementById('sel-dataset');
+    const available = readAvailable(select);
+
+    if (!available[currentInterval]) {
+      const fallback = ['1h', '1d', '1w', '1M', '1m'].find((value) => available[value]);
+      currentInterval = fallback || currentInterval;
+    }
+
     document.querySelectorAll('#sel-timeframe button[data-interval]').forEach(btn => {
       const enabled = Boolean(available[btn.dataset.interval]);
       btn.disabled = !enabled;
       btn.classList.toggle('active', enabled && btn.dataset.interval === currentInterval);
     });
-    if (!available[currentInterval]) {
-      const fallback = Object.keys(available)[0];
-      if (fallback) currentInterval = fallback;
-    }
+
+    return currentInterval;
   };
 
   const setInterval = (interval) => {
     const button = document.querySelector(`#sel-timeframe button[data-interval="${interval}"]`);
-    if (!button || button.disabled) return false;
+    if (!button || button.disabled || !getDatasetForInterval(interval)) return false;
     currentInterval = interval;
     syncIntervalButtons();
     return true;
@@ -66,25 +81,15 @@ export function setupControls(engine, tableModal){
   });
 
   document.getElementById('sel-dataset').addEventListener('change', async () => {
-    const selected = document.getElementById('sel-dataset').selectedOptions[0];
-    const available = selected?.dataset?.datasets ? JSON.parse(selected.dataset.datasets) : {};
-    if (!available[currentInterval]) {
-      const fallback = Object.keys(available)[0] || '1d';
-      setInterval(fallback);
-    } else {
-      syncIntervalButtons();
-    }
+    syncIntervalButtons();
     await syncCurrent(false);
   });
 
-  syncIntervalButtons();
-
   document.getElementById('sel-timeframe')?.addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-interval]');
-    if (!button) return;
+    if (!button || button.disabled) return;
     const interval = button.dataset.interval;
-    if (!getDatasetForInterval(interval)) return;
-    setInterval(interval);
+    if (!setInterval(interval)) return;
     await syncCurrent(false);
   });
 
@@ -101,5 +106,12 @@ export function setupControls(engine, tableModal){
 
   document.getElementById('btn-theme').addEventListener('click', () => themeManager.toggleTheme?.());
 
-  return { getScale: () => currentScale, getType: () => currentType, syncCurrent };
+  return {
+    getScale: () => currentScale,
+    getType: () => currentType,
+    getInterval: () => currentInterval,
+    setInterval,
+    refreshIntervalButtons: syncIntervalButtons,
+    syncCurrent
+  };
 }
