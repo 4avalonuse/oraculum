@@ -4,6 +4,9 @@ import { pushLog } from '../ui/dev-hud.js';
 import { setSeries } from '../../../hub/data-store.js';
 
 let currentRows = [];
+let fullRows = [];
+let periodController = null;
+let currentConfig = { scale: 'linear', type: 'line' };
 const QS = new URLSearchParams(location.search);
 
 function formatPrice(value) {
@@ -50,6 +53,7 @@ export async function loadDatasets() {
 }
 
 export async function sync(engine, datasetId, scale, type) {
+  currentConfig = { scale, type };
   const status = document.getElementById('status');
   status.textContent = 'Carregando…';
   try {
@@ -57,17 +61,19 @@ export async function sync(engine, datasetId, scale, type) {
     const { data, meta = {} } = payload;
     const result = sanitizeLine(data || [], { requirePositive: scale === 'logarithmic' });
     const rows = result.data || [];
-    currentRows = rows;
-    updateMeta(meta, rows);
+    fullRows = rows;
+    if (periodController) periodController.setDataset(datasetId, rows);
+    const visibleRows = periodController ? periodController.filter(rows) : rows;
+    render(engine, visibleRows, { type, scale });
+    updateMeta(meta, visibleRows);
     try { setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, { source: meta.source || 'oraculum-api' }); } catch (_) {}
 
-    render(engine, rows, { type, scale });
-    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${rows.length} barras`;
+    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${visibleRows.length} barras`;
     pushLog({
       level: result.stats?.droppedInvalid ? 'warn' : 'info',
       msg: 'api_sync_ok',
       ts: Date.now(),
-      data: { datasetId, bars: rows.length, rejected: result.stats?.droppedInvalid || 0, source: meta.source || 'oraculum-api' }
+      data: { datasetId, bars: visibleRows.length, totalBars: rows.length, rejected: result.stats?.droppedInvalid || 0, source: meta.source || 'oraculum-api' }
     });
   } catch (error) {
     console.error(error);
@@ -78,3 +84,15 @@ export async function sync(engine, datasetId, scale, type) {
 }
 
 export function getCurrentRows(){ return currentRows; }
+
+
+export function setAnalysisPeriods(controller, engine) {
+  periodController = controller || null;
+  if (!periodController) return;
+  periodController.onChange = () => {
+    const rows = periodController.filter(fullRows);
+    render(engine, rows, currentConfig);
+    currentRows = rows.slice();
+    document.getElementById('k-bars').textContent = String(rows.length);
+  };
+}
