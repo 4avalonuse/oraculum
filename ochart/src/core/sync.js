@@ -57,6 +57,7 @@ export async function loadDatasets() {
     option.textContent = `${d.name} · ${d.provider}`;
     option.dataset.interval = d.interval || '';
     option.dataset.provider = d.provider || '';
+    option.dataset.symbol = d.symbol || '';
     select.appendChild(option);
   }
 
