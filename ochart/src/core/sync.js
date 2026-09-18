@@ -8,6 +8,7 @@ let fullRows = [];
 let periodController = null;
 let currentConfig = { scale: 'linear', type: 'line' };
 let candleLimit = 1000;
+let syncSequence = 0;
 const QS = new URLSearchParams(location.search);
 
 function formatPrice(value) {
@@ -15,14 +16,25 @@ function formatPrice(value) {
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
+function sourceLabel(provider) {
+  const labels = {
+    yahoo: 'Yahoo Finance',
+    binance: 'Binance'
+  };
+  return labels[String(provider || '').toLowerCase()] || provider || 'Data API';
+}
+
 function updateMeta(meta, rows) {
+  const source = meta.sourceName || sourceLabel(meta.provider);
   document.getElementById('dataset-name').textContent = meta.name || meta.symbol || 'Dataset';
   document.getElementById('dataset-meta').textContent = [meta.symbol, meta.kind, meta.interval].filter(Boolean).join(' · ');
-  document.getElementById('k-provider').textContent = meta.provider || '—';
+  document.getElementById('k-provider').textContent = source;
   document.getElementById('k-interval').textContent = meta.interval || '—';
   document.getElementById('k-currency').textContent = meta.currency || '—';
   document.getElementById('k-bars').textContent = String(rows.length);
   document.getElementById('k-updated').textContent = meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('pt-BR') : '—';
+  const sourceBadge = document.getElementById('k-source');
+  if (sourceBadge) sourceBadge.textContent = source;
 }
 
 function applyCandleLimit(rows) {
@@ -51,8 +63,6 @@ export async function loadDatasets() {
   const select = document.getElementById('sel-dataset');
   select.innerHTML = '';
 
-  // The selector represents a market, not an individual interval.
-  // Interval-specific dataset ids stay internal to OChart.
   const markets = new Map();
   for (const d of datasets) {
     const key = `${d.provider}:${d.symbol}`;
@@ -61,7 +71,7 @@ export async function loadDatasets() {
         key,
         provider: d.provider || '',
         symbol: d.symbol || '',
-        name: d.provider === 'yahoo' ? 'Bitcoin / USD' : 'Bitcoin / USDT',
+        name: d.name || d.symbol || 'Mercado',
         datasets: new Map()
       });
     }
@@ -71,7 +81,8 @@ export async function loadDatasets() {
   for (const market of markets.values()) {
     const option = document.createElement('option');
     option.value = market.key;
-    option.textContent = market.name;
+    const providerName = sourceLabel(market.provider);
+    option.textContent = `${market.name} · ${providerName}`;
     option.dataset.provider = market.provider;
     option.dataset.symbol = market.symbol;
     option.dataset.datasets = JSON.stringify(Object.fromEntries(market.datasets));
@@ -106,8 +117,12 @@ export function syncSelected(engine, scale, type, { refresh = false, interval = 
   const market = select?.selectedOptions?.[0];
   if (!market) return Promise.resolve();
 
-  const desired = interval || market.dataset.interval || '1d';
-  const dataset = getDatasetForInterval(desired) || getDatasetForInterval('1d') || Object.values(JSON.parse(market.dataset.datasets || '{}'))[0];
+  let available = {};
+  try { available = JSON.parse(market.dataset.datasets || '{}'); } catch (_) {}
+  const desired = interval && available[interval]
+    ? interval
+    : (available['1d'] ? '1d' : Object.keys(available)[0]);
+  const dataset = desired ? available[desired] : null;
   if (!dataset) return Promise.resolve();
 
   select.dataset.activeDataset = dataset.id;
@@ -115,12 +130,15 @@ export function syncSelected(engine, scale, type, { refresh = false, interval = 
 }
 
 export async function sync(engine, datasetId, scale, type, { refresh = false } = {}) {
+  const sequence = ++syncSequence;
   currentConfig = { scale, type };
   const status = document.getElementById('status');
   status.textContent = refresh ? 'Atualizando…' : 'Carregando…';
 
   try {
     const payload = await fetchSeries(datasetId, { refresh });
+    if (sequence !== syncSequence) return;
+
     const { data, meta = {} } = payload;
     const result = sanitizeLine(data || [], { requirePositive: scale === 'logarithmic' });
     const rows = result.data || [];
@@ -134,7 +152,7 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
 
     try {
       setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, {
-        source: meta.source || 'oraculum-api'
+        source: meta.sourceName || meta.source || 'oraculum-api'
       });
     } catch (_) {}
 
@@ -149,17 +167,19 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
         bars: visibleRows.length,
         totalBars: rows.length,
         rejected: result.stats?.droppedInvalid || 0,
-        source: meta.source || 'oraculum-api'
+        source: meta.sourceName || meta.source || 'oraculum-api'
       }
     });
   } catch (error) {
+    if (sequence !== syncSequence) return;
     console.error(error);
     status.textContent = 'Erro de conexão';
+    const detail = error?.message || String(error);
     pushLog({
       level: 'error',
       msg: refresh ? 'api_refresh_fail' : 'api_sync_fail',
       ts: Date.now(),
-      data: { error: String(error) }
+      data: { error: detail }
     });
     throw error;
   }
