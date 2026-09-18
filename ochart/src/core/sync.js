@@ -16,6 +16,11 @@ function formatPrice(value) {
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
+function marketLabel(name, symbol) {
+  const clean = String(name || '').replace(/\s·\s(?:1m|1h|1d|1w|1M)$/i, '').trim();
+  return clean || symbol || 'Mercado';
+}
+
 function sourceLabel(provider) {
   const labels = {
     yahoo: 'Yahoo Finance',
@@ -71,7 +76,7 @@ export async function loadDatasets() {
         key,
         provider: d.provider || '',
         symbol: d.symbol || '',
-        name: d.name || d.symbol || 'Mercado',
+        name: marketLabel(d.name, d.symbol),
         datasets: new Map()
       });
     }
@@ -156,7 +161,7 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
       });
     } catch (_) {}
 
-    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${visibleRows.length} barras`;
+    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${sourceLabel(meta.provider)} · ${visibleRows.length} barras`;
 
     pushLog({
       level: result.stats?.droppedInvalid ? 'warn' : 'info',
