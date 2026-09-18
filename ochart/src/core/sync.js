@@ -2,6 +2,7 @@ import { fetchDatasets, fetchSeries } from './data-loader.js';
 import { sanitizeLine } from './sanitizer.js';
 import { pushLog } from '../ui/dev-hud.js';
 import { setSeries, setAnalysisPeriods as publishAnalysisPeriods } from '../../../hub/data-store.js';
+import { providerName, userError } from './provider-status.js';
 
 let currentRows = [];
 let fullRows = [];
@@ -21,14 +22,7 @@ function marketLabel(name, symbol) {
   return clean || symbol || 'Mercado';
 }
 
-function sourceLabel(provider) {
-  const labels = {
-    yahoo: 'Yahoo Finance',
-    binance: 'Binance',
-    'binance-us': 'Binance.US'
-  };
-  return labels[String(provider || '').toLowerCase()] || provider || 'Data API';
-}
+function sourceLabel(provider) { return providerName(provider); }
 
 function updateMeta(meta, rows) {
   const source = meta.sourceName || sourceLabel(meta.provider);
@@ -139,6 +133,8 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
   const sequence = ++syncSequence;
   currentConfig = { scale, type };
   const status = document.getElementById('status');
+  const notice = document.getElementById('data-notice');
+  if (notice) notice.hidden = true;
   status.textContent = refresh ? 'Atualizando…' : 'Carregando…';
 
   try {
@@ -179,7 +175,13 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
   } catch (error) {
     if (sequence !== syncSequence) return;
     console.error(error);
-    status.textContent = 'Erro de conexão';
+    const friendly = userError(error);
+    status.textContent = friendly.status;
+    if (notice) {
+      notice.hidden = false;
+      notice.querySelector('[data-notice-title]').textContent = friendly.title;
+      notice.querySelector('[data-notice-detail]').textContent = friendly.detail;
+    }
     const detail = error?.message || String(error);
     pushLog({
       level: 'error',
