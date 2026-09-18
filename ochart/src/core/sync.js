@@ -24,7 +24,8 @@ function marketLabel(name, symbol) {
 function sourceLabel(provider) {
   const labels = {
     yahoo: 'Yahoo Finance',
-    binance: 'Binance'
+    binance: 'Binance',
+    'binance-us': 'Binance.US'
   };
   return labels[String(provider || '').toLowerCase()] || provider || 'Data API';
 }
