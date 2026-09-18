@@ -5,9 +5,9 @@ export function setupControls(engine, tableModal){
   let currentScale = 'linear';
   let currentType = 'line';
 
-  const syncCurrent = () => {
+  const syncCurrent = (refresh = false) => {
     const id = document.getElementById('sel-dataset').value;
-    if (id) sync(engine, id, currentScale, currentType);
+    if (id) return sync(engine, id, currentScale, currentType, { refresh });
   };
 
   const setScale = (scale) => {
@@ -28,8 +28,9 @@ export function setupControls(engine, tableModal){
   document.getElementById('btn-scale-log').addEventListener('click', () => setScale('logarithmic'));
   document.getElementById('btn-type-line').addEventListener('click', () => setType('line'));
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
-  document.getElementById('btn-sync').addEventListener('click', syncCurrent);
-  document.getElementById('sel-dataset').addEventListener('change', syncCurrent);
+
+  document.getElementById('btn-sync').addEventListener('click', () => syncCurrent(true));
+  document.getElementById('sel-dataset').addEventListener('change', () => syncCurrent(false));
 
   document.getElementById('sel-candles').addEventListener('change', (event) => {
     setCandleLimit(event.target.value, engine);
