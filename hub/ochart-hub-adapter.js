@@ -2,11 +2,11 @@ import { fetchSeries } from '../ochart/src/core/data-loader.js';
 import { sanitizeLine, getSeriesStats } from '../ochart/src/core/sanitizer.js';
 
 const DATASETS = {
-  '1m': 'btc-usdt-binance-1m',
-  '1h': 'btc-usdt-binance-1h',
-  '1d': 'btc-usdt-binance-1d',
-  '1w': 'btc-usdt-binance-1w',
-  '1M': 'btc-usdt-binance-1M'
+  '1m': 'btc-usd-binance-us-1m',
+  '1h': 'btc-usd-binance-us-1h',
+  '1d': 'btc-usd-binance-us-1d',
+  '1w': 'btc-usd-binance-us-1w',
+  '1M': 'btc-usd-binance-us-1M'
 };
 
 export class OChartHubAdapter {
