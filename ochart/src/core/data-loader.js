@@ -22,7 +22,11 @@ async function fetchJSON(url, timeoutMs = 30000) {
       throw new Error(`JSON malformado: ${url}`);
     }
     if (!res.ok || !json?.ok) {
-      throw new Error(json?.message || json?.error || `HTTP ${res.status}`);
+      const error = new Error(json?.message || json?.error || `HTTP ${res.status}`);
+      error.code = json?.code || null;
+      error.provider = json?.provider || null;
+      error.httpStatus = json?.httpStatus || res.status;
+      throw error;
     }
     return json;
   } catch (error) {
