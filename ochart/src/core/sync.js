@@ -7,6 +7,7 @@ let currentRows = [];
 let fullRows = [];
 let periodController = null;
 let currentConfig = { scale: 'linear', type: 'line' };
+let candleLimit = 1000;
 const QS = new URLSearchParams(location.search);
 
 function formatPrice(value) {
@@ -22,6 +23,16 @@ function updateMeta(meta, rows) {
   document.getElementById('k-currency').textContent = meta.currency || '—';
   document.getElementById('k-bars').textContent = String(rows.length);
   document.getElementById('k-updated').textContent = meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('pt-BR') : '—';
+}
+
+function applyCandleLimit(rows) {
+  if (!Number.isFinite(candleLimit) || candleLimit <= 0) return rows.slice();
+  return rows.length > candleLimit ? rows.slice(-candleLimit) : rows.slice();
+}
+
+function getVisibleRows() {
+  const periodRows = periodController ? periodController.filter(fullRows) : fullRows.slice();
+  return applyCandleLimit(periodRows);
 }
 
 function render(engine, rows, config) {
@@ -63,7 +74,7 @@ export async function sync(engine, datasetId, scale, type) {
     const rows = result.data || [];
     fullRows = rows;
     if (periodController) periodController.setDataset(datasetId, rows);
-    const visibleRows = periodController ? periodController.filter(rows) : rows;
+    const visibleRows = getVisibleRows();
     render(engine, visibleRows, { type, scale });
     updateMeta(meta, visibleRows);
     try { setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, { source: meta.source || 'oraculum-api' }); } catch (_) {}
@@ -83,8 +94,16 @@ export async function sync(engine, datasetId, scale, type) {
   }
 }
 
-export function getCurrentRows(){ return currentRows; }
+export function setCandleLimit(limit, engine) {
+  const value = Number(limit);
+  candleLimit = Number.isFinite(value) && value > 0 ? value : Infinity;
+  const rows = getVisibleRows();
+  render(engine, rows, currentConfig);
+  document.getElementById('k-bars').textContent = String(rows.length);
+  return rows.length;
+}
 
+export function getCurrentRows(){ return currentRows; }
 
 export function setAnalysisPeriods(controller, engine) {
   periodController = controller || null;
@@ -92,7 +111,7 @@ export function setAnalysisPeriods(controller, engine) {
   publishAnalysisPeriods(periodController.get());
   periodController.onChange = (state) => {
     publishAnalysisPeriods(state);
-    const rows = periodController.filter(fullRows);
+    const rows = getVisibleRows();
     render(engine, rows, currentConfig);
     currentRows = rows.slice();
     document.getElementById('k-bars').textContent = String(rows.length);
