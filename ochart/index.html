@@ -1,81 +1,92 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>ochart — visualizador</title>
-  <link rel="icon" href="data:image/svg+xml,
-<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22>
-  <text x=%224%22 y=%2212%22 font-size=%2212%22>📈</text>
-</svg>">
-
-  <!-- Núcleo Chart.js e plugins (UMD) -->
+  <meta name="theme-color" content="#070b14"/>
+  <title>OChart — Oraculum</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text x=%222%22 y=%2213%22 font-size=%2212%22>◈</text></svg>">
   <script src="./libs/chart.umd.js"></script>
   <script src="./libs/chartjs-adapter-date-fns.bundle.js"></script>
   <script src="./libs/chartjs-chart-financial.min.js"></script>
   <script src="./libs/chartjs-plugin-zoom.min.js"></script>
   <script src="./libs/chartjs-plugin-annotation.min.js"></script>
-
-  <!-- Estilos principais do app -->
   <link rel="stylesheet" href="./src/style/app.css">
+  <link rel="stylesheet" href="./src/style/v2.css">
 </head>
 <body class="ui-surface">
-
-  <section class="box row">
-    <div class="inline">
-      <label>TF</label>
-      <select id="sel-tf">
-        <option value="1h">1h</option>
-        <option value="1d" selected>1d</option>
-        <option value="1w">1w</option>
-        <option value="1mo">1mo</option>
-      </select>
+  <header class="ochart-topbar">
+    <div class="brand">
+      <div class="brand-mark">◈</div>
+      <div><strong>OChart</strong><span>Oraculum market viewer</span></div>
     </div>
-
-    <div class="inline">
-      <label class="muted">Janela (offsets do fim)</label>
-      <div id="ow"></div>
+    <div class="dataset-picker">
+      <label for="sel-dataset">Mercado</label>
+      <select id="sel-dataset"><option value="">Carregando…</option></select>
     </div>
+    <div class="top-actions">
+      <button id="btn-sync" class="primary">↻ Atualizar</button>
+      <button id="btn-theme" title="Alternar tema">☼</button>
+    </div>
+  </header>
 
-    <div class="inline">
-      <label class="muted">Tipo</label>
-      <div class="seg">
-        <button id="btn-type-line" class="active">Line</button>
-        <button id="btn-type-candle">Candle</button>
+  <main class="ochart-main">
+    <section class="market-strip">
+      <div class="market-title">
+        <span class="eyebrow">SÉRIE</span>
+        <h1 id="dataset-name">Carregando dados</h1>
+        <span id="dataset-meta" class="subtle">—</span>
       </div>
-    </div>
+      <div class="quote-stat"><span>Último</span><strong id="k-close">—</strong></div>
+      <div class="quote-stat"><span>Máxima</span><strong id="k-max">—</strong></div>
+      <div class="quote-stat"><span>Mínima</span><strong id="k-min">—</strong></div>
+      <div class="quote-stat"><span>Barras</span><strong id="k-bars">—</strong></div>
+    </section>
 
-    <div class="inline">
-      <label class="muted">Escala</label>
-      <div class="seg">
-        <button id="btn-scale-linear">Linear</button>
-        <button id="btn-scale-log" class="active">Log</button>
+    <section class="chart-card">
+      <div class="chart-toolbar">
+        <div class="toolbar-group">
+          <span class="toolbar-label">Visualização</span>
+          <div class="seg">
+            <button id="btn-type-line" class="active">Linha</button>
+            <button id="btn-type-candle">Candles</button>
+          </div>
+        </div>
+        <div class="toolbar-group">
+          <span class="toolbar-label">Escala</span>
+          <div class="seg">
+            <button id="btn-scale-linear" class="active">Linear</button>
+            <button id="btn-scale-log">Log</button>
+          </div>
+        </div>
+        <div class="toolbar-group timeframe">
+          <span class="toolbar-label">Janela</span>
+          <select id="sel-tf">
+            <option value="1h">1 hora</option>
+            <option value="1d" selected>1 dia</option>
+            <option value="1w">1 semana</option>
+            <option value="1mo">1 mês</option>
+          </select>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button id="btn-table" class="ghost">▦ Tabela</button>
+        <span id="status" class="status-pill">Conectando…</span>
       </div>
-    </div>
 
-    <div class="spacer"></div>
+      <div class="chart-shell">
+        <canvas id="ch"></canvas>
+      </div>
+    </section>
 
-    <button id="btn-table">📊 Tabela</button>
-    <button id="btn-sync">🔄 Sync</button>
-    <button id="btn-theme"><span>🌙</span> Dark</button>
-    <span id="status" class="muted">—</span>
-  </section>
-
-  <section class="box chart-main">
-    <div class="chart-shell">
-      <canvas id="ch"></canvas>
-    </div>
-  </section>
-
-  <section class="box row metrics">
-    <div><div class="muted">Preço (close)</div><div id="k-close" class="big price-value">—</div></div>
-    <div><div class="muted">Máx (janela)</div><div id="k-max" class="big price-value">—</div></div>
-    <div><div class="muted">Mín (janela)</div><div id="k-min" class="big price-value">—</div></div>
-  </section>
+    <section class="insight-grid">
+      <div class="insight-card"><span>Fonte</span><strong id="k-provider">—</strong></div>
+      <div class="insight-card"><span>Intervalo</span><strong id="k-interval">—</strong></div>
+      <div class="insight-card"><span>Moeda</span><strong id="k-currency">—</strong></div>
+      <div class="insight-card"><span>Atualizado</span><strong id="k-updated">—</strong></div>
+    </section>
+  </main>
 
   <div id="dev-hud-root"></div>
-
   <script type="module" src="./src/app.js"></script>
-
 </body>
 </html>
