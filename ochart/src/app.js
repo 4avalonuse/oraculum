@@ -5,7 +5,7 @@ import { DrawingTools } from './ui/drawing-tools.js';
 import { TableModal } from './ui/table-modal.js';
 import { themeManager } from './ui/theme-manager.js';
 import { setupControls } from './ui/controls.js';
-import { loadDatasets, syncSelected, getDatasetForInterval, setAnalysisPeriods } from './core/sync.js';
+import { loadDatasets, syncSelected, setAnalysisPeriods } from './core/sync.js';
 import { AnalysisPeriods } from './ui/analysis-periods.js';
 
 const $ = (s) => document.querySelector(s);
@@ -25,6 +25,17 @@ function setStartupState(title, meta, status) {
   document.getElementById('status').textContent = status;
 }
 
+function readAvailable(select) {
+  const selected = select?.selectedOptions?.[0];
+  if (!selected?.dataset?.datasets) return {};
+  try {
+    const parsed = JSON.parse(selected.dataset.datasets);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
 async function boot() {
   engine = new ChartEngine($('#ch'));
   const drawingTools = new DrawingTools(engine);
@@ -35,7 +46,7 @@ async function boot() {
   if (shell && tb && tb.parentElement !== shell) shell.appendChild(tb);
 
   themeManager.init(engine);
-  setupControls(engine, tableModal);
+  const controls = setupControls(engine, tableModal);
   setAnalysisPeriods(analysisPeriods, engine);
 
   try {
@@ -49,17 +60,21 @@ async function boot() {
       return;
     }
 
+    controls.refreshIntervalButtons();
+
     const selected = document.getElementById('sel-dataset').selectedOptions[0];
-    const available = selected?.dataset?.datasets ? JSON.parse(selected.dataset.datasets) : {};
+    const available = readAvailable(document.getElementById('sel-dataset'));
     const requested = QS.get('dataset');
     const requestedDataset = datasets.find(d => d.id === requested);
 
-    let interval = requestedDataset?.interval || '1h';
-    if (!available[interval]) interval = Object.keys(available)[0] || '1d';
+    let interval = requestedDataset?.interval || controls.getInterval() || '1h';
+    if (!available[interval]) {
+      interval = Object.keys(available).find(value => ['1m', '1h', '1d', '1w', '1M'].includes(value)) || '1d';
+    }
 
-    document.querySelectorAll('#sel-timeframe button[data-interval]').forEach(btn =>
-      btn.classList.toggle('active', btn.dataset.interval === interval)
-    );
+    if (!controls.setInterval(interval)) {
+      controls.refreshIntervalButtons();
+    }
 
     await syncSelected(engine, 'linear', 'line', { interval });
   } catch (error) {
