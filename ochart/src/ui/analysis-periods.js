@@ -30,10 +30,15 @@ export class AnalysisPeriods {
     const bounds = this._bounds();
     this.bounds = bounds;
     if (!bounds) return;
+
     const saved = this._read();
-    this.state = { ...this.state, ...(saved || {}) };
-    this.state.a = { ...this.state.a, ...(saved?.a || {}) };
-    this.state.b = { ...this.state.b, ...(saved?.b || {}) };
+    this.state = saved ? {
+      ...this._defaults(bounds),
+      ...saved,
+      a: { ...this._defaults(bounds).a, ...(saved.a || {}) },
+      b: { ...this._defaults(bounds).b, ...(saved.b || {}) }
+    } : this._defaults(bounds);
+
     this._clamp(bounds);
     this.render(bounds);
   }
@@ -43,9 +48,7 @@ export class AnalysisPeriods {
   }
 
   filter(rows = this.rows, active = this.state.active) {
-    if (active === 'full') {
-      return this._filterQuick(rows);
-    }
+    if (active === 'full') return this._filterQuick(rows);
 
     const range = this.state[active];
     if (!range?.start || !range?.end) return rows.slice();
@@ -73,12 +76,11 @@ export class AnalysisPeriods {
 
   _defaults(bounds) {
     const day = 86400000;
-    const maxDate = new Date(bounds.max);
-    const end = this._date(maxDate);
-    const aEnd = end;
+    const aEnd = this._date(new Date(bounds.max));
     const aStart = this._date(new Date(bounds.max - 29 * day));
     const bEnd = this._date(new Date(bounds.max - 30 * day));
     const bStart = this._date(new Date(bounds.max - 59 * day));
+
     return {
       active: 'full',
       quick: 'all',
@@ -104,9 +106,11 @@ export class AnalysisPeriods {
   _clamp(bounds) {
     const min = this._date(new Date(bounds.min));
     const max = this._date(new Date(bounds.max));
+
     for (const key of ['a', 'b']) {
       this.state[key].start = this.state[key].start < min ? min : this.state[key].start > max ? max : this.state[key].start;
       this.state[key].end = this.state[key].end < min ? min : this.state[key].end > max ? max : this.state[key].end;
+
       if (this.state[key].start > this.state[key].end) {
         const t = this.state[key].start;
         this.state[key].start = this.state[key].end;
@@ -134,6 +138,7 @@ export class AnalysisPeriods {
   render(bounds) {
     const min = this._date(new Date(bounds.min));
     const max = this._date(new Date(bounds.max));
+
     this.root.innerHTML = `
       <div class="periods-head">
         <div>
@@ -146,9 +151,11 @@ export class AnalysisPeriods {
           <button data-period="b" class="${this.state.active === 'b' ? 'active' : ''}">Período B</button>
         </div>
       </div>
+
       <div class="quick-ranges">
         ${QUICK_RANGES.map(([key, label]) => `<button data-quick="${key}" class="${this.state.active === 'full' && this.state.quick === key ? 'active' : ''}">${label}</button>`).join('')}
       </div>
+
       <div class="periods-grid">
         ${this._rangeMarkup('a', 'Período A', min, max)}
         ${this._rangeMarkup('b', 'Período B', min, max)}
@@ -184,6 +191,7 @@ export class AnalysisPeriods {
 
   _rangeMarkup(key, label, min, max) {
     const r = this.state[key];
+
     return `
       <div class="period-box">
         <strong>${label}</strong>
