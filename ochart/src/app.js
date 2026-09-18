@@ -31,7 +31,7 @@ async function boot() {
   }
   const id = document.getElementById('sel-dataset').value || datasets[0].id;
   document.getElementById('sel-dataset').value = id;
-  await sync(engine, id, document.getElementById('sel-tf').value, 'linear', 'line');
+  await sync(engine, id, 'linear', 'line');
 }
 boot().catch((error) => {
   console.error(error);
