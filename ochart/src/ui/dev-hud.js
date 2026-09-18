@@ -20,7 +20,7 @@ export function mountHUD(root){
   root.innerHTML = `
     <div id="hud">
       <div class="hud-bar">
-        <button id="hud-toggle">Dev HUD</button>
+        <button id="hud-toggle">Logs do OChart</button>
         <span>Logs:</span>
         <select id="hud-filter">
           <option value="all">all</option>
@@ -31,7 +31,7 @@ export function mountHUD(root){
         <button id="hud-copy">Copiar JSONL</button>
         <button id="hud-clear">Limpar</button>
       </div>
-      <div id="hud-body">
+      <div id="hud-body" class="open">
         <pre id="hud-pre"></pre>
       </div>
     </div>
