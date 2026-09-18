@@ -44,4 +44,4 @@ body.ui-surface{margin:0;background:radial-gradient(900px 500px at 20% -10%,#132
 .timeframe-seg button{min-width:32px;height:30px;padding:0 9px;border:0;border-right:1px solid var(--oc-border);background:transparent;color:var(--oc-muted);font:600 11px/1 inherit}
 .timeframe-seg button:last-child{border-right:0}
 .timeframe-seg button:hover{background:var(--oc-panel-2);color:var(--oc-text)}
-.timeframe-seg button.active{background:#1a3152;color:#e8f1ff}
+.timeframe-seg button.active{background:#1a3152;color:#e8f1ff}.timeframe-seg button:disabled{opacity:.3;cursor:not-allowed}.timeframe-seg button:disabled:hover{background:transparent;color:var(--oc-muted)}
