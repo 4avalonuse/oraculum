@@ -52,15 +52,15 @@
             <button id="btn-type-candle">Candles</button>
           </div>
         </div>
-        <div class="toolbar-group">
+        <div class="toolbar-group timeframe-group">
           <span class="toolbar-label">Intervalo</span>
-          <select id="sel-timeframe" class="toolbar-select" aria-label="Intervalo da série">
-            <option value="1m">m</option>
-            <option value="1h" selected>h</option>
-            <option value="1d">d</option>
-            <option value="1w">w</option>
-            <option value="1M">M</option>
-          </select>
+          <div id="sel-timeframe" class="timeframe-seg" role="group" aria-label="Intervalo da série">
+            <button type="button" data-interval="1m">m</button>
+            <button type="button" data-interval="1h" class="active">h</button>
+            <button type="button" data-interval="1d">d</button>
+            <button type="button" data-interval="1w">w</button>
+            <button type="button" data-interval="1M">M</button>
+          </div>
         </div>
         <div class="toolbar-group">
           <span class="toolbar-label">Velas</span>
@@ -90,10 +90,10 @@
         <span id="status" class="status-pill">Conectando…</span>
       </div>
 
+      <div id="analysis-periods" class="analysis-periods"></div>
       <div class="chart-shell">
         <canvas id="ch"></canvas>
       </div>
-      <div id="analysis-periods" class="analysis-periods"></div>
     </section>
 
     <section class="insight-grid">
