@@ -1,29 +1,30 @@
-// hub/ochart-hub-adapter.js
-/**
- * OChartHubAdapter
- * -----------------
- * Ponte entre OChart e o Hub.
- * Usa o data-loader para buscar séries e já devolve dados + stats + meta.
- */
-
 import { fetchSeries } from '../ochart/src/core/data-loader.js';
-import { sanitizeSeries, getSeriesStats } from '../ochart/src/core/sanitizer.js';
+import { sanitizeLine, getSeriesStats } from '../ochart/src/core/sanitizer.js';
+
+const DATASETS = {
+  '1d': 'btc-usd-yahoo',
+  '1h': 'btc-usdt-binance'
+};
 
 export class OChartHubAdapter {
-  static async loadSeries(tf = '1d', scale = 'logarithmic') {
+  static async loadSeries(tf = '1d', scale = 'linear') {
     try {
-      const payload = await fetchSeries(tf, scale);
-      const { data, stats } = sanitizeSeries(payload.data || []);
+      const datasetId = DATASETS[tf] || tf;
+      const payload = await fetchSeries(datasetId);
+      const { data, stats } = sanitizeLine(payload.data || [], {
+        requirePositive: scale !== 'linear'
+      });
       const meta = {
         ...(payload.meta || {}),
         tf,
         scale,
+        datasetId,
         source: payload.meta?.source || 'unknown'
       };
       return { data, stats, meta };
     } catch (err) {
-      console.error("❌ OChartHubAdapter.loadSeries error:", err);
-      return { data: [], stats: {}, meta: { error: err.message } };
+      console.error('OChartHubAdapter.loadSeries error:', err);
+      return { data: [], stats: {}, meta: { error: err.message, tf, scale } };
     }
   }
 
