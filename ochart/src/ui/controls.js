@@ -1,14 +1,16 @@
-import { sync, getCurrentRows, setCandleLimit } from '../core/sync.js';
+import { syncSelected, getDatasetForInterval, getCurrentRows, setCandleLimit } from '../core/sync.js';
 import { themeManager } from './theme-manager.js';
 
 export function setupControls(engine, tableModal){
   let currentScale = 'linear';
   let currentType = 'line';
+  let currentInterval = '1h';
 
-  const syncCurrent = (refresh = false) => {
-    const id = document.getElementById('sel-dataset').value;
-    if (id) return sync(engine, id, currentScale, currentType, { refresh });
-  };
+  const syncCurrent = (refresh = false) =>
+    syncSelected(engine, currentScale, currentType, {
+      refresh,
+      interval: currentInterval
+    });
 
   const setScale = (scale) => {
     currentScale = scale === 'logarithmic' ? 'logarithmic' : 'linear';
@@ -24,43 +26,50 @@ export function setupControls(engine, tableModal){
     engine?.setType(currentType);
   };
 
+  const setInterval = (interval) => {
+    const button = document.querySelector(`#sel-timeframe button[data-interval="${interval}"]`);
+    if (!button) return false;
+    currentInterval = interval;
+    document.querySelectorAll('#sel-timeframe button[data-interval]').forEach(btn =>
+      btn.classList.toggle('active', btn === button)
+    );
+    return true;
+  };
+
   document.getElementById('btn-scale-linear').addEventListener('click', () => setScale('linear'));
   document.getElementById('btn-scale-log').addEventListener('click', () => setScale('logarithmic'));
   document.getElementById('btn-type-line').addEventListener('click', () => setType('line'));
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
 
-  document.getElementById('btn-sync').addEventListener('click', () => syncCurrent(true));
-
-  document.getElementById('sel-dataset').addEventListener('change', () => {
-    const selected = document.getElementById('sel-dataset').selectedOptions[0];
-    const interval = selected?.dataset?.interval || '';
-    const tf = document.getElementById('sel-timeframe');
-    if (tf && interval) tf.value = interval;
-    syncCurrent(false);
+  document.getElementById('btn-sync').addEventListener('click', async () => {
+    const button = document.getElementById('btn-sync');
+    button.disabled = true;
+    button.classList.add('loading');
+    try {
+      await syncCurrent(true);
+    } finally {
+      button.disabled = false;
+      button.classList.remove('loading');
+    }
   });
 
-  document.getElementById('sel-timeframe')?.addEventListener('click', (event) => {
+  document.getElementById('sel-dataset').addEventListener('change', async () => {
+    const selected = document.getElementById('sel-dataset').selectedOptions[0];
+    const available = selected?.dataset?.datasets ? JSON.parse(selected.dataset.datasets) : {};
+    if (!available[currentInterval]) {
+      const fallback = Object.keys(available)[0] || '1d';
+      setInterval(fallback);
+    }
+    await syncCurrent(false);
+  });
+
+  document.getElementById('sel-timeframe')?.addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-interval]');
     if (!button) return;
     const interval = button.dataset.interval;
-    const dataset = document.getElementById('sel-dataset');
-    const current = dataset.selectedOptions[0];
-    const provider = current?.dataset?.provider || '';
-    const symbol = current?.dataset?.symbol || '';
-
-    let option = Array.from(dataset.options).find(o =>
-      o.dataset.interval === interval &&
-      o.dataset.provider === provider &&
-      o.dataset.symbol === symbol
-    );
-    if (!option) option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
-    if (!option) return;
-
-    dataset.value = option.value;
-    document.querySelectorAll('#sel-timeframe button').forEach(btn =>
-      btn.classList.toggle('active', btn === button)
-    );
-    syncCurrent(false);
+    if (!getDatasetForInterval(interval)) return;
+    setInterval(interval);
+    await syncCurrent(false);
   });
 
   document.getElementById('sel-candles').addEventListener('change', (event) => {
