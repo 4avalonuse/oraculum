@@ -1,11 +1,24 @@
+const QUICK_RANGES = [
+  ['7d', '7 dias', 7],
+  ['30d', '30 dias', 30],
+  ['90d', '90 dias', 90],
+  ['6m', '6 meses', 182],
+  ['1y', '1 ano', 365],
+  ['5y', '5 anos', 1826],
+  ['10y', '10 anos', 3652],
+  ['all', 'Todo o período', null]
+];
+
 export class AnalysisPeriods {
   constructor(root, { onChange } = {}) {
     this.root = root;
     this.onChange = typeof onChange === 'function' ? onChange : null;
     this.datasetId = null;
     this.rows = [];
+    this.bounds = null;
     this.state = {
       active: 'full',
+      quick: 'all',
       a: { start: '', end: '' },
       b: { start: '', end: '' }
     };
@@ -15,9 +28,12 @@ export class AnalysisPeriods {
     this.datasetId = datasetId;
     this.rows = Array.isArray(rows) ? rows.slice() : [];
     const bounds = this._bounds();
+    this.bounds = bounds;
     if (!bounds) return;
     const saved = this._read();
-    this.state = saved || this._defaults(bounds);
+    this.state = { ...this.state, ...(saved || {}) };
+    this.state.a = { ...this.state.a, ...(saved?.a || {}) };
+    this.state.b = { ...this.state.b, ...(saved?.b || {}) };
     this._clamp(bounds);
     this.render(bounds);
   }
@@ -27,11 +43,24 @@ export class AnalysisPeriods {
   }
 
   filter(rows = this.rows, active = this.state.active) {
-    if (active === 'full') return rows.slice();
+    if (active === 'full') {
+      return this._filterQuick(rows);
+    }
+
     const range = this.state[active];
     if (!range?.start || !range?.end) return rows.slice();
     const start = new Date(range.start + 'T00:00:00').getTime();
     const end = new Date(range.end + 'T23:59:59.999').getTime();
+    return rows.filter(row => Number(row.t) >= start && Number(row.t) <= end);
+  }
+
+  _filterQuick(rows) {
+    if (this.state.quick === 'all') return rows.slice();
+    const preset = QUICK_RANGES.find(([key]) => key === this.state.quick);
+    if (!preset || !this.bounds) return rows.slice();
+    const days = preset[2];
+    const end = this.bounds.max;
+    const start = Math.max(this.bounds.min, end - ((days - 1) * 86400000));
     return rows.filter(row => Number(row.t) >= start && Number(row.t) <= end);
   }
 
@@ -52,6 +81,7 @@ export class AnalysisPeriods {
     const bStart = this._date(new Date(bounds.max - 59 * day));
     return {
       active: 'full',
+      quick: 'all',
       a: { start: this._maxDate(aStart, bounds.min), end: this._minDate(aEnd, bounds.max) },
       b: { start: this._maxDate(bStart, bounds.min), end: this._minDate(bEnd, bounds.max) }
     };
@@ -108,13 +138,16 @@ export class AnalysisPeriods {
       <div class="periods-head">
         <div>
           <span class="toolbar-label">Períodos de análise</span>
-          <span class="subtle">Defina duas janelas independentes para comparação futura.</span>
+          <span class="subtle">A e B ficam disponíveis para a análise; a janela rápida controla a visualização.</span>
         </div>
         <div class="periods-mode seg">
-          <button data-period="full" class="${this.state.active === 'full' ? 'active' : ''}">Completo</button>
+          <button data-period="full" class="${this.state.active === 'full' ? 'active' : ''}">Janela rápida</button>
           <button data-period="a" class="${this.state.active === 'a' ? 'active' : ''}">Período A</button>
           <button data-period="b" class="${this.state.active === 'b' ? 'active' : ''}">Período B</button>
         </div>
+      </div>
+      <div class="quick-ranges">
+        ${QUICK_RANGES.map(([key, label]) => `<button data-quick="${key}" class="${this.state.active === 'full' && this.state.quick === key ? 'active' : ''}">${label}</button>`).join('')}
       </div>
       <div class="periods-grid">
         ${this._rangeMarkup('a', 'Período A', min, max)}
@@ -125,6 +158,16 @@ export class AnalysisPeriods {
     this.root.querySelectorAll('[data-period]').forEach(btn => {
       btn.onclick = () => {
         this.state.active = btn.dataset.period;
+        this._save();
+        this.render(bounds);
+        this.onChange?.(this.get());
+      };
+    });
+
+    this.root.querySelectorAll('[data-quick]').forEach(btn => {
+      btn.onclick = () => {
+        this.state.active = 'full';
+        this.state.quick = btn.dataset.quick;
         this._save();
         this.render(bounds);
         this.onChange?.(this.get());
