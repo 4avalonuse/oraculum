@@ -53,3 +53,113 @@ body.ui-surface{margin:0;background:radial-gradient(900px 500px at 20% -10%,#132
 .data-notice-icon{width:22px;height:22px;display:grid;place-items:center;flex:0 0 22px;border:1px solid rgba(255,170,80,.35);border-radius:50%;color:#ffb86b;font-size:11px;font-weight:800}
 .data-notice strong{display:block;font-size:11px;line-height:1.2}.data-notice span{display:block;margin-top:2px;color:var(--oc-muted);font-size:10px;line-height:1.35}.data-notice-action{margin-left:auto;flex:0 0 auto;background:var(--oc-panel-2);border:1px solid var(--oc-border);color:var(--oc-text);border-radius:7px;padding:6px 9px;font:600 10px/1 inherit}
 @media(max-width:520px){.data-notice{align-items:flex-start}.data-notice-action{align-self:center}.data-notice span{max-width:210px}}
+
+
+/* ============================================================
+   OChart UX pass 06 — market first / chart first
+   ============================================================ */
+.ochart-topbar{height:64px;padding:0 18px;gap:18px}
+.brand{min-width:180px}
+.dataset-picker{max-width:390px}
+.dataset-picker label{display:none}
+.top-actions{gap:6px}
+.top-actions button{height:36px}
+
+.ochart-main{padding:14px 18px 28px}
+.market-strip{
+  grid-template-columns:minmax(300px,2fr) repeat(3,minmax(110px,.52fr));
+  border-radius:12px;
+  margin-bottom:10px;
+}
+.market-title{padding:14px 16px}
+.market-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.market-title h1{font-size:17px;line-height:1.2;margin:3px 0 0}
+.market-title .subtle{display:block;margin-top:5px}
+.price-line{display:flex;align-items:baseline;gap:10px;margin-top:7px}
+.price-line #k-close{font-size:25px;line-height:1;font-weight:750;letter-spacing:-.02em}
+.price-change{font-size:11px;font-weight:750;padding:4px 7px;border-radius:6px;background:rgba(130,144,165,.08);color:var(--oc-muted)}
+.price-change.positive{color:var(--oc-green);background:rgba(56,211,159,.08)}
+.price-change.negative{color:#ff6b76;background:rgba(255,107,118,.08)}
+.quote-stat{padding:12px 14px}
+.quote-stat span{font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+.quote-stat strong{font-size:14px;margin-top:4px}
+
+.chart-card{border-radius:12px}
+.chart-toolbar{
+  min-height:50px;padding:7px 10px;gap:8px;
+  background:rgba(16,24,39,.62);
+}
+.toolbar-group{gap:5px}
+.toolbar-label{font-size:9px}
+.seg,.timeframe-seg{border-radius:7px}
+.seg button{padding:6px 9px;font-size:10px}
+.timeframe-seg button{height:29px;min-width:31px;padding:0 8px;font-size:10px}
+.toolbar-select{height:30px;padding:5px 8px;font-size:10px}
+.ghost{font-size:10px;padding:6px 9px}
+.status-pill{font-size:9px;padding:5px 8px;white-space:nowrap}
+.status-pill i{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;vertical-align:middle;margin-right:3px}
+
+.analysis-periods{padding:9px 12px}
+.periods-head{margin-bottom:7px}
+.quick-ranges{gap:5px;margin-bottom:7px}
+.quick-ranges button{padding:5px 8px;font-size:10px}
+.periods-grid{gap:7px}
+.period-box{padding:7px 9px}
+.chart-shell{height:min(68vh,700px);min-height:420px;padding:8px 10px 10px}
+
+.insight-grid{margin-top:8px;gap:7px}
+.insight-card{padding:9px 11px}
+.insight-card span{font-size:8px}
+.insight-card strong{font-size:11px;margin-top:3px}
+
+/* Secondary metadata stays quiet; the market header carries the primary story. */
+.insight-grid{opacity:.78}
+
+/* Compact responsive layout */
+@media(max-width:900px){
+  .ochart-topbar{padding:9px 12px;gap:8px}
+  .brand{min-width:0}
+  .dataset-picker{order:3;max-width:none}
+  .market-strip{grid-template-columns:1fr 1fr}
+  .market-title{grid-column:1/-1}
+  .chart-toolbar{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .chart-toolbar::-webkit-scrollbar{display:none}
+  .chart-toolbar .toolbar-group:nth-child(5){display:none}
+  .toolbar-spacer{display:block}
+  .chart-shell{height:58vh;min-height:360px}
+}
+
+@media(max-width:520px){
+  .ochart-topbar{min-height:58px;height:auto;padding:8px 10px}
+  .brand-mark{width:30px;height:30px;border-radius:8px;font-size:15px}
+  .brand strong{font-size:13px}
+  .brand span{font-size:8px}
+  .top-actions .primary{font-size:0;padding:8px 10px}
+  .top-actions .primary:first-letter{font-size:14px}
+  .dataset-picker select{width:100%;height:34px}
+  .ochart-main{padding:8px 7px 20px}
+  .market-strip{grid-template-columns:1fr 1fr;margin-bottom:8px}
+  .market-title{padding:12px 12px}
+  .market-title h1{font-size:16px}
+  .price-line #k-close{font-size:23px}
+  .price-change{font-size:10px}
+  .quote-stat{padding:9px 11px}
+  .quote-stat strong{font-size:13px}
+  .chart-card{border-radius:10px}
+  .chart-toolbar{padding:6px 7px}
+  .chart-toolbar .toolbar-group{flex:0 0 auto}
+  .chart-toolbar .toolbar-group:nth-child(4){display:flex;flex:0 0 auto}
+  .toolbar-select{max-width:58px}
+  .status-pill{margin-left:auto}
+  .data-notice{margin:8px 8px 0;padding:8px 9px}
+  .analysis-periods{padding:8px}
+  .chart-shell{height:54vh;min-height:320px;padding:4px 5px 7px}
+  .insight-grid{grid-template-columns:1fr 1fr}
+}
+
+/* Touch targets: never make primary controls hard to hit on phones. */
+@media(pointer:coarse){
+  .timeframe-seg button{min-width:38px;height:34px}
+  .seg button,.ghost{min-height:34px}
+  .quick-ranges button{min-height:34px}
+}
