@@ -8,7 +8,7 @@ const QS = new URLSearchParams(location.search);
 const DATASETS_CACHE = 'ochart:datasets';
 const cacheKey = (id) => `ochart:dataset:${id}`;
 
-async function fetchJSON(url, timeoutMs = 12000) {
+async function fetchJSON(url, timeoutMs = 30000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -49,18 +49,24 @@ export async function fetchDatasets() {
   }
 }
 
-export async function fetchSeries(datasetId) {
+export async function fetchSeries(datasetId, { refresh = false } = {}) {
   if (!datasetId) throw new Error('dataset não selecionado');
+
+  const url = new URL(`${API_BASE}/datasets/${encodeURIComponent(datasetId)}`);
+  if (refresh) url.searchParams.set('refresh', '1');
+
   try {
-    const payload = await fetchJSON(`${API_BASE}/datasets/${encodeURIComponent(datasetId)}`);
+    const payload = await fetchJSON(url.toString(), refresh ? 60000 : 30000);
     try { localStorage.setItem(cacheKey(datasetId), JSON.stringify(payload)); } catch (_) {}
     payload.meta = { ...(payload.meta || {}), source: 'oraculum-api' };
     return payload;
   } catch (error) {
-    const cached = readCachedSeries(datasetId);
-    if (cached) {
-      cached.meta = { ...(cached.meta || {}), source: 'cache-local' };
-      return cached;
+    if (!refresh) {
+      const cached = readCachedSeries(datasetId);
+      if (cached) {
+        cached.meta = { ...(cached.meta || {}), source: 'cache-local' };
+        return cached;
+      }
     }
     throw error;
   }
