@@ -39,8 +39,10 @@ export function setupControls(engine, tableModal){
     syncCurrent(false);
   });
 
-  document.getElementById('sel-timeframe')?.addEventListener('change', (event) => {
-    const interval = event.target.value;
+  document.getElementById('sel-timeframe')?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-interval]');
+    if (!button) return;
+    const interval = button.dataset.interval;
     const dataset = document.getElementById('sel-dataset');
     const current = dataset.selectedOptions[0];
     const provider = current?.dataset?.provider || '';
@@ -51,13 +53,13 @@ export function setupControls(engine, tableModal){
       o.dataset.provider === provider &&
       o.dataset.symbol === symbol
     );
-
-    if (!option) {
-      option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
-    }
-
+    if (!option) option = Array.from(dataset.options).find(o => o.dataset.interval === interval);
     if (!option) return;
+
     dataset.value = option.value;
+    document.querySelectorAll('#sel-timeframe button').forEach(btn =>
+      btn.classList.toggle('active', btn === button)
+    );
     syncCurrent(false);
   });
 
