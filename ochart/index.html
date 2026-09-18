@@ -4,21 +4,21 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="theme-color" content="#070b14"/>
-  <title>OChart — Oraculum · v2026.09.18.05</title>
+  <title>OChart — Oraculum · v2026.09.18.06</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text x=%222%22 y=%2213%22 font-size=%2212%22>◈</text></svg>">
-  <script src="./libs/chart.umd.js?v=2026.09.18.05"></script>
-  <script src="./libs/chartjs-adapter-date-fns.bundle.js?v=2026.09.18.05"></script>
-  <script src="./libs/chartjs-chart-financial.min.js?v=2026.09.18.05"></script>
-  <script src="./libs/chartjs-plugin-zoom.min.js?v=2026.09.18.05"></script>
-  <script src="./libs/chartjs-plugin-annotation.min.js?v=2026.09.18.05"></script>
-  <link rel="stylesheet" href="./src/style/app.css?v=2026.09.18.05">
-  <link rel="stylesheet" href="./src/style/v2.css?v=2026.09.18.05">
+  <script src="./libs/chart.umd.js?v=2026.09.18.06"></script>
+  <script src="./libs/chartjs-adapter-date-fns.bundle.js?v=2026.09.18.06"></script>
+  <script src="./libs/chartjs-chart-financial.min.js?v=2026.09.18.06"></script>
+  <script src="./libs/chartjs-plugin-zoom.min.js?v=2026.09.18.06"></script>
+  <script src="./libs/chartjs-plugin-annotation.min.js?v=2026.09.18.06"></script>
+  <link rel="stylesheet" href="./src/style/app.css?v=2026.09.18.06">
+  <link rel="stylesheet" href="./src/style/v2.css?v=2026.09.18.06">
 </head>
 <body class="ui-surface">
   <header class="ochart-topbar">
     <div class="brand">
       <div class="brand-mark">◈</div>
-      <div><strong>OChart <small>v2026.09.18<span class="version-suffix"> .04</span></small></strong><span>Oraculum market viewer</span></div>
+      <div><strong>OChart <small>v2026.09.18<span class="version-suffix"> .06</span></small></strong><span>Oraculum market viewer</span></div>
     </div>
     <div class="dataset-picker">
       <label for="sel-dataset">Mercado</label>
@@ -33,11 +33,10 @@
   <main class="ochart-main">
     <section class="market-strip">
       <div class="market-title">
-        <span class="eyebrow">SÉRIE</span>
-        <h1 id="dataset-name">Carregando dados</h1>
-        <span id="dataset-meta" class="subtle">—</span><span id="k-source" class="source-badge">—</span>
+        <div class="market-heading"><div><span class="eyebrow">MERCADO</span><h1 id="dataset-name">Carregando dados</h1></div><span id="k-source" class="source-badge">—</span></div>
+        <div class="price-line"><strong id="k-close">—</strong><span id="k-change" class="price-change">—</span></div>
+        <span id="dataset-meta" class="subtle">—</span>
       </div>
-      <div class="quote-stat"><span>Último</span><strong id="k-close">—</strong></div>
       <div class="quote-stat"><span>Máxima</span><strong id="k-max">—</strong></div>
       <div class="quote-stat"><span>Mínima</span><strong id="k-min">—</strong></div>
       <div class="quote-stat"><span>Barras</span><strong id="k-bars">—</strong></div>
@@ -87,7 +86,7 @@
         </div>
         <div class="toolbar-spacer"></div>
         <button id="btn-table" class="ghost">▦ Tabela</button>
-        <span id="status" class="status-pill">Conectando…</span>
+        <span id="status" class="status-pill"><i></i> Conectando…</span>
       </div>
 
       <div id="data-notice" class="data-notice" role="status" aria-live="polite" hidden><div class="data-notice-icon">!</div><div><strong data-notice-title>Não foi possível carregar</strong><span data-notice-detail>A Data API não conseguiu entregar esta série agora.</span></div><button type="button" class="data-notice-action" onclick="document.getElementById('btn-sync')?.click()">Tentar novamente</button></div>
@@ -106,6 +105,6 @@
   </main>
 
   <div id="dev-hud-root"></div>
-  <script type="module" src="./src/app.js?v=2026.09.18.05"></script>
+  <script type="module" src="./src/app.js?v=2026.09.18.06"></script>
 </body>
 </html>
