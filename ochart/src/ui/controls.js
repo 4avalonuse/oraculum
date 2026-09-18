@@ -7,8 +7,7 @@ export function setupControls(engine, tableModal){
 
   const syncCurrent = () => {
     const id = document.getElementById('sel-dataset').value;
-    const tf = document.getElementById('sel-tf').value;
-    if (id) sync(engine, id, tf, currentScale, currentType);
+    if (id) sync(engine, id, currentScale, currentType);
   };
 
   const setScale = (scale) => {
@@ -31,12 +30,12 @@ export function setupControls(engine, tableModal){
   document.getElementById('btn-type-candle').addEventListener('click', () => setType('candlestick'));
   document.getElementById('btn-sync').addEventListener('click', syncCurrent);
   document.getElementById('sel-dataset').addEventListener('change', syncCurrent);
-  document.getElementById('sel-tf').addEventListener('change', syncCurrent);
 
   document.getElementById('btn-table').addEventListener('click', () => {
     const rows = getCurrentRows();
     tableModal.show(rows);
-    tableModal.el.querySelector('#tm-export').onclick = () => tableModal.exportCSV();
+    const exportButton = tableModal.el?.querySelector('#tm-export');
+    if (exportButton) exportButton.onclick = () => tableModal.exportCSV();
   });
 
   document.getElementById('btn-theme').addEventListener('click', () => themeManager.toggleTheme?.());
