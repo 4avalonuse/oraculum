@@ -36,12 +36,14 @@ export async function loadDatasets() {
   const datasets = await fetchDatasets();
   const select = document.getElementById('sel-dataset');
   select.innerHTML = '';
+
   for (const d of datasets) {
     const option = document.createElement('option');
     option.value = d.id;
     option.textContent = `${d.name} · ${d.provider}`;
     select.appendChild(option);
   }
+
   const requested = QS.get('dataset');
   if (requested && datasets.some(d => d.id === requested)) select.value = requested;
   return datasets;
@@ -57,16 +59,21 @@ export async function sync(engine, datasetId, scale, type) {
     const rows = result.data || [];
     currentRows = rows;
     updateMeta(meta, rows);
-    try { setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, { source: 'oraculum-api' }); } catch (_) {}
+    try { setSeries(meta.symbol || datasetId, meta.interval || 'unknown', rows, { source: meta.source || 'oraculum-api' }); } catch (_) {}
 
     render(engine, rows, { type, scale });
-    status.textContent = `Online · ${rows.length} barras`;
-    pushLog({ level: result.stats?.droppedInvalid ? 'warn' : 'info', msg: 'api_sync_ok', ts: Date.now(), data: { datasetId, bars: rows.length, rejected: result.stats?.droppedInvalid || 0 } });
+    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${rows.length} barras`;
+    pushLog({
+      level: result.stats?.droppedInvalid ? 'warn' : 'info',
+      msg: 'api_sync_ok',
+      ts: Date.now(),
+      data: { datasetId, bars: rows.length, rejected: result.stats?.droppedInvalid || 0, source: meta.source || 'oraculum-api' }
+    });
   } catch (error) {
     console.error(error);
     status.textContent = 'Erro de conexão';
     pushLog({ level: 'error', msg: 'api_sync_fail', ts: Date.now(), data: { error: String(error) } });
-    alert('Não foi possível carregar o dataset. ' + error.message);
+    throw error;
   }
 }
 
