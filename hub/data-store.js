@@ -1,5 +1,6 @@
 // hub/data-store.js v1.2
 const store = new Map();
+let analysisPeriods = null;
 
 const DataStore = {
   save(tf, data, stats, meta) {
@@ -12,6 +13,14 @@ const DataStore = {
     return store.get(tf);
   },
 
+  setAnalysisPeriods(periods) {
+    analysisPeriods = periods ? JSON.parse(JSON.stringify(periods)) : null;
+  },
+
+  getAnalysisPeriods() {
+    return analysisPeriods ? JSON.parse(JSON.stringify(analysisPeriods)) : null;
+  },
+
   setSeries(symbol, tf, data, meta = {}) {
     const key = `${symbol}:${tf}`;
     const snapshot = { last: data[data.length - 1], count: data.length };
@@ -22,3 +31,5 @@ const DataStore = {
 
 export default DataStore;
 export const setSeries = DataStore.setSeries.bind(DataStore);
+export const setAnalysisPeriods = DataStore.setAnalysisPeriods.bind(DataStore);
+export const getAnalysisPeriods = DataStore.getAnalysisPeriods.bind(DataStore);
