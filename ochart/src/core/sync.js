@@ -31,6 +31,19 @@ function marketLabel(name, symbol) {
 
 function sourceLabel(provider) { return providerName(provider); }
 
+function formatUpdateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '—';
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 function updateMeta(meta, rows) {
   const source = meta.sourceName || sourceLabel(meta.provider);
   document.getElementById('dataset-name').textContent = meta.name || meta.symbol || 'Dataset';
@@ -39,7 +52,7 @@ function updateMeta(meta, rows) {
   document.getElementById('k-interval').textContent = meta.interval || '—';
   document.getElementById('k-currency').textContent = meta.currency || '—';
   document.getElementById('k-bars').textContent = String(rows.length);
-  document.getElementById('k-updated').textContent = meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('pt-BR') : '—';
+  document.getElementById('k-updated').textContent = formatUpdateTime(meta.updatedAt);
   const sourceBadge = document.getElementById('k-source');
   if (sourceBadge) sourceBadge.textContent = source;
 }
@@ -172,7 +185,7 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
       });
     } catch (_) {}
 
-    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${sourceLabel(meta.provider)} · ${visibleRows.length} barras`;
+    status.textContent = `${meta.source === 'cache-local' ? 'Cache local' : 'Online'} · ${sourceLabel(meta.provider)} · ${visibleRows.length} barras · ${formatUpdateTime(meta.updatedAt)}`;
 
     pushLog({
       level: result.stats?.droppedInvalid ? 'warn' : 'info',
@@ -180,6 +193,8 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
       ts: Date.now(),
       data: {
         datasetId,
+        updatedAt: meta.updatedAt || null,
+        updatedAtLocal: formatUpdateTime(meta.updatedAt),
         bars: visibleRows.length,
         totalBars: rows.length,
         rejected: result.stats?.droppedInvalid || 0,
@@ -201,7 +216,7 @@ export async function sync(engine, datasetId, scale, type, { refresh = false } =
       level: 'error',
       msg: refresh ? 'api_refresh_fail' : 'api_sync_fail',
       ts: Date.now(),
-      data: { error: detail }
+      data: { error: detail, failedAt: formatUpdateTime(Date.now()) }
     });
     throw error;
   }
