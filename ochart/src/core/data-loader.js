@@ -7,12 +7,17 @@ const API_BASE = 'https://oraculum-data-api.4avalonuse.workers.dev/api';
 const DATASETS_CACHE = 'ochart:datasets:v3';
 const cacheKey = (id) => `ochart:dataset:v3:${id}`;
 
-async function fetchJSON(url, timeoutMs = 30000) {
+async function fetchJSON(url, timeoutMs = 30000, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
+      method: options.method || 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(options.body ? { 'Content-Type': 'application/json' } : {})
+      },
+      body: options.body,
       cache: 'no-store',
       signal: controller.signal
     });
@@ -55,11 +60,15 @@ export async function fetchDatasets() {
 export async function fetchSeries(datasetId, { refresh = false } = {}) {
   if (!datasetId) throw new Error('dataset não selecionado');
 
-  const url = new URL(`${API_BASE}/datasets/${encodeURIComponent(datasetId)}`);
-  if (refresh) url.searchParams.set('refresh', '1');
+  const readUrl = `${API_BASE}/datasets/${encodeURIComponent(datasetId)}`;
+  const refreshUrl = `${API_BASE}/datasets/${encodeURIComponent(datasetId)}/refresh`;
 
   try {
-    const payload = await fetchJSON(url.toString(), refresh ? 60000 : 30000);
+    const payload = await fetchJSON(
+      refresh ? refreshUrl : readUrl,
+      refresh ? 60000 : 30000,
+      refresh ? { method: 'POST' } : {}
+    );
     try { localStorage.setItem(cacheKey(datasetId), JSON.stringify(payload)); } catch (_) {}
     payload.meta = { ...(payload.meta || {}), source: 'oraculum-api' };
     return payload;
