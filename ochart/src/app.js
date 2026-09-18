@@ -5,15 +5,15 @@ import { DrawingTools } from './ui/drawing-tools.js';
 import { TableModal } from './ui/table-modal.js';
 import { themeManager } from './ui/theme-manager.js';
 import { setupControls } from './ui/controls.js';
-import { loadDatasets, sync, setAnalysisPeriods } from './core/sync.js';
+import { loadDatasets, syncSelected, getDatasetForInterval, setAnalysisPeriods } from './core/sync.js';
 import { AnalysisPeriods } from './ui/analysis-periods.js';
 
 const $ = (s) => document.querySelector(s);
+const QS = new URLSearchParams(location.search);
 let engine = null;
-let drawingTools = null;
+
 const tableModal = new TableModal();
 const analysisPeriods = new AnalysisPeriods(document.getElementById('analysis-periods'));
-const QS = new URLSearchParams(location.search);
 
 if (QS.get('dev') === '1') {
   mountHUD(document.getElementById('dev-hud-root'));
@@ -27,11 +27,13 @@ function setStartupState(title, meta, status) {
 
 async function boot() {
   engine = new ChartEngine($('#ch'));
-  drawingTools = new DrawingTools(engine);
+  const drawingTools = new DrawingTools(engine);
   drawingTools.init();
+
   const shell = document.querySelector('.chart-shell');
   const tb = document.getElementById('drawing-toolbar');
   if (shell && tb && tb.parentElement !== shell) shell.appendChild(tb);
+
   themeManager.init(engine);
   setupControls(engine, tableModal);
   setAnalysisPeriods(analysisPeriods, engine);
@@ -46,9 +48,20 @@ async function boot() {
       );
       return;
     }
-    const id = document.getElementById('sel-dataset').value || datasets[0].id;
-    document.getElementById('sel-dataset').value = id;
-    await sync(engine, id, 'linear', 'line');
+
+    const selected = document.getElementById('sel-dataset').selectedOptions[0];
+    const available = selected?.dataset?.datasets ? JSON.parse(selected.dataset.datasets) : {};
+    const requested = QS.get('dataset');
+    const requestedDataset = datasets.find(d => d.id === requested);
+
+    let interval = requestedDataset?.interval || '1h';
+    if (!available[interval]) interval = Object.keys(available)[0] || '1d';
+
+    document.querySelectorAll('#sel-timeframe button[data-interval]').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.interval === interval)
+    );
+
+    await syncSelected(engine, 'linear', 'line', { interval });
   } catch (error) {
     console.error(error);
     setStartupState(
