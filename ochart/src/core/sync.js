@@ -51,19 +51,67 @@ export async function loadDatasets() {
   const select = document.getElementById('sel-dataset');
   select.innerHTML = '';
 
+  // The selector represents a market, not an individual interval.
+  // Interval-specific dataset ids stay internal to OChart.
+  const markets = new Map();
   for (const d of datasets) {
+    const key = `${d.provider}:${d.symbol}`;
+    if (!markets.has(key)) {
+      markets.set(key, {
+        key,
+        provider: d.provider || '',
+        symbol: d.symbol || '',
+        name: d.provider === 'yahoo' ? 'Bitcoin / USD' : 'Bitcoin / USDT',
+        datasets: new Map()
+      });
+    }
+    markets.get(key).datasets.set(d.interval || '', d);
+  }
+
+  for (const market of markets.values()) {
     const option = document.createElement('option');
-    option.value = d.id;
-    option.textContent = `${d.name} · ${d.provider}`;
-    option.dataset.interval = d.interval || '';
-    option.dataset.provider = d.provider || '';
-    option.dataset.symbol = d.symbol || '';
+    option.value = market.key;
+    option.textContent = market.name;
+    option.dataset.provider = market.provider;
+    option.dataset.symbol = market.symbol;
+    option.dataset.datasets = JSON.stringify(Object.fromEntries(market.datasets));
     select.appendChild(option);
   }
 
   const requested = QS.get('dataset');
-  if (requested && datasets.some(d => d.id === requested)) select.value = requested;
+  const requestedDataset = datasets.find(d => d.id === requested);
+  if (requestedDataset) {
+    const key = `${requestedDataset.provider}:${requestedDataset.symbol}`;
+    if (Array.from(select.options).some(o => o.value === key)) select.value = key;
+  }
+
   return datasets;
+}
+
+export function getDatasetForInterval(interval) {
+  const select = document.getElementById('sel-dataset');
+  const market = select?.selectedOptions?.[0];
+  if (!market?.dataset?.datasets) return null;
+
+  try {
+    const map = JSON.parse(market.dataset.datasets);
+    return map[interval] || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export function syncSelected(engine, scale, type, { refresh = false, interval = null } = {}) {
+  const select = document.getElementById('sel-dataset');
+  const market = select?.selectedOptions?.[0];
+  if (!market) return Promise.resolve();
+
+  const desired = interval || market.dataset.interval || '1d';
+  const dataset = getDatasetForInterval(desired) || getDatasetForInterval('1d') || Object.values(JSON.parse(market.dataset.datasets || '{}'))[0];
+  if (!dataset) return Promise.resolve();
+
+  select.dataset.activeDataset = dataset.id;
+  return sync(engine, dataset.id, scale, type, { refresh });
 }
 
 export async function sync(engine, datasetId, scale, type, { refresh = false } = {}) {
