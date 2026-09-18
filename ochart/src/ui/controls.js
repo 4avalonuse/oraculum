@@ -37,14 +37,12 @@ export function setupControls(engine, tableModal){
     engine?.setType(currentType);
   };
 
-  const syncIntervalButtons = () => {
-    const select = document.getElementById('sel-dataset');
-    const available = readAvailable(select);
-
-    if (!available[currentInterval]) {
-      const fallback = ['1h', '1d', '1w', '1M', '1m'].find((value) => available[value]);
-      currentInterval = fallback || currentInterval;
-    }
+  const syncIntervalButtons = (preferred = currentInterval) => {
+    const available = readAvailable(document.getElementById('sel-dataset'));
+    const fallbackOrder = ['1h', '1d', '1w', '1M', '1m'];
+    currentInterval = available[preferred]
+      ? preferred
+      : (fallbackOrder.find((value) => available[value]) || preferred);
 
     document.querySelectorAll('#sel-timeframe button[data-interval]').forEach(btn => {
       const enabled = Boolean(available[btn.dataset.interval]);
@@ -56,10 +54,9 @@ export function setupControls(engine, tableModal){
   };
 
   const setInterval = (interval) => {
-    const button = document.querySelector(`#sel-timeframe button[data-interval="${interval}"]`);
-    if (!button || button.disabled || !getDatasetForInterval(interval)) return false;
+    if (!getDatasetForInterval(interval)) return false;
     currentInterval = interval;
-    syncIntervalButtons();
+    syncIntervalButtons(interval);
     return true;
   };
 
@@ -81,8 +78,9 @@ export function setupControls(engine, tableModal){
   });
 
   document.getElementById('sel-dataset').addEventListener('change', async () => {
-    syncIntervalButtons();
+    const interval = syncIntervalButtons();
     await syncCurrent(false);
+    if (interval !== currentInterval) syncIntervalButtons(interval);
   });
 
   document.getElementById('sel-timeframe')?.addEventListener('click', async (event) => {
