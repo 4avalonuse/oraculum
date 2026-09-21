@@ -48,7 +48,7 @@ export class ChartEngine {
       const ctx = this.canvas.getContext('2d');
       this.chart = new Chart(ctx, cfg);
 
-      // Harden sem Hammer: garanta que pinch/pan fiquem OFF
+      // Mobile: HammerJS habilita pinch/pan
       const hasHammer = !!(window.Hammer && window.Hammer.Manager);
       const z = this.chart.options?.plugins?.zoom;
       if (z && !hasHammer) {
@@ -513,7 +513,7 @@ export class ChartEngine {
               y: { min: 'original', max: 'original' }
             },
             pan: {
-              enabled: false,
+              enabled: true,
               mode: 'x',
               modifierKey: null,
               onPan: () => this.callbacks.onPan?.()
@@ -524,7 +524,7 @@ export class ChartEngine {
                 speed: 0.1
               },
               pinch: { 
-                enabled: false
+                enabled: true
               },
               drag: {
                 enabled: true,
