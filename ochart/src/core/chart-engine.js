@@ -29,7 +29,6 @@ export class ChartEngine {
     this._drawings = [];
     this._cache = new Map();
     this._overlayIndex = new Map(); // id -> dataset index
-    this._axisTouch = null;
   }
 
   create(data, config = {}) {
@@ -57,7 +56,6 @@ export class ChartEngine {
         if (z.pan)         z.pan.enabled        = false;
       }
       this.chart.update('none');
-      this._installAxisTouchControls();
 
       this._applyCustomStyles();
       return this.chart;
@@ -93,7 +91,6 @@ export class ChartEngine {
   }
 
   destroy() {
-    this._removeAxisTouchControls();
     if (this.chart) {
       this.chart.destroy();
       this.chart = null;
@@ -302,81 +299,6 @@ export class ChartEngine {
 
   _getScaleType() {
     return this.currentConfig.scale === 'logarithmic' ? 'logarithmic' : 'linear';
-  }
-
-  _installAxisTouchControls() {
-    this._removeAxisTouchControls();
-    if (!this.canvas) return;
-
-    // OChart: gesto de 1 dedo no eixo de preço = zoom vertical.
-    // No restante do gráfico, o comportamento continua sendo temporal.
-    const start = (event) => {
-      if (!event.touches || event.touches.length !== 1 || !this.chart) return;
-      const touch = event.touches[0];
-      const rect = this.canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const axisWidth = Math.min(84, Math.max(54, rect.width * 0.12));
-
-      if (x < rect.width - axisWidth) return;
-
-      const yScale = this.chart.scales?.y;
-      if (!yScale || !Number.isFinite(yScale.min) || !Number.isFinite(yScale.max)) return;
-
-      event.preventDefault();
-      this._axisTouch = {
-        id: touch.identifier,
-        y: touch.clientY,
-        min: yScale.min,
-        max: yScale.max
-      };
-    };
-
-    const move = (event) => {
-      const state = this._axisTouch;
-      if (!state || !event.touches || !this.chart) return;
-
-      const touch = Array.from(event.touches).find(t => t.identifier === state.id);
-      if (!touch) return;
-
-      const rect = this.canvas.getBoundingClientRect();
-      const height = Math.max(1, rect.height);
-      const dy = touch.clientY - state.y;
-
-      // Arrastar para baixo abre a escala; para cima comprime.
-      // A escala é simétrica em torno do preço central, evitando o
-      // comportamento "escorregadio" de alterar apenas um extremo.
-      const factor = Math.exp(dy / height * 1.35);
-      const center = (state.min + state.max) / 2;
-      const half = Math.max((state.max - state.min) / 2 * factor, Number.EPSILON);
-      const nextMin = center - half;
-      const nextMax = center + half;
-
-      event.preventDefault();
-      this.chart.options.scales.y.min = nextMin;
-      this.chart.options.scales.y.max = nextMax;
-      this.chart.update('none');
-    };
-
-    const end = () => {
-      this._axisTouch = null;
-    };
-
-    this._axisTouchHandlers = { start, move, end };
-    this.canvas.addEventListener('touchstart', start, { passive: false });
-    this.canvas.addEventListener('touchmove', move, { passive: false });
-    this.canvas.addEventListener('touchend', end, { passive: false });
-    this.canvas.addEventListener('touchcancel', end, { passive: false });
-  }
-
-  _removeAxisTouchControls() {
-    if (!this.canvas || !this._axisTouchHandlers) return;
-    const h = this._axisTouchHandlers;
-    this.canvas.removeEventListener('touchstart', h.start);
-    this.canvas.removeEventListener('touchmove', h.move);
-    this.canvas.removeEventListener('touchend', h.end);
-    this.canvas.removeEventListener('touchcancel', h.end);
-    this._axisTouchHandlers = null;
-    this._axisTouch = null;
   }
 
   _applyCustomStyles() {
@@ -601,8 +523,6 @@ export class ChartEngine {
                 enabled: true,
                 speed: 0.1
               },
-              // Pinch permanece disponível para zoom geral em telas touch.
-              // O zoom dedicado do preço é feito com 1 dedo sobre o eixo Y.
               pinch: { 
                 enabled: true
               },
