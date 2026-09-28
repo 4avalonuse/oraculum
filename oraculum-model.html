@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oraculum — modelo</title>
+<link rel="stylesheet" href="./src/styles/oraculum-model.css">
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><span class="mark">O</span><div><strong>ORACULUM</strong><small>investigation environment</small></div></div>
+    <button class="asset-pill" id="assetButton">BTCUSD <span>⌄</span></button>
+    <div class="top-actions"><button>⌕</button><button>⚙</button></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">ATIVO</span>
+        <h1>Bitcoin <em>BTCUSD</em></h1>
+        <div class="price">$112,840 <span class="up">+2.41%</span></div>
+        <p>Visão investigativa do ativo: mercado, contexto, eventos e relações.</p>
+      </div>
+      <div class="hero-chart">
+        <div class="chart-label">PREÇO · 1D</div>
+        <svg viewBox="0 0 560 170" preserveAspectRatio="none" aria-label="gráfico ilustrativo">
+          <polyline points="0,137 45,126 82,142 120,108 158,119 194,88 230,98 270,69 307,82 340,52 377,62 418,40 454,55 494,28 530,40 560,15"/>
+        </svg>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="active" data-tab="overview">Visão</button>
+      <button data-tab="timeline">Timeline</button>
+      <button data-tab="relations">Relações</button>
+      <button data-tab="workspace">Workspace</button>
+    </nav>
+
+    <section class="grid" id="overview">
+      <article class="card wide">
+        <div class="card-head"><div><span class="kicker">CONTEXTO</span><h2>O que está acontecendo?</h2></div><button>Ver tudo →</button></div>
+        <div class="metric-row">
+          <div><span>Preço</span><strong>$112,840</strong><small>mercado</small></div>
+          <div><span>Volume</span><strong>1.84B</strong><small>24h</small></div>
+          <div><span>Volatilidade</span><strong>48.2%</strong><small>30d</small></div>
+          <div><span>Regime</span><strong>Expansão</strong><small>modelo</small></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><div><span class="kicker">PRÓXIMOS</span><h2>Eventos</h2></div><button>+</button></div>
+        <ul class="events">
+          <li><b>30 SET</b><span>Indicador econômico</span><i>●</i></li>
+          <li><b>02 OUT</b><span>Payroll · EUA</span><i>●</i></li>
+          <li><b>08 OUT</b><span>Evento de mercado</span><i>●</i></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><div><span class="kicker">RELAÇÕES</span><h2>O que se move junto?</h2></div><button>→</button></div>
+        <div class="relation"><span>BTC ↔ Nasdaq</span><strong>0.72</strong><small>correlação · 30d</small></div>
+        <div class="relation"><span>BTC ↔ DXY</span><strong>-0.61</strong><small>correlação · 30d</small></div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><div><span class="kicker">LEAD / LAG</span><h2>O que vem antes?</h2></div><button>→</button></div>
+        <div class="lead"><strong>DXY</strong><span>→</span><b>BTC</b><small>defasagem observada: 2–3 dias</small></div>
+        <div class="lead"><strong>Liquidez</strong><span>→</span><b>BTC</b><small>defasagem observada: 1 semana</small></div>
+      </article>
+
+      <article class="card wide timeline-card">
+        <div class="card-head"><div><span class="kicker">HISTÓRIA</span><h2>Timeline do ativo</h2></div><button>Explorar →</button></div>
+        <div class="timeline"><span></span><div><b>2026</b><small>Eventos · ciclos · mudanças de regime</small></div><div><b>2025</b><small>Movimentos relevantes</small></div><div><b>2024</b><small>Halving · macro · mercado</small></div></div>
+      </article>
+    </section>
+
+    <section class="workspace-preview" id="workspace">
+      <div><span class="kicker">A CEREJA DO BOLO</span><h2>Workspace</h2><p>Um laboratório temporal onde gráficos, eventos, variáveis, análises e hipóteses podem ser alinhados em Frames.</p></div>
+      <button id="openWorkspace">Abrir Workspace →</button>
+    </section>
+  </main>
+</div>
+<script src="./src/styles/oraculum-model.js"></script>
+</body>
+</html>
