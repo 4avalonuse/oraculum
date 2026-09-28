@@ -1,0 +1,11 @@
+const svg=document.getElementById("chart");const axis=document.getElementById("axis");const offset=document.getElementById("offset");const offsetValue=document.getElementById("offsetValue");const modeTitle=document.getElementById("modeTitle");const range=document.getElementById("range");const infoMode=document.getElementById("infoMode");
+const colors=["#f0f0f0","#aeb3bd","#70757f"];
+const anchors=[0,0,0];
+const cycles=[
+ {name:"BTC 2016",start:35,amp:110,phase:.4,trend:.34},
+ {name:"BTC 2020",start:80,amp:150,phase:1.4,trend:.28},
+ {name:"BTC 2024",start:115,amp:125,phase:2.1,trend:.22}
+];
+function points(c,shift){let a=[];for(let i=0;i<=100;i++){let x=i*10;let wave=Math.sin(i*.12+c.phase)*c.13+Math.sin(i*.31+c.phase)*.045;let y=c.start+c.amp*(i/100)+c.amp*wave;let dx=x+shift*2.1;a.push([dx,y])}return a}
+function path(p){return p.map((v,i)=>(i?"L":"M")+v[0].toFixed(1)+","+v[1].toFixed(1)).join(" ")}
+function draw(){let relative=document.querySelector(".seg .active").dataset.mode==="relative";svg.innerHTML="";cycles.forEach((c,i)=>{let shift=Number(offset.value)*(i===2?1:i===1?.45:.25);let pts=points(c,shift);let d=path(pts);let minY=0,maxY=320;let norm=relative?1:1;let scaled=pts.map(([x,y])=>[Math.max(-180,Math.min(1180,x)),330-(y-minY)/(maxY-minY)*285]);let p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d",path(scaled));p.setAttribute("fill","none");p.setAttribute("stroke",colors[i]);p.setAttribute("stroke-width",i===2?"3":"2");p.setAttribute("opacity",i===2?"1":i===1?".72":".45");svg.appendChild(p)});let labels=relative?["-90d","-45d","0","45d","90d"]:["2016","2018","2020","2022","2024","2026"];axis.innerHTML=labels.map(x=>"<span>"+x+"</span>").join("");modeTitle.textContent=relative?"Relativo":"Calendário";range.textContent=relative?"-90 → +90 dias":"2016 — 2026";infoMode.textContent=relative?"Relativo":"Calendário";offsetValue.textContent=(Number(offset.value)>0?"+":"")+offset.value+" dias"}document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".seg button").forEach(x=>x.classList.remove("active"));b.classList.add("active");draw()}));offset.addEventListener("input",draw);document.getElementById("anchor").addEventListener("click",()=>{this});document.getElementById("norm").addEventListener("click",()=>{this});draw();
