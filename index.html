@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ochama</title><link rel="stylesheet" href="./src/styles/app.css?v=20260927-31"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Oraculum</title><link rel="stylesheet" href="./src/styles/app.css?v=20260927-31"><link rel="stylesheet" href="./src/styles/oraculum.css"></head>
 <body><main id="app">
-<div class="brand-top"><span>OCham</span><span class="brand-tilde">ã</span></div>
-<header class="app-header"><div class="app-brand">OChamã</div><div class="market-header">
+<div class="brand-top"><span>ORACULUM</span></div>
+<header class="app-header"><div class="app-brand">ORACULUM</div><div class="market-header">
 <select id="asset-select" class="asset-select" aria-label="Ativo"><option value="BTC-USD" selected>BTCUSD</option><option value="SOL-USD">SOLUSD</option></select>
 <span id="asset-price" class="asset-price">—</span>
 <select id="interval-select" class="interval-select" aria-label="Intervalo"><option value="1m">m</option><option value="1h">h</option><option value="1d" selected>D</option><option value="1w">W</option><option value="1M">M</option></select>
 <button id="chart-type-toggle" class="chart-type-toggle" type="button" aria-pressed="false">CANDLE</button><select id="provider-select" class="provider-select" aria-label="Servidor"><option value="yahoo" selected>Yahoo</option><option value="binance-us">Binance.US</option></select>
 <button id="refresh-data" class="header-action" type="button" aria-label="Atualizar dados">↻</button></div>
 <span id="status" class="app-status" aria-live="polite">Inicializando…</span></header>
-<section id="chart" class="chart-shell" aria-label="Gráfico">
+<section class="oraculum-data-panel" aria-label="Dados disponíveis"><h2>Dados disponíveis</h2><p>Escolha o que deseja investigar. Nada é adicionado ao gráfico automaticamente.</p><div id="oraculum-data-library" class="data-library"></div><div id="oraculum-selection" class="oraculum-selection">Nenhum dado selecionado. Escolha o que deseja investigar.</div></section><section id="chart" class="chart-shell" aria-label="Gráfico">
 <button id="moving-average-button" class="moving-average-button" type="button" aria-expanded="false">MA</button>
 <button id="fit-toggle" class="fit-toggle" type="button">FIT</button>
 <button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button>
@@ -26,4 +26,4 @@
 </div>
 </section>
 
-</main><script type="module" src="./src/app/bootstrap.js?v=20260927-37"></script></body></html>
+</main><script type="module" src="./src/app/bootstrap.js?v=20260927-37"></script><script type="module" src="./src/app/oraculum-shell.js"></script></body></html>
