@@ -22,7 +22,7 @@ test('scale converts linear values without distortion', () => {
 
 test('scale converts logarithmic values in log space', () => {
   assert.equal(toScaleValue(100, SCALE_LOG), Math.log(100));
-  assert.equal(fromScaleValue(Math.log(100), SCALE_LOG), 100);
+  assert.ok(Math.abs(fromScaleValue(Math.log(100), SCALE_LOG) - 100) < 1e-12);
   assert.ok(Math.abs(valueAtRatio(10, 1000, 0.5, SCALE_LOG) - 100) < 1e-12);
   assert.ok(Math.abs(ratioForValue(100, 10, 1000, SCALE_LOG) - 0.5) < 1e-12);
 });
