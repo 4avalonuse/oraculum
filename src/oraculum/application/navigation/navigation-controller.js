@@ -25,7 +25,7 @@ export function createNavigationController({ root, routes, initialRoute, onChang
   function navigate(route, { hash = true } = {}) {
     const next = state.set(route);
     render(next);
-    if (hash) history.replaceState(null, '', '#' + next);
+    if (hash && location.hash !== '#' + next) history.pushState(null, '', '#' + next);
     return next;
   }
 
