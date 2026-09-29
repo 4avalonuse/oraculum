@@ -1,64 +1,55 @@
 import { createDataClient } from '../data/client.js';
-import { attachPersistentDataLibrary } from '../oraculum/ui/data-library-persistent.js';
+import { createInvestigationStore } from '../oraculum/application/investigation/investigation-store.js';
+import { createInvestigationSelectionService } from '../oraculum/application/investigation/selection-service.js';
+import { getInvestigationCatalog } from '../oraculum/application/investigation/catalog-adapter.js';
+import { attachInvestigationLibrary } from '../oraculum/ui/investigation-library.js';
 import { attachInvestigationTimeline } from '../oraculum/ui/investigation-timeline.js';
+import { createNavigationController } from '../oraculum/application/navigation/navigation-controller.js';
 
 const API = 'https://oraculum-data-api.4avalonuse.workers.dev';
-const root = document.querySelector('#oraculum-data-library');
-const selection = document.querySelector('#oraculum-selection');
-const timelineRoot = document.querySelector('#oraculum-investigation-timeline') || document.querySelector('#timeline');
-const status = document.querySelector('#status');
+const ROUTES = ['visao', 'dados', 'timeline', 'workspace'];
 const dataClient = createDataClient(API);
+const status = document.querySelector('#status');
+const selectionRoot = document.querySelector('#oraculum-selection');
+const libraryRoot = document.querySelector('#oraculum-data-library');
 
-const nav = document.querySelector('#oraculum-nav');
-const navLinks = [...(nav?.querySelectorAll('[data-nav-target]') || [])];
-const sections = navLinks
-  .map(link => document.getElementById(link.dataset.navTarget))
-  .filter(Boolean);
+const catalog = getInvestigationCatalog();
+const selection = createInvestigationSelectionService(createInvestigationStore(), catalog);
 
-function activate(targetId, updateHash = false) {
-  navLinks.forEach(link => {
-    link.classList.toggle('is-active', link.dataset.navTarget === targetId);
-  });
-  if (updateHash) history.replaceState(null, '', '#' + targetId);
-}
-
-navLinks.forEach(link => {
-  link.addEventListener('click', event => {
-    event.preventDefault();
-    const target = document.getElementById(link.dataset.navTarget);
-    if (!target) return;
-    activate(link.dataset.navTarget, true);
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
-
-const observer = new IntersectionObserver(entries => {
-  const visible = entries
-    .filter(entry => entry.isIntersecting)
-    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-  if (visible) activate(visible.target.id);
-}, { threshold: [0.2, 0.45, 0.7] });
-
-sections.forEach(section => observer.observe(section));
-activate(location.hash.replace('#', '') || 'visao');
-
-let library;
 const timeline = attachInvestigationTimeline({
-  root: timelineRoot,
+  root: document.querySelector('#timeline'),
   statusRoot: status,
   dataClient,
-  getSelection: () => library?.getSelection() || []
+  getSelection: selection.list
 });
 
-library = attachPersistentDataLibrary(root, (items, action = {}) => {
-  if (selection) {
-    selection.textContent = items.length
-      ? `${items.length} item(ns) selecionado(s) · toque em INVESTIGAR`
-      : 'Nenhum dado selecionado.';
+const navigation = createNavigationController({
+  root: document.querySelector('#oraculum-nav'),
+  routes: ROUTES,
+  initialRoute: 'visao',
+  onChange(route) {
+    if (route === 'timeline' && selection.list().length) timeline.refresh();
   }
-  if (action.investigate) {
-    timeline.refresh();
-    document.querySelector('#timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    activate('timeline', true);
+});
+
+attachInvestigationLibrary({
+  root: libraryRoot,
+  items: catalog,
+  selection,
+  onChange(items) {
+    if (selectionRoot) {
+      selectionRoot.textContent = items.length
+        ? `${items.length} item(ns) selecionado(s)`
+        : 'Nenhum dado selecionado.';
+    }
+  },
+  onInvestigate() {
+    navigation.navigate('timeline');
   }
+});
+
+window.oraculum = Object.freeze({
+  navigation,
+  selection,
+  refreshInvestigation: () => timeline.refresh()
 });
