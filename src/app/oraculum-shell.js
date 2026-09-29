@@ -5,7 +5,15 @@ import { attachInvestigationTimeline } from '../oraculum/ui/investigation-timeli
 const API = 'https://oraculum-data-api.4avalonuse.workers.dev';
 const root = document.querySelector('#oraculum-data-library');
 const selection = document.querySelector('#oraculum-selection');
-const timelineRoot = document.querySelector('#oraculum-investigation-timeline');
+let timelineRoot = document.querySelector('#oraculum-investigation-timeline');
+if (!timelineRoot) {
+  timelineRoot = document.createElement('section');
+  timelineRoot.id = 'oraculum-investigation-timeline';
+  timelineRoot.className = 'oraculum-timeline';
+  timelineRoot.setAttribute('aria-label', 'Linha do tempo da investigação');
+  timelineRoot.innerHTML = '<div class="timeline-empty">Selecione eventos ou variáveis para iniciar a investigação.</div>';
+  document.querySelector('#chart')?.insertAdjacentElement('afterend', timelineRoot);
+}
 const status = document.querySelector('#status');
 const dataClient = createDataClient(API);
 
