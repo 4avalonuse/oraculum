@@ -16,6 +16,8 @@ const libraryRoot = document.querySelector('#oraculum-data-library');
 const catalog = getInvestigationCatalog();
 const selection = createInvestigationSelectionService(createInvestigationStore(), catalog);
 
+let navigation = null;
+
 const timeline = attachInvestigationTimeline({
   root: document.querySelector('#timeline'),
   statusRoot: status,
@@ -32,7 +34,7 @@ const timeline = attachInvestigationTimeline({
   }
 });
 
-const navigation = createNavigationController({
+navigation = createNavigationController({
   root: document.querySelector('#oraculum-nav'),
   routes: ROUTES,
   initialRoute: 'visao',
