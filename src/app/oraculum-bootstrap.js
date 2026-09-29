@@ -5,6 +5,7 @@ import { getInvestigationCatalog } from '../oraculum/application/investigation/c
 import { attachInvestigationLibrary } from '../oraculum/ui/investigation-library.js';
 import { attachInvestigationTimeline } from '../oraculum/ui/investigation-timeline.js';
 import { createNavigationController } from '../oraculum/application/navigation/navigation-controller.js';
+import { bootstrap as bootstrapOchama } from './ochama-bootstrap.js';
 
 const API = 'https://oraculum-data-api.4avalonuse.workers.dev';
 const ROUTES = ['visao', 'dados', 'timeline', 'workspace'];
@@ -64,3 +65,15 @@ window.oraculum = Object.freeze({
   selection,
   refreshInvestigation: () => timeline.refresh()
 });
+
+function showStartupError(error) {
+  console.error('[Oraculum]', error);
+  const chart = document.querySelector('#chart');
+  chart?.classList.remove('is-loading');
+  chart?.classList.add('is-error');
+  if (!status) return;
+  status.textContent = 'Erro: ' + (error?.message || 'falha desconhecida');
+  status.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;width:auto;height:auto;overflow:visible;clip:auto;clip-path:none;z-index:5000;padding:8px 10px;border:1px solid #7f1d1d;border-radius:8px;background:#1a0f12;color:#fecaca;font-size:11px;white-space:normal;';
+}
+
+bootstrapOchama().catch(showStartupError);
