@@ -20,7 +20,16 @@ const timeline = attachInvestigationTimeline({
   root: document.querySelector('#timeline'),
   statusRoot: status,
   dataClient,
-  getSelection: selection.list
+  getSelection: selection.list,
+  onEventClick(event) {
+    navigation.navigate('visao');
+    const focused = window.ochama?.focusTimestamp?.(event.timestamp);
+    if (status) {
+      status.textContent = focused
+        ? 'Gráfico focado em ' + new Date(event.timestamp).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+        : 'Evento fora do período disponível no gráfico.';
+    }
+  }
 });
 
 const navigation = createNavigationController({
