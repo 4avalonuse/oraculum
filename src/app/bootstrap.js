@@ -64,6 +64,7 @@ export async function bootstrap(){
 
   let movingAverageConfigs=[];
   let drawingController=null;
+  let session=null;
 
   const movingAverageCleanup=attachMovingAverageMenu({
     button:elements.movingAverageButton,
@@ -81,7 +82,7 @@ export async function bootstrap(){
     anchor:elements.moreButton
   });
 
-  const session=createChartSession({
+  session=createChartSession({
     dataClient,
     stateStore,
     drawingPersistence,
