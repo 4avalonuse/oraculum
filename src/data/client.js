@@ -2,16 +2,27 @@ export function createDataClient(baseUrl) {
   const root = String(baseUrl).replace(/\/$/, '');
 
   async function request(path, options = {}) {
-    const response = await fetch(`${root}${path}`, {
-      ...options,
-      headers: { Accept: 'application/json', ...(options.headers || {}) },
-      cache: 'no-store'
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let response;
+    try {
+      response = await fetch(`${root}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: { Accept: 'application/json', ...(options.headers || {}) },
+        cache: 'no-store'
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new Error('Data API timeout: ' + path);
+      throw new Error('Falha de rede na Data API: ' + path);
+    } finally {
+      clearTimeout(timeout);
+    }
     const text = await response.text();
     let payload = null;
     try { payload = text ? JSON.parse(text) : null; }
-    catch { throw new Error('Data API retornou JSON inválido'); }
-    if (!response.ok) throw new Error(payload?.error || payload?.message || `Data API HTTP ${response.status}`);
+    catch { throw new Error('Data API retornou JSON inválido: ' + path); }
+    if (!response.ok) throw new Error(payload?.error || payload?.message || `Data API HTTP ${response.status}: ${path}`);
     return payload;
   }
 
