@@ -72,7 +72,7 @@ export async function bootstrap(){
     button:elements.movingAverageButton,
     onChange:configs=>{
       movingAverageConfigs=configs;
-      session.getActive()?.chart?.setMovingAverages(configs);
+      session?.getActive()?.chart?.setMovingAverages(configs);
       elements.movingAverageButton?.setAttribute('aria-expanded','true');
     }
   });
