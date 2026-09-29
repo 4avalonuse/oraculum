@@ -139,7 +139,26 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
       onViewportChanged:persist
     });
 
-    active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,interval,meta,drawingManager};
+    const focusTimestamp=(timestamp, windowRatio=0.12)=>{
+      const target=Number(timestamp);
+      if(!Number.isFinite(target)) return false;
+      const bounds=viewport.getBounds().x;
+      const span=Math.max(bounds.max-bounds.min,1);
+      const half=Math.max(span*windowRatio/2,1);
+      const min=Math.max(bounds.min,target-half);
+      const max=Math.min(bounds.max,target+half);
+      const actualMin=Math.min(min,max);
+      const actualMax=Math.max(min,max);
+      if(actualMax<=actualMin) return false;
+      viewport.fitX({min:actualMin,max:actualMax});
+      const shown=candles.filter(c=>c.timestamp>=actualMin&&c.timestamp<=actualMax);
+      if(shown.length) viewport.fitY({min:Math.min(...shown.map(c=>c.low)),max:Math.max(...shown.map(c=>c.high))});
+      persist();
+      chart.draw();
+      return true;
+    };
+
+    active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,interval,meta,drawingManager,focusTimestamp};
     stateStore.saveSelection({symbol,provider,interval});
     window.ochama=active;
     callbacks.onActiveChanged?.(activeDrawingInteraction,active);
