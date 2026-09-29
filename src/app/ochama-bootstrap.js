@@ -29,6 +29,8 @@ const formatPrice=v=>Number(v).toLocaleString('en-US',{maximumFractionDigits:v>=
 const updateHeader=(symbol,candles)=>{
   const latest=candles.at(-1);
   document.querySelector('#asset-price').textContent=latest?formatPrice(latest.close):'—';
+  const label=symbol.replace('-USD','USD');
+  document.querySelector('#asset-view-symbol').textContent=label;
 };
 
 export async function bootstrap(){
