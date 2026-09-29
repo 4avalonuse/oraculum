@@ -2,7 +2,7 @@ function formatDate(timestamp) {
   return new Date(timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 }
 
-export function renderTimelineAxis({ timeline, events = [] }) {
+export function renderTimelineAxis({ timeline, events = [], onEventClick = null }) {
   const axis = document.createElement('div');
   axis.className = 'timeline-axis';
   if (timeline.start === null || timeline.end === null) return axis;
@@ -27,6 +27,7 @@ export function renderTimelineAxis({ timeline, events = [] }) {
     marker.style.left = Math.max(0, Math.min(100, ((timestamp - start) / span) * 100)) + '%';
     marker.title = event.title || 'Evento';
     marker.setAttribute('aria-label', event.title || 'Evento');
+    marker.addEventListener('click', () => onEventClick?.(event));
     axis.appendChild(marker);
   });
   return axis;
