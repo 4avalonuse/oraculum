@@ -41,7 +41,9 @@ export function createNavigationController({ root, routes, initialRoute, onChang
   });
 
   const fromHash = location.hash.slice(1);
-  render(state.set(fromHash || initialRoute));
+  const initial = state.set(fromHash || initialRoute);
+  render(initial);
+  if (location.hash.slice(1) !== initial) history.replaceState(null, '', '#' + initial);
 
   return Object.freeze({
     current: () => state.get(),
