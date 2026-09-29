@@ -288,8 +288,8 @@ const HISTORY_COLORS = [
   '#e56bff'
 ];
 
-function historyColor(year) {
-  const index = ((Number(year) % 7) + 7) % 7;
+function historyColor(year, baseYear = 0) {
+  const index = ((Number(year) - Number(baseYear)) % 7 + 7) % 7;
   return HISTORY_COLORS[index];
 }
 
@@ -315,6 +315,7 @@ function drawLine(ctx, candles, state, plot) {
   const fullHistory = xSpan >= 3 * 365 * 24 * 60 * 60 * 1000;
   const points = fullHistory ? monthlyHistoryPoints(candles, state) : visible;
   if (points.length < 2) return;
+  const baseYear = new Date(points[0].timestamp).getUTCFullYear();
 
   ctx.save();
   ctx.lineWidth = fullHistory ? 2.2 : 2;
@@ -333,7 +334,7 @@ function drawLine(ctx, candles, state, plot) {
     const previousY = plot.top + (1 - previousRatio) * plot.height;
     const currentY = plot.top + (1 - currentRatio) * plot.height;
 
-    ctx.strokeStyle = fullHistory ? historyColor(new Date(current.timestamp).getUTCFullYear()) : '#dbe4ee';
+    ctx.strokeStyle = fullHistory ? historyColor(new Date(current.timestamp).getUTCFullYear(), baseYear) : '#dbe4ee';
     ctx.beginPath();
     ctx.moveTo(previousX, previousY);
     ctx.lineTo(currentX, currentY);
@@ -346,7 +347,7 @@ function drawLine(ctx, candles, state, plot) {
       if (!Number.isFinite(ratio)) return;
       const x = plot.left + ((point.timestamp - state.x.min) / xSpan) * plot.width;
       const y = plot.top + (1 - ratio) * plot.height;
-      ctx.fillStyle = historyColor(new Date(point.timestamp).getUTCFullYear());
+      ctx.fillStyle = historyColor(new Date(point.timestamp).getUTCFullYear(), baseYear);
       ctx.beginPath();
       ctx.arc(x, y, 1.8, 0, Math.PI * 2);
       ctx.fill();
