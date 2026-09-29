@@ -56,6 +56,8 @@ export function createDrawingController({elements,getInteraction,getActive,getSt
     elements.deleteButton?.addEventListener('pointerdown',startDeleteHold);
     ['pointerup','pointercancel','pointerleave'].forEach(type=>elements.deleteButton?.addEventListener(type,cancelDeleteHold));
     elements.colorInput?.addEventListener('input',()=>getInteraction()?.setColor(elements.colorInput.value));
+    window.addEventListener('keydown',event=>{if(event.key!=='Delete'||event.repeat)return;if(event.target instanceof HTMLInputElement||event.target instanceof HTMLSelectElement||event.target instanceof HTMLTextAreaElement)return;deleteHoldTriggered=false;deleteHoldTimer=window.setTimeout(()=>{deleteHoldTimer=null;deleteHoldTriggered=true;clearAll();},700);});
+    window.addEventListener('keyup',event=>{if(event.key!=='Delete')return;cancelDeleteHold();if(!deleteHoldTriggered)getInteraction()?.getSelectedId?.()&&getInteraction().deleteSelected();deleteHoldTriggered=false;});
     fibonacciCleanup=attachFibonacciMenu({
       button:elements.fibonacciButton,
       onModeChange:mode=>getInteraction()?.setFibonacciMode?.(mode),
