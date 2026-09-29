@@ -25,11 +25,14 @@ const timeline = attachInvestigationTimeline({
   getSelection: () => library?.getSelection() || []
 });
 
-library = attachPersistentDataLibrary(root, items => {
+library = attachPersistentDataLibrary(root, (items, action = {}) => {
   if (selection) {
     selection.textContent = items.length
       ? `${items.length} item(ns) selecionado(s) · carregue a investigação abaixo`
       : 'Nenhum dado selecionado. Escolha o que deseja investigar.';
   }
-  timeline.refresh();
+  if (action.investigate) {
+    timeline.refresh();
+    document.querySelector('#oraculum-investigation-timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 });
