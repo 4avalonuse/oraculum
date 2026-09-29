@@ -278,82 +278,31 @@ function drawStudies(ctx, candles, state, plot, studies) {
   });
 }
 
-const HISTORY_COLORS = [
-  '#ff5c5c',
-  '#ff9f43',
-  '#f7d154',
-  '#55d68a',
-  '#4db8ff',
-  '#8b7cff',
-  '#e56bff'
-];
-
-function historyColor(year, baseYear = 0) {
-  const index = ((Number(year) - Number(baseYear)) % 7 + 7) % 7;
-  return HISTORY_COLORS[index];
-}
-
-function monthlyHistoryPoints(candles, state) {
-  const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
-  if (visible.length < 2) return [];
-
-  const groups = new Map();
-  visible.forEach(candle => {
-    const date = new Date(candle.timestamp);
-    const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-    groups.set(key, candle);
-  });
-
-  return [...groups.values()].sort((a, b) => a.timestamp - b.timestamp);
-}
-
 function drawLine(ctx, candles, state, plot) {
   const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
   if (visible.length < 2) return;
 
   const xSpan = state.x.max - state.x.min || 1;
-  const fullHistory = xSpan >= 3 * 365 * 24 * 60 * 60 * 1000;
-  const points = fullHistory ? monthlyHistoryPoints(candles, state) : visible;
-  if (points.length < 2) return;
-  const baseYear = new Date(points[0].timestamp).getUTCFullYear();
-
   ctx.save();
-  ctx.lineWidth = fullHistory ? 2.2 : 2;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#dbe4ee';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
 
-  for (let i = 1; i < points.length; i += 1) {
-    const previous = points[i - 1];
-    const current = points[i];
-    const previousRatio = yRatio(previous.close, state.y.min, state.y.max, state.yScaleType);
-    const currentRatio = yRatio(current.close, state.y.min, state.y.max, state.yScaleType);
-    if (![previousRatio, currentRatio].every(Number.isFinite)) continue;
+  let started = false;
+  visible.forEach(candle => {
+    const ratio = yRatio(candle.close, state.y.min, state.y.max, state.yScaleType);
+    if (!Number.isFinite(ratio)) return;
+    const x = plot.left + ((candle.timestamp - state.x.min) / xSpan) * plot.width;
+    const y = plot.top + (1 - ratio) * plot.height;
+    if (!started) {
+      ctx.moveTo(x, y);
+      started = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
 
-    const previousX = plot.left + ((previous.timestamp - state.x.min) / xSpan) * plot.width;
-    const currentX = plot.left + ((current.timestamp - state.x.min) / xSpan) * plot.width;
-    const previousY = plot.top + (1 - previousRatio) * plot.height;
-    const currentY = plot.top + (1 - currentRatio) * plot.height;
-
-    ctx.strokeStyle = fullHistory ? historyColor(new Date(current.timestamp).getUTCFullYear(), baseYear) : '#dbe4ee';
-    ctx.beginPath();
-    ctx.moveTo(previousX, previousY);
-    ctx.lineTo(currentX, currentY);
-    ctx.stroke();
-  }
-
-  if (fullHistory) {
-    points.forEach(point => {
-      const ratio = yRatio(point.close, state.y.min, state.y.max, state.yScaleType);
-      if (!Number.isFinite(ratio)) return;
-      const x = plot.left + ((point.timestamp - state.x.min) / xSpan) * plot.width;
-      const y = plot.top + (1 - ratio) * plot.height;
-      ctx.fillStyle = historyColor(new Date(point.timestamp).getUTCFullYear(), baseYear);
-      ctx.beginPath();
-      ctx.arc(x, y, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }
-
+  if (started) ctx.stroke();
   ctx.restore();
 }
 
