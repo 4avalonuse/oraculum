@@ -145,6 +145,7 @@ export async function bootstrap(){
     elements.chartHost.classList.remove('is-loading');
     elements.chartHost.classList.add('is-error');
     elements.status.textContent='Erro: '+(error?.message||'falha desconhecida');
+    elements.status.style.cssText='position:fixed;left:8px;right:8px;top:8px;width:auto;height:auto;overflow:visible;clip:auto;clip-path:none;z-index:5000;padding:8px 10px;border:1px solid #7f1d1d;border-radius:8px;background:#1a0f12;color:#fecaca;font-size:11px;white-space:normal;';
   });
 
   elements.assetSelect?.addEventListener('change',()=>{syncProviders();load();});
