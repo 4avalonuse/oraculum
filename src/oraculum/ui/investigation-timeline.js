@@ -1,7 +1,7 @@
 import { loadInvestigationTimeline } from '../application/investigation/timeline-loader.js';
 import { renderTimelineAxis } from './timeline-axis.js';
 
-export function attachInvestigationTimeline({ root, statusRoot, dataClient, getSelection }) {
+export function attachInvestigationTimeline({ root, statusRoot, dataClient, getSelection, onEventClick = null }) {
   if (!root) return { refresh: async () => null };
 
   async function refresh() {
@@ -21,7 +21,7 @@ export function attachInvestigationTimeline({ root, statusRoot, dataClient, getS
       const title = document.createElement('h2');
       title.textContent = 'Timeline da investigação';
       root.appendChild(title);
-      root.appendChild(renderTimelineAxis({ timeline: result.timeline, events: result.events }));
+      root.appendChild(renderTimelineAxis({ timeline: result.timeline, events: result.events, onEventClick }));
 
       result.events.forEach(event => {
         const row = document.createElement('article');
