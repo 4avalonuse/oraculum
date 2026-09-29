@@ -11,9 +11,7 @@ export function createDataClient(baseUrl) {
     let payload = null;
     try { payload = text ? JSON.parse(text) : null; }
     catch { throw new Error('Data API retornou JSON inválido'); }
-    if (!response.ok) {
-      throw new Error(payload?.error || payload?.message || `Data API HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(payload?.error || payload?.message || `Data API HTTP ${response.status}`);
     return payload;
   }
 
@@ -40,14 +38,29 @@ export function createDataClient(baseUrl) {
   return {
     async loadCandles(options) {
       const dataset = await findDataset(options);
-      const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}`);
-      return unpack(payload, dataset);
+      return unpack(await request(`/api/datasets/${encodeURIComponent(dataset.id)}`), dataset);
     },
+
+    async loadSeries({ symbol, currency = 'USD' }) {
+      const dataset = await findDataset({ provider: 'yahoo', symbol, interval: '1d', currency, kind: 'series' });
+      const loaded = unpack(await request(`/api/datasets/${encodeURIComponent(dataset.id)}`), dataset);
+      return {
+        observations: loaded.candles.map(row => ({ timestamp: Number(row.t), value: Number(row.c) })),
+        meta: loaded.meta
+      };
+    },
+
+    async loadEvents() {
+      const payload = await request('/api/events');
+      if (!payload?.ok || !Array.isArray(payload.data)) throw new Error('Contrato de eventos inválido');
+      return payload.data;
+    },
+
     async refresh(options) {
       const dataset = await findDataset(options);
-      const payload = await request(`/api/datasets/${encodeURIComponent(dataset.id)}/refresh`, { method: 'POST' });
-      return unpack(payload, dataset);
+      return unpack(await request(`/api/datasets/${encodeURIComponent(dataset.id)}/refresh`, { method: 'POST' }), dataset);
     },
+
     async loadOrPopulate(options) {
       const loaded = await this.loadCandles(options);
       if (loaded.candles.length) return loaded;
