@@ -1,0 +1,34 @@
+name: Branch preview
+
+on:
+  push:
+    branches:
+      - refactor/oraculum-modular-navigation
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish preview link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          PREVIEW="https://raw.githack.com/${REPO}/${BRANCH}/index.html"
+          echo "Preview: $PREVIEW"
+          if [ -n "${PR_NUMBER}" ]; then
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" --body "### Branch preview
+
+[ABRIR PRÉVIA](${PREVIEW})
+
+Esta prévia aponta diretamente para a branch \`${BRANCH}\`. A \`main\` e o deploy de produção não são alterados."
+          fi
