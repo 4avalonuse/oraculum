@@ -10,6 +10,10 @@ export function attachPersistentDataLibrary(root, onSelectionChange = () => {}) 
     ...ORACULUM_DATA_CATALOG.variables.map(item => ({ ...item, kind: 'VARIÁVEL', label: item.name, detail: item.symbol }))
   ];
 
+  function notify() {
+    onSelectionChange(items.filter(item => selected.has(item.id)));
+  }
+
   function render() {
     root.replaceChildren();
     items.forEach(item => {
@@ -30,13 +34,22 @@ export function attachPersistentDataLibrary(root, onSelectionChange = () => {}) 
         else selected.add(item.id);
         store.save([...selected]);
         render();
-        onSelectionChange(items.filter(value => selected.has(value.id)));
+        notify();
       });
       root.appendChild(button);
     });
   }
 
   render();
-  onSelectionChange(items.filter(item => selected.has(item.id)));
-  return { getSelection: () => items.filter(item => selected.has(item.id)), clear: () => { selected.clear(); store.clear(); render(); onSelectionChange([]); } };
+  notify();
+
+  return {
+    getSelection: () => items.filter(item => selected.has(item.id)),
+    clear: () => {
+      selected.clear();
+      store.clear();
+      render();
+      notify();
+    }
+  };
 }
