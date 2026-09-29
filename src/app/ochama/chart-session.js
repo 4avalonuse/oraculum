@@ -5,7 +5,6 @@ import { attachPointerInteraction } from '../../interaction/pointer.js';
 import { attachScaleToggle } from '../../ui/scale-toggle.js';
 import { attachFitToggle } from '../../ui/fit-toggle.js';
 import { createDrawingManager } from '../../drawing/core/drawing-manager.js';
-import { createDrawingPersistence } from '../../drawing/storage/drawing-persistence.js';
 import { createDrawingInteraction } from '../../drawing/interaction/drawing-controller.js?v=20260927-30';
 import '../../drawing/tools/index.js';
 
