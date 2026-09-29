@@ -1,4 +1,4 @@
-export function createDrawingController({elements,getInteraction,getActive,getStatus,studyController,studyInfo,attachFibonacciMenu,attachDrawingToolsMenu}){
+export function createDrawingController({elements,getInteraction,getActive,getStatus,studyController,studyInfo,attachFibonacciMenu,attachDrawingToolsMenu,onChanged=()=>{}}){
   let fibonacciCleanup=()=>{};
   let moreCleanup=()=>{};
   let deleteHoldTimer=null;
@@ -28,7 +28,9 @@ export function createDrawingController({elements,getInteraction,getActive,getSt
     const interaction=getInteraction();
     if(!getActive()?.drawingManager?.getDrawings?.().length)return false;
     if(!window.confirm('Apagar todos os desenhos?'))return false;
-    return interaction?.clearAll?.()||false;
+    const changed=interaction?.clearAll?.()||false;
+    if(changed)onChanged();
+    return changed;
   };
 
   const startDeleteHold=()=>{
@@ -47,11 +49,11 @@ export function createDrawingController({elements,getInteraction,getActive,getSt
     elements.horizontalButton?.addEventListener('click',()=>{getInteraction()?.setTool('horizontal');setToolbarMode('drawing');});
     elements.verticalButton?.addEventListener('click',()=>{getInteraction()?.setTool('vertical');setToolbarMode('drawing');});
     elements.moreButton?.addEventListener('contextmenu',event=>event.preventDefault());
-    elements.undoButton?.addEventListener('click',()=>{const a=getActive();if(a?.drawingManager?.undo()){a.chart.draw();refreshActions();}});
-    elements.redoButton?.addEventListener('click',()=>{const a=getActive();if(a?.drawingManager?.redo()){a.chart.draw();refreshActions();}});
+    elements.undoButton?.addEventListener('click',()=>{const a=getActive();if(a?.drawingManager?.undo()){a.chart.draw();onChanged();refreshActions();}});
+    elements.redoButton?.addEventListener('click',()=>{const a=getActive();if(a?.drawingManager?.redo()){a.chart.draw();onChanged();refreshActions();}});
     elements.deleteButton?.addEventListener('click',()=>{
       if(deleteHoldTriggered){deleteHoldTriggered=false;return;}
-      if(getInteraction()?.getSelectedId?.())getInteraction().deleteSelected();
+      if(getInteraction()?.getSelectedId?.()){getInteraction().deleteSelected();onChanged();}
     });
     elements.deleteButton?.addEventListener('pointerdown',startDeleteHold);
     ['pointerup','pointercancel','pointerleave'].forEach(type=>elements.deleteButton?.addEventListener(type,cancelDeleteHold));
