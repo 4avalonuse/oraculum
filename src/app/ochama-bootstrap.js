@@ -187,14 +187,3 @@ export async function bootstrap(){
   await session.load(elements.assetSelect?.value||'BTC-USD',elements.providerSelect?.value||'yahoo',elements.intervalSelect?.value||'1d');
 }
 
-bootstrap().catch(error=>{
-  console.error('[Ochama]',error);
-  const chart=document.querySelector('#chart');
-  chart?.classList.remove('is-loading');
-  chart?.classList.add('is-error');
-  const status=document.querySelector('#status');
-  if(status){
-    status.textContent='Erro: '+(error?.message||'falha desconhecida');
-    status.style.cssText='position:fixed;left:8px;right:8px;top:8px;width:auto;height:auto;overflow:visible;clip:auto;clip-path:none;z-index:5000;padding:8px 10px;border:1px solid #7f1d1d;border-radius:8px;background:#1a0f12;color:#fecaca;font-size:11px;white-space:normal;';
-  }
-});
