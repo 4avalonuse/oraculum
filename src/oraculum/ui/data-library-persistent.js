@@ -16,6 +16,15 @@ export function attachPersistentDataLibrary(root, onSelectionChange = () => {}) 
 
   function render() {
     root.replaceChildren();
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'data-library-investigate';
+    action.textContent = 'INVESTIGAR SELEÇÃO';
+    action.disabled = selected.size === 0;
+    action.addEventListener('click', () => {
+      onSelectionChange(items.filter(item => selected.has(item.id)), { investigate: true });
+    });
+    root.appendChild(action);
     items.forEach(item => {
       const button = document.createElement('button');
       button.type = 'button';
