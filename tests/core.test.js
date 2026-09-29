@@ -23,8 +23,8 @@ test('scale converts linear values without distortion', () => {
 test('scale converts logarithmic values in log space', () => {
   assert.equal(toScaleValue(100, SCALE_LOG), Math.log(100));
   assert.equal(fromScaleValue(Math.log(100), SCALE_LOG), 100);
-  assert.equal(valueAtRatio(10, 1000, 0.5, SCALE_LOG), 100);
-  assert.equal(ratioForValue(100, 10, 1000, SCALE_LOG), 0.5);
+  assert.ok(Math.abs(valueAtRatio(10, 1000, 0.5, SCALE_LOG) - 100) < 1e-12);
+  assert.ok(Math.abs(ratioForValue(100, 10, 1000, SCALE_LOG) - 0.5) < 1e-12);
 });
 
 test('Y viewport keeps logarithmic ranges positive', () => {
@@ -46,7 +46,7 @@ test('time viewport respects bounds', () => {
 
 test('normalizer rejects empty, malformed and duplicate data', () => {
   assert.throws(() => normalizeCandles([]), /Nenhum candle/);
-  assert.throws(() => normalizeCandles([{ timestamp: 1, open: 1, high: 0.5, low: 1, close: 1 }]), /Candle inválido/);
+  assert.throws(() => normalizeCandles([{ timestamp: 1, open: 1, high: 0.5, low: 1, close: 1 }]), /Candle (OHLC )?inválido/);
   const candle = { timestamp: 1, open: 1, high: 2, low: 1, close: 1, volume: 0 };
   assert.throws(() => normalizeCandles([candle, candle]), /Candle duplicado/);
 });
