@@ -25,6 +25,7 @@ const timeline = attachInvestigationTimeline({
   dataClient,
   getSelection: selection.list,
   getChartRange: () => window.ochama?.viewport?.getState?.()?.x || null,
+  getChartPlot: () => window.ochama?.chart?.getDrawingPlot?.() || null,
   onEventClick(event) {
     navigation.navigate('visao');
     const focused = window.ochama?.focusTimestamp?.(event.timestamp);
@@ -59,6 +60,7 @@ attachInvestigationLibrary({
   async onInvestigate() {
     navigation.navigate('visao');
     const result = await timeline.refresh();
+    window.ochama?.chart?.setTimelineEvents?.(result?.events || []);
     const eventTimestamps = result?.events?.map(event => Number(event.timestamp)).filter(Number.isFinite) || [];
     if (eventTimestamps.length) {
       const focused = window.ochama?.focusTimestampRange?.(eventTimestamps);
