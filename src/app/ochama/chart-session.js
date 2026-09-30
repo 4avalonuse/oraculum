@@ -83,7 +83,10 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
     chart.setMovingAverages(callbacks.getMovingAverages?.()||[]);
     chart.setStudies(callbacks.getStudies?.()||[]);
 
-    const persist=()=>stateStore.save({symbol,provider,interval},viewport.getState());
+    const persist=()=>{
+      stateStore.save({symbol,provider,interval},viewport.getState());
+      callbacks.onViewportChanged?.(viewport.getState().x);
+    };
 
     let drawingInteraction;
     try{
@@ -162,6 +165,7 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
     stateStore.saveSelection({symbol,provider,interval});
     window.ochama=active;
     callbacks.onActiveChanged?.(activeDrawingInteraction,active);
+    callbacks.onViewportChanged?.(viewport.getState().x);
     chartHost.classList.remove('is-loading','is-error');
     callbacks.onHeaderUpdate?.(symbol,candles);
   };
