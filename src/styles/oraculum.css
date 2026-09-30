@@ -106,7 +106,7 @@
 .timeline-dock-series{
   position:absolute;
   right:10px;
-  top:6px;
+  bottom:3px;
   max-width:55%;
   overflow:hidden;
   text-overflow:ellipsis;
