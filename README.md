@@ -1,31 +1,39 @@
-# Ochama
+# ORACULUM
 
-Novo núcleo do OChart / Oraculum.
+Sistema modular de investigação e análise de mercado.
 
-Este repositório está sendo construído a partir de uma auditoria do OChart legado, com arquitetura modular e responsabilidades bem separadas.
+O ORACULUM não é apenas um gráfico. É o ambiente onde dados de mercado, contexto, eventos, variáveis, relações, hipóteses e estratégias podem ser reunidos, comparados e testados.
+
+## Arquitetura
+
+DATA → VISÃO → INVESTIGAÇÃO → WORKSPACE → HIPÓTESES → OALGO → OBACKTEST → OWIN (futuro)
+
+O gráfico é uma fundação visual dentro do sistema, não o produto inteiro.
+
+## Workspace
+
+O Workspace é o ambiente editável de investigação do ORACULUM. Nele poderão coexistir gráficos, ativos, variáveis, eventos, timelines, relações, anotações, hipóteses e resultados.
+
+O eixo temporal é um contrato central: diferentes objetos podem ser alinhados, comparados, sobrepostos e investigados no mesmo contexto.
+
+## Fundação técnica
+
+Este repositório reaproveita conceitos e componentes técnicos já comprovados no desenvolvimento anterior, especialmente renderização, viewport, escala normal/log, navegação, desenhos, estudos, normalização de candles, cache, estado local e Data API.
+
+A identidade, arquitetura de produto e evolução deste repositório pertencem ao ORACULUM.
 
 ## Princípios
 
-- O OChart legado permanece congelado como referência funcional.
-- Primeiro auditamos, depois projetamos, depois implementamos.
 - DATA não conhece UI.
 - CHART não carrega dados.
-- INTERACTION roteia intenção do usuário.
-- UI não contém lógica matemática de domínio.
+- INTERACTION roteia intenção.
+- UI não contém lógica de domínio.
 - `app` orquestra; não concentra funcionalidades.
-- Arquivos grandes são sinal de auditoria, não um limite rígido.
+- Domínio, aplicação, infraestrutura e apresentação permanecem separados.
+- Primeiro contratos; depois implementação.
+- Não reconstruir o que já é uma fundação técnica válida.
+- Não transformar o ORACULUM em um gráfico maior.
 
-## Estado
+## Estado atual
 
-### Fase 1 — Fundação do core: concluída
-
-- Renderização de candles funcionando.
-- Navegação por pointer/touch.
-- Escala linear e logarítmica.
-- Zoom/pan de viewport.
-- Fit inicial e fit manual.
-- Normalização e validação de candles.
-- Proteções básicas contra estado inválido.
-- Testes unitários do núcleo matemático e da normalização.
-
-A fundação estável termina aqui. A próxima etapa deve adicionar capacidades de produto sem refatoração estrutural desnecessária.
+A fundação gráfica e o primeiro núcleo conceitual de investigação já existem. A próxima evolução é transformar o Workspace e a navegação investigativa em produto real, preservando a fundação técnica sem carregar a identidade do projeto anterior.
