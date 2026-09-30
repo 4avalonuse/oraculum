@@ -8,7 +8,7 @@ import { createNavigationController } from '../oraculum/application/navigation/n
 import { bootstrap as bootstrapOchama } from './ochama-bootstrap.js';
 
 const API = 'https://oraculum-data-api.4avalonuse.workers.dev';
-const ROUTES = ['visao', 'dados', 'timeline', 'workspace'];
+const ROUTES = ['visao', 'dados', 'workspace'];
 const dataClient = createDataClient(API);
 const status = document.querySelector('#status');
 const selectionRoot = document.querySelector('#oraculum-selection');
@@ -20,10 +20,11 @@ const selection = createInvestigationSelectionService(createInvestigationStore()
 let navigation = null;
 
 const timeline = attachInvestigationTimeline({
-  root: document.querySelector('#timeline'),
+  root: document.querySelector('#investigation-timeline'),
   statusRoot: status,
   dataClient,
   getSelection: selection.list,
+  getChartRange: () => window.ochama?.viewport?.getState?.()?.x || null,
   onEventClick(event) {
     navigation.navigate('visao');
     const focused = window.ochama?.focusTimestamp?.(event.timestamp);
@@ -40,7 +41,7 @@ navigation = createNavigationController({
   routes: ROUTES,
   initialRoute: 'visao',
   onChange(route) {
-    if (route === 'timeline' && selection.list().length) timeline.refresh();
+    if (route === 'visao') timeline.syncRange();
   }
 });
 
@@ -56,14 +57,16 @@ attachInvestigationLibrary({
     }
   },
   onInvestigate() {
-    navigation.navigate('timeline');
+    navigation.navigate('visao');
+    timeline.refresh();
   }
 });
 
 window.oraculum = Object.freeze({
   navigation,
   selection,
-  refreshInvestigation: () => timeline.refresh()
+  refreshInvestigation: () => timeline.refresh(),
+  syncTimeline: () => timeline.syncRange()
 });
 
 function showStartupError(error) {
