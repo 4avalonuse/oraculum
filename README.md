@@ -1,39 +1,25 @@
 # ORACULUM
 
-Sistema modular de investigação e análise de mercado.
+Fundação limpa do sistema de investigação e análise de mercado.
 
-O ORACULUM não é apenas um gráfico. É o ambiente onde dados de mercado, contexto, eventos, variáveis, relações, hipóteses e estratégias podem ser reunidos, comparados e testados.
+Este repositório foi zerado de propósito. A aplicação será reconstruída a partir de uma arquitetura limpa, sem carregar a implementação anterior do gráfico.
 
-## Arquitetura
+## Fundação preservada
 
-DATA → VISÃO → INVESTIGAÇÃO → WORKSPACE → HIPÓTESES → OALGO → OBACKTEST → OWIN (futuro)
+- **Data API:** `https://oraculum-data-api.4avalonuse.workers.dev`
+- **Backend:** Cloudflare Worker
+- **Banco:** Cloudflare D1
+- **Modelo de dados:** datasets + candles + api_meta
+- **Fontes de mercado já existentes:** Yahoo Finance e Binance.US
 
-O gráfico é uma fundação visual dentro do sistema, não o produto inteiro.
+O banco e a Data API são infraestrutura compartilhada e não serão recriados como parte deste reset.
 
-## Workspace
+## Próxima construção
 
-O Workspace é o ambiente editável de investigação do ORACULUM. Nele poderão coexistir gráficos, ativos, variáveis, eventos, timelines, relações, anotações, hipóteses e resultados.
+A nova implementação será criada por módulos, começando pela fundação de dados e navegação do ORACULUM.
 
-O eixo temporal é um contrato central: diferentes objetos podem ser alinhados, comparados, sobrepostos e investigados no mesmo contexto.
+O gráfico será apenas uma capacidade visual reutilizável dentro do sistema, não a identidade do produto.
 
-## Fundação técnica
+## Regra do reset
 
-Este repositório reaproveita conceitos e componentes técnicos já comprovados no desenvolvimento anterior, especialmente renderização, viewport, escala normal/log, navegação, desenhos, estudos, normalização de candles, cache, estado local e Data API.
-
-A identidade, arquitetura de produto e evolução deste repositório pertencem ao ORACULUM.
-
-## Princípios
-
-- DATA não conhece UI.
-- CHART não carrega dados.
-- INTERACTION roteia intenção.
-- UI não contém lógica de domínio.
-- `app` orquestra; não concentra funcionalidades.
-- Domínio, aplicação, infraestrutura e apresentação permanecem separados.
-- Primeiro contratos; depois implementação.
-- Não reconstruir o que já é uma fundação técnica válida.
-- Não transformar o ORACULUM em um gráfico maior.
-
-## Estado atual
-
-A fundação gráfica e o primeiro núcleo conceitual de investigação já existem. A próxima evolução é transformar o Workspace e a navegação investigativa em produto real, preservando a fundação técnica sem carregar a identidade do projeto anterior.
+Nenhum código da aplicação anterior deve ser carregado automaticamente para a nova base. Conceitos comprovados poderão ser reimplementados depois, conscientemente e em pequenas etapas.
