@@ -15,3 +15,20 @@ export function createPlotGeometry(width, height) {
     height: Math.max(1, h - PLOT_GEOMETRY.top - PLOT_GEOMETRY.bottom)
   };
 }
+
+
+export function timestampToPlotX(timestamp, xMin, xMax, plot) {
+  const t = Number(timestamp);
+  const min = Number(xMin);
+  const max = Number(xMax);
+  if (!Number.isFinite(t) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) return NaN;
+  return plot.left + ((t - min) / (max - min)) * plot.width;
+}
+
+export function timestampToPlotRatio(timestamp, xMin, xMax) {
+  const t = Number(timestamp);
+  const min = Number(xMin);
+  const max = Number(xMax);
+  if (!Number.isFinite(t) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) return NaN;
+  return (t - min) / (max - min);
+}
