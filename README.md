@@ -1,25 +1,51 @@
 # ORACULUM
 
-Fundação limpa do sistema de investigação e análise de mercado.
+ORACULUM é o sistema central de investigação e análise de mercado.
 
-Este repositório foi zerado de propósito. A aplicação será reconstruída a partir de uma arquitetura limpa, sem carregar a implementação anterior do gráfico.
+Ele transforma dados em contexto, contexto em investigação e investigação em hipóteses testáveis.
 
-## Fundação preservada
+## Arquitetura de produto
 
-- **Data API:** `https://oraculum-data-api.4avalonuse.workers.dev`
-- **Backend:** Cloudflare Worker
-- **Banco:** Cloudflare D1
-- **Modelo de dados:** datasets + candles + api_meta
-- **Fontes de mercado já existentes:** Yahoo Finance e Binance.US
+ORACULUM é o núcleo integrador. Os produtos abaixo são independentes:
 
-O banco e a Data API são infraestrutura compartilhada e não serão recriados como parte deste reset.
+- Ochama — visualização e exploração gráfica.
+- OAlgo — criação e manutenção de regras/algoritmos.
+- OBacktest — teste, análise e iteração de estratégias.
+- OWin — execução/operação.
 
-## Próxima construção
+Eles não vivem dentro deste repositório. Conectam-se ao ORACULUM por contratos de dados, APIs e identificadores/versionamento.
 
-A nova implementação será criada por módulos, começando pela fundação de dados e navegação do ORACULUM.
+## ORACULUM
 
-O gráfico será apenas uma capacidade visual reutilizável dentro do sistema, não a identidade do produto.
+O centro é o Workspace: um ambiente persistente e editável para investigar o mercado.
 
-## Regra do reset
+O Workspace pode reunir ativos e datasets, visualizações vindas do Ochama, indicadores e variáveis, eventos e notícias, relações e correlações, anotações, hipóteses, recortes temporais e resultados externos.
 
-Nenhum código da aplicação anterior deve ser carregado automaticamente para a nova base. Conceitos comprovados poderão ser reimplementados depois, conscientemente e em pequenas etapas.
+A unidade principal não é o gráfico. É a investigação.
+
+## Fluxo
+
+DADOS → VISUALIZAÇÃO → INVESTIGAÇÃO → HIPÓTESE → TESTE → EVOLUÇÃO
+
+O teste pode ser executado pelo OBacktest e a execução pelo OWin, sem que esses produtos sejam incorporados ao ORACULUM.
+
+## Fundação de dados
+
+- Data API: https://oraculum-data-api.4avalonuse.workers.dev
+- Backend: Cloudflare Worker
+- Banco: Cloudflare D1
+- Modelo atual: datasets, candles, api_meta
+- Fontes existentes: Yahoo Finance e Binance.US
+
+## Princípios
+
+1. ORACULUM integra; não absorve os outros produtos.
+2. O gráfico é uma capacidade, não a identidade do produto.
+3. Dados, lógica, renderização, UI, storage e API permanecem separados.
+4. Nenhum arquivo deve virar um depósito de funções.
+5. O Workspace preserva contexto, relações e histórico.
+6. Começamos simples e evoluímos sem destruir o que já funciona.
+
+## Estado atual
+
+Reconstrução limpa do ORACULUM. O código antigo foi removido deliberadamente.
