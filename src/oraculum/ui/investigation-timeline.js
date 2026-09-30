@@ -7,6 +7,7 @@ export function attachInvestigationTimeline({
   dataClient,
   getSelection,
   getChartRange = () => null,
+  getChartPlot = () => null,
   onEventClick = null
 }) {
   if (!root) return { refresh: async () => null, syncRange: () => {} };
@@ -30,11 +31,13 @@ export function attachInvestigationTimeline({
     }
 
     const range = chartRange();
+    const plot = getChartPlot?.();
     const axis = renderTimelineAxis({
       timeline: result.timeline,
       events: result.events,
       start: range?.min ?? null,
       end: range?.max ?? null,
+      plot,
       onEventClick
     });
 
