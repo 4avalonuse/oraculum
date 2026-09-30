@@ -1,5 +1,5 @@
 import { normalizeScaleType, toScaleValue, fromScaleValue } from '../viewport/scale.js';
-import { createPlotGeometry } from './plot-geometry.js';
+import { createPlotGeometry, timestampToPlotX } from './plot-geometry.js';
 import { createDrawingTransform } from '../drawing/render/transform.js';
 import { createDrawingRenderer } from '../drawing/render/drawing-renderer.js';
 import { listStudies } from '../studies/study-registry.js';
@@ -199,6 +199,23 @@ function drawGrid(ctx, width, height, plot, yMin, yMax, scaleType, xMin, xMax) {
   ctx.restore();
 }
 
+function drawTimelineEvents(ctx, events, state, plot) {
+  if (!Array.isArray(events) || !events.length) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(248,113,113,.72)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  events.forEach(event => {
+    const x = timestampToPlotX(event?.timestamp, state.x.min, state.x.max, plot);
+    if (!Number.isFinite(x) || x < plot.left || x > plot.left + plot.width) return;
+    ctx.beginPath();
+    ctx.moveTo(x, plot.top);
+    ctx.lineTo(x, plot.top + plot.height);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
 function drawCandles(ctx, candles, state, plot) {
   const visible = candles.filter(c => c.timestamp >= state.x.min && c.timestamp <= state.x.max);
   if (!visible.length) return;
@@ -217,7 +234,7 @@ function drawCandles(ctx, candles, state, plot) {
     if (![highRatio, lowRatio, openRatio, closeRatio].every(Number.isFinite)) return;
 
     const xSpan = state.x.max - state.x.min || 1;
-    const x = plot.left + ((candle.timestamp - state.x.min) / xSpan) * plot.width;
+    const x = timestampToPlotX(candle.timestamp, state.x.min, state.x.max, plot);
     const yHigh = plot.top + (1 - highRatio) * plot.height;
     const yLow = plot.top + (1 - lowRatio) * plot.height;
     const yOpen = plot.top + (1 - openRatio) * plot.height;
@@ -320,6 +337,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
   let chartType = 'candle';
   let movingAverages = [];
   let studyConfigs = [];
+  let timelineEvents = [];
   let paneRatio = 0.25;
   let paneControls = null;
   let paneDragCleanup = null;
@@ -406,6 +424,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     }
 
     drawGrid(ctx, width, height, plot, state.y.min, state.y.max, normalizeScaleType(state.yScaleType), state.x.min, state.x.max);
+    drawTimelineEvents(ctx, timelineEvents, state, plot);
     if (chartType === 'line') drawLine(ctx, candles, state, plot);
     else drawCandles(ctx, candles, state, plot);
     drawStudies(ctx, candles, state, plot, [...movingAverages, ...studyConfigs]);
@@ -442,6 +461,13 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
 
   function setStudies(next) {
     studyConfigs = Array.isArray(next) ? next.map(item => ({ ...item })) : [];
+    draw();
+  }
+
+  function setTimelineEvents(next) {
+    timelineEvents = Array.isArray(next)
+      ? next.map(event => ({ ...event, timestamp: Number(event?.timestamp) })).filter(event => Number.isFinite(event.timestamp))
+      : [];
     draw();
   }
 
@@ -486,6 +512,7 @@ export function createChart(host, candles, viewport, drawingManager = null, opti
     setChartType,
     setMovingAverages,
     setStudies,
+    setTimelineEvents,
     setPaneRatio(nextRatio) {
       paneRatio = Math.max(0.15, Math.min(0.45, Number(nextRatio) || 0.25));
       draw();
