@@ -14,7 +14,6 @@
 <nav id="oraculum-nav" class="oraculum-nav" aria-label="Navegação principal">
   <a href="#visao" data-nav-target="visao" class="is-active">VISÃO</a>
   <a href="#dados" data-nav-target="dados">DADOS</a>
-  <a href="#timeline" data-nav-target="timeline">TIMELINE</a>
   <a href="#workspace" data-nav-target="workspace">WORKSPACE</a>
 </nav>
 
@@ -24,6 +23,7 @@
     <button id="moving-average-button" class="moving-average-button" type="button" aria-expanded="false">MA</button>
     <button id="fit-toggle" class="fit-toggle" type="button">FIT</button>
     <button id="scale-toggle" class="scale-toggle" type="button" aria-pressed="false">NORMAL</button>
+    <div id="investigation-timeline" class="investigation-timeline-dock" aria-label="Linha do tempo alinhada ao gráfico"></div>
     <div class="drawing-toolbar" aria-label="Ferramentas de desenho">
       <button id="drawing-nav" class="drawing-tool is-active" type="button">PAN</button>
       <button id="drawing-select" class="drawing-tool" type="button">SELECT</button>
@@ -47,14 +47,10 @@
   <div id="oraculum-selection" class="oraculum-selection">Nenhum dado selecionado.</div>
 </section>
 
-<section id="timeline" class="oraculum-section oraculum-timeline" aria-label="Linha do tempo da investigação">
-  <div class="timeline-empty">Selecione dados no catálogo e toque em INVESTIGAR.</div>
-</section>
-
 <section id="workspace" class="oraculum-section oraculum-workspace-preview" aria-label="Workspace">
   <div class="oraculum-section-head"><strong>WORKSPACE</strong><span>LABORATÓRIO DE INVESTIGAÇÃO</span></div>
   <p>O Workspace será o lugar para alinhar gráficos, eventos, variáveis e hipóteses no mesmo eixo temporal.</p>
   <button type="button" class="oraculum-disabled-action" disabled>ABRIR WORKSPACE</button>
 </section>
 
-</main><script type="module" src="./src/app/ochama-bootstrap.js?v=20260929-3"></script><script type="module" src="./src/app/oraculum-bootstrap.js?v=20260929-3"></script></body></html>
+</main><script type="module" src="./src/app/ochama-bootstrap.js?v=20260930-1"></script><script type="module" src="./src/app/oraculum-bootstrap.js?v=20260930-1"></script></body></html>
