@@ -82,10 +82,11 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
     chart.setChartType(elements.chartTypeButton?.getAttribute('aria-pressed')==='true'?'line':'candle');
     chart.setMovingAverages(callbacks.getMovingAverages?.()||[]);
     chart.setStudies(callbacks.getStudies?.()||[]);
+    chart.setTimelineEvents(callbacks.getTimelineEvents?.() || []);
 
     const persist=()=>{
       stateStore.save({symbol,provider,interval},viewport.getState());
-      callbacks.onViewportChanged?.(viewport.getState().x);
+      callbacks.onViewportChanged?.(viewport.getState().x, chart.getDrawingPlot?.());
     };
 
     let drawingInteraction;
@@ -200,6 +201,7 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
     refresh:async(symbol,provider,interval)=>load(symbol,provider,interval,await dataClient.refresh(optionsFor(symbol,provider,interval))),
     getActive:()=>active,
     getDrawingInteraction:()=>activeDrawingInteraction,
+    setTimelineEvents:events=>active?.chart?.setTimelineEvents?.(events),
     getProviderSymbols:()=>PROVIDER_SYMBOLS,
     getOptions:optionsFor,
     save:saveActiveState,
