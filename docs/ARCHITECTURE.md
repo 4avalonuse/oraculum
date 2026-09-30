@@ -1,50 +1,17 @@
-# Ochama — Arquitetura
+# ORACULUM — Arquitetura
 
 ## Objetivo
 
-Reconstruir o OChart com uma separação clara de responsabilidades, preservando as funcionalidades comprovadas do projeto legado e evitando carregar acoplamentos desnecessários.
+Construir o ORACULUM como um sistema modular de investigação de mercado, preservando a fundação gráfica e de dados já comprovada sem transformar essa fundação no produto inteiro.
 
-## Camadas candidatas
+USER → NAVIGATION / WORKSPACE → DOMAIN → APPLICATION → DATA / STATE / STORAGE → CHART / RENDER / VIEWPORT
 
-```text
-USER
- ↓
-INTERACTION
- ↓
-INTENT
- ├── VIEWPORT
- ├── DRAWINGS
- └── SELECTION
- ↓
-STATE
- ↓
-CHART / RENDER
-```
+## Domínios
 
-Domínios previstos:
+MARKET · VARIABLES · EVENTS · TIMELINE · RELATIONS · HYPOTHESES · OALGO · OBACKTEST
 
-```text
-src/
-├── app/
-├── data/
-├── chart/
-├── viewport/
-├── interaction/
-├── drawings/
-├── studies/
-├── ui/
-├── state/
-├── utils/
-└── styles/
-```
+## Regra
 
-Esta árvore é uma hipótese inicial. Nenhum arquivo do legado será copiado ou movido antes da auditoria.
+Auditar → preservar componentes válidos → definir contratos → implementar uma capacidade por vez → testar.
 
-## Regra de reconstrução
-
-1. Auditar o legado.
-2. Identificar responsabilidades reais.
-3. Definir contratos entre módulos.
-4. Criar a fundação do Ochama.
-5. Migrar/reimplementar uma capacidade por vez.
-6. Testar a cada etapa.
+O gráfico é uma fundação reutilizada. O produto é o ORACULUM.
