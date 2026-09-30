@@ -48,6 +48,4 @@ O teste pode ser executado pelo OBacktest e a execução pelo OWin, sem que esse
 
 ## Estado atual
 
-Esta é a reconstrução limpa do ORACULUM. O código antigo foi removido deliberadamente.
-
-Próxima etapa: fundação da navegação e do Workspace.
+Reconstrução limpa do ORACULUM. O código antigo foi removido deliberadamente.

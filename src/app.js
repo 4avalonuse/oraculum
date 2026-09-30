@@ -1,0 +1,3 @@
+const actions={new:()=>setStatus('Novo Workspace — fundação pronta.'),open:()=>setStatus('Abrir Workspace — persistência será conectada na próxima etapa.'),datasets:()=>setStatus('Datasets — catálogo será conectado à Data API.'),events:()=>setStatus('Eventos — módulo de investigação ainda não conectado.'),relations:()=>setStatus('Relações — modelo preparado, implementação ainda não iniciada.'),hypotheses:()=>setStatus('Hipóteses — estrutura preparada para a próxima camada.')};
+function setStatus(message){document.querySelector('.status').textContent=message}
+document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>actions[button.dataset.action]?.()));
