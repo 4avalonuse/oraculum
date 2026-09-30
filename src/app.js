@@ -101,7 +101,6 @@ function draw(){
     ctx.beginPath();ctx.moveTo(xx-3,y(d.o));ctx.lineTo(xx,y(d.c));ctx.stroke();
   }
   drawEvents(data,x,p,ph);
-  renderEventFilters();
   $("#range-label").textContent=new Date(data[0].t).toLocaleDateString()+" → "+new Date(data.at(-1).t).toLocaleDateString();
 }
 function drawEvents(data,x,p,ph){
