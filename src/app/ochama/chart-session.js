@@ -161,7 +161,32 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
       return true;
     };
 
-    active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,interval,meta,drawingManager,focusTimestamp};
+    const focusTimestampRange=(timestamps, paddingRatio=0.15)=>{
+      const values=(Array.isArray(timestamps)?timestamps:[])
+        .map(Number)
+        .filter(Number.isFinite);
+      if(!values.length) return false;
+
+      const bounds=viewport.getBounds().x;
+      const visible=values.filter(timestamp=>timestamp>=bounds.min&&timestamp<=bounds.max);
+      if(!visible.length) return false;
+      if(visible.length===1) return focusTimestamp(visible[0]);
+
+      const span=Math.max(visible.at(-1)-visible[0],1);
+      const padding=span*paddingRatio;
+      const actualMin=Math.max(bounds.min,visible[0]-padding);
+      const actualMax=Math.min(bounds.max,visible.at(-1)+padding);
+      if(actualMax<=actualMin) return false;
+
+      viewport.fitX({min:actualMin,max:actualMax});
+      const shown=candles.filter(c=>c.timestamp>=actualMin&&c.timestamp<=actualMax);
+      if(shown.length) viewport.fitY({min:Math.min(...shown.map(c=>c.low)),max:Math.max(...shown.map(c=>c.high))});
+      persist();
+      chart.draw();
+      return true;
+    };
+
+    active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,interval,meta,drawingManager,focusTimestamp,focusTimestampRange};
     stateStore.saveSelection({symbol,provider,interval});
     window.ochama=active;
     callbacks.onActiveChanged?.(activeDrawingInteraction,active);
