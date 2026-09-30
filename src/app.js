@@ -1,6 +1,6 @@
 const API_BASE="https://oraculum-data-api.4avalonuse.workers.dev";
 const DATASET={provider:"binance-us",symbol:"BTCUSD",kind:"ohlcv",interval:"1d",currency:"USD"};
-const state={candles:[],viewStart:0,viewEnd:0,drag:null};
+const state={candles:[],viewStart:0,viewEnd:0,drag:null,pointers:new Map(),pinch:null};
 const $=s=>document.querySelector(s),canvas=$("#chart"),ctx=canvas.getContext("2d");
 
 async function loadData(){
@@ -47,12 +47,22 @@ canvas.addEventListener("wheel",e=>{
   e.preventDefault(); zoomAt(e.deltaY>0?1.12:.89,e.clientX);
 },{passive:false});
 canvas.addEventListener("pointerdown",e=>{
-  if(e.button!==0)return;
-  canvas.setPointerCapture(e.pointerId);
-  state.drag={x:e.clientX,start:state.viewStart,end:state.viewEnd};
-  canvas.style.cursor="grabbing";
+  if(e.pointerType==="mouse"&&e.button!==0)return;
+  canvas.setPointerCapture(e.pointerId); state.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(state.pointers.size===2){
+    const pts=[...state.pointers.values()],dx=pts[0].x-pts[1].x,dy=pts[0].y-pts[1].y;
+    state.pinch={distance:Math.hypot(dx,dy),center:(pts[0].x+pts[1].x)/2}; state.drag=null; return;
+  }
+  state.drag={x:e.clientX,start:state.viewStart,end:state.viewEnd}; canvas.style.cursor="grabbing";
 });
 canvas.addEventListener("pointermove",e=>{
+  if(state.pointers.has(e.pointerId))state.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(state.pointers.size===2&&state.pinch){
+    const pts=[...state.pointers.values()],dx=pts[0].x-pts[1].x,dy=pts[0].y-pts[1].y;
+    const distance=Math.hypot(dx,dy),factor=state.pinch.distance/distance;
+    if(Math.abs(distance-state.pinch.distance)>3){zoomAt(factor,state.pinch.center);state.pinch.distance=distance;}
+    return;
+  }
   if(!state.drag)return;
   const dx=e.clientX-state.drag.x,width=canvas.clientWidth||1;
   const shift=Math.round(dx/width*visibleCount());
@@ -60,7 +70,7 @@ canvas.addEventListener("pointermove",e=>{
 });
 canvas.addEventListener("pointerup",endDrag);
 canvas.addEventListener("pointercancel",endDrag);
-function endDrag(){state.drag=null;canvas.style.cursor="grab"}
+function endDrag(e){state.pointers.delete(e.pointerId);state.pinch=null;state.drag=null;canvas.style.cursor="grab"}
 
 function resize(){
   const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;
