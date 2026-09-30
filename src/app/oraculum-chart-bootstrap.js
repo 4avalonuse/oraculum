@@ -6,9 +6,9 @@ import { createStudyInfo } from '../ui/study-info.js';
 import { attachMovingAverageMenu } from '../ui/moving-average-menu.js';
 import { attachFibonacciMenu } from '../ui/fibonacci-menu.js?v=20260927-29';
 import { attachDrawingToolsMenu } from '../ui/drawing-tools-menu.js';
-import { createChartSession } from './ochama/chart-session.js';
-import { createStudyController } from './ochama/study-controller.js';
-import { createDrawingController } from './ochama/drawing-controller.js';
+import { createChartSession } from './oraculum/chart-session.js';
+import { createStudyController } from './oraculum/study-controller.js';
+import { createDrawingController } from './oraculum/drawing-controller.js';
 import { attachRsiMenu } from '../ui/rsi-menu.js?v=20260927-27';
 import { attachVolumeMenu } from '../ui/volume-menu.js?v=20260927-32';
 import { attachMacdMenu } from '../ui/macd-menu.js?v=20260927-33';
@@ -139,7 +139,7 @@ export async function bootstrap(){
   };
 
   const load=()=>session.load(elements.assetSelect.value,elements.providerSelect.value,elements.intervalSelect.value).catch(error=>{
-    console.error('[Ochama]',error);
+    console.error('[Oraculum]',error);
     elements.chartHost.classList.remove('is-loading');
     elements.chartHost.classList.add('is-error');
     elements.status.textContent='Erro: '+(error?.message||'falha desconhecida');
@@ -156,7 +156,7 @@ export async function bootstrap(){
     elements.refreshButton.disabled=true;
     elements.status.textContent='Atualizando '+symbol+' · '+provider+'…';
     try{await session.refresh(symbol,provider,interval);}
-    catch(error){console.error('[Ochama refresh]',error);elements.status.textContent='Refresh: '+(error?.message||'falha');elements.chartHost.classList.add('is-error');}
+    catch(error){console.error('[Oraculum refresh]',error);elements.status.textContent='Refresh: '+(error?.message||'falha');elements.chartHost.classList.add('is-error');}
     finally{elements.refreshButton.disabled=false;}
   });
 
@@ -185,7 +185,7 @@ export async function bootstrap(){
 }
 
 bootstrap().catch(error=>{
-  console.error('[Ochama]',error);
+  console.error('[Oraculum]',error);
   document.querySelector('#chart')?.classList.remove('is-loading');
   document.querySelector('#chart')?.classList.add('is-error');
   const status=document.querySelector('#status');

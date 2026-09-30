@@ -8,7 +8,7 @@ function timestamp(value) {
   let t = number(value, 'timestamp');
 
   // A Data API pode entregar Unix time em segundos ou milissegundos.
-  // O contrato interno do Ochama é sempre milissegundos.
+  // O contrato interno do Oraculum é sempre milissegundos.
   if (Math.abs(t) < 1e12) t *= 1000;
 
   const date = new Date(t);

@@ -141,7 +141,7 @@ export function createChartSession({dataClient,stateStore,drawingPersistence,ele
 
     active={viewport,interaction,chart,scaleCleanup,fitCleanup,candles,symbol,provider,interval,meta,drawingManager};
     stateStore.saveSelection({symbol,provider,interval});
-    window.ochama=active;
+    window.oraculumChart=active;
     callbacks.onActiveChanged?.(activeDrawingInteraction,active);
     chartHost.classList.remove('is-loading','is-error');
     callbacks.onHeaderUpdate?.(symbol,candles);

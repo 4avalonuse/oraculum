@@ -1,39 +1,18 @@
-# ORACULUM — TREE PLANEJADA
-
-## Status
-
-A tree atual é uma fundação inicial. Ela ainda não representa toda a arquitetura conceitual definida neste documento.
-
-## Estrutura planejada
+# ORACULUM — TREE
 
 src/
 ├── app/
-│
 ├── oraculum/
 │   ├── market/
 │   ├── variables/
 │   ├── events/
 │   ├── timeline/
 │   ├── relations/
-│   ├── asset-panel/
 │   ├── workspace/
-│   │   ├── objects/
-│   │   ├── frames/
-│   │   ├── alignment/
-│   │   ├── layers/
-│   │   └── persistence/
 │   ├── analytics/
-│   │   ├── statistics/
-│   │   ├── econometrics/
-│   │   ├── transformations/
-│   │   ├── deflation/
-│   │   ├── correlation/
-│   │   ├── lead-lag/
-│   │   └── event-study/
 │   ├── hypotheses/
 │   ├── oalgo/
 │   └── obacktest/
-│
 ├── chart/
 ├── drawing/
 ├── interaction/
@@ -46,18 +25,14 @@ src/
 
 ## Responsabilidade
 
-oraculum/ contém domínio e lógica específica do produto Oraculum.
+`oraculum/` contém o domínio e a lógica específica do produto.
 
-chart/, drawing/, interaction/, viewport/, studies/ e demais módulos herdados continuam sendo a fundação visual/técnica do Ochama.
+Os módulos de chart, drawing, interaction, viewport, studies, data e storage formam a fundação técnica reutilizada.
 
-Não duplicar lógica de gráfico dentro de oraculum/.
+A fundação não deve impor a identidade do produto nem receber lógica de domínio indevida.
 
 ## Regra
 
-Primeiro definir contratos e responsabilidades. Depois criar implementações.
+Primeiro contratos e responsabilidades. Depois implementação.
 
 Não criar pastas apenas para parecer modular.
-
-## Evolução
-
-Pastas podem ser consolidadas ou divididas conforme o primeiro caso real exigir. A arquitetura deve evitar abstração prematura.

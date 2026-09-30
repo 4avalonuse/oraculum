@@ -1,7 +1,7 @@
 import { DRAWING_DOCUMENT_VERSION, createDrawingDocument } from '../core/drawing-model.js';
 import { hasDrawingTool } from '../core/drawing-registry.js';
 
-const STORAGE_KEY = 'ochama:drawing-documents:v1';
+const STORAGE_KEY = 'oraculum:drawing-documents:v1';
 
 function keyFor({ symbol, provider, interval }) {
   return `${provider}:${symbol}:${interval}`;
@@ -34,7 +34,7 @@ export function createDrawingPersistence(storage = localStorage) {
       if (!value) return createDrawingDocument({ symbol, provider, interval });
       const drawings = value.drawings.filter(drawing => {
         if (hasDrawingTool(drawing?.type)) return true;
-        console.warn('[Ochama drawing] Ignorando tipo desconhecido:', drawing?.type);
+        console.warn('[Oraculum drawing] Ignorando tipo desconhecido:', drawing?.type);
         return false;
       });
       return createDrawingDocument({ symbol, provider, interval, drawings });

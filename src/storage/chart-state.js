@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'ochama:chart-state:v1';
+const STORAGE_KEY = 'oraculum:chart-state:v1';
 
 function readAll() {
   try {
