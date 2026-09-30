@@ -107,6 +107,10 @@ export async function bootstrap(){
       },
       onActiveChanged:()=>{
         drawingController?.refreshActions();
+        window.oraculum?.syncTimeline?.();
+      },
+      onViewportChanged:()=>{
+        window.oraculum?.syncTimeline?.();
       },
       onHeaderUpdate:updateHeader
     }
