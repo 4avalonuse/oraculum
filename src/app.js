@@ -1,7 +1,15 @@
 const API_BASE="https://oraculum-data-api.4avalonuse.workers.dev";
 const DATASET={provider:"binance-us",symbol:"BTCUSD",kind:"ohlcv",interval:"1d",currency:"USD"};
+const EVENTS=[
+ {date:"2012-11-28",title:"Halving #1",type:"protocol",why:"Primeiro halving do Bitcoin.",read:"Redução programada da emissão; observar a mudança estrutural da oferta ao longo do ciclo."},
+ {date:"2016-07-09",title:"Halving #2",type:"protocol",why:"Segundo halving do Bitcoin.",read:"Novo corte na emissão; comparar comportamento do preço antes e depois do evento."},
+ {date:"2020-05-11",title:"Halving #3",type:"protocol",why:"Terceiro halving do Bitcoin.",read:"Redução da recompensa por bloco; útil para estudar ciclos de oferta e defasagens temporais."},
+ {date:"2024-04-20",title:"Halving #4",type:"protocol",why:"Quarto halving do Bitcoin.",read:"Novo choque programado na emissão; ponto de referência para analisar o ciclo atual."}
+];
+const EVENT_TYPES={all:"Todos",protocol:"Protocolo",macro:"Macro",market:"Mercado",company:"Empresas"};
 const state={candles:[],viewStart:0,viewEnd:0,drag:null,pointers:new Map(),pinch:null};
 const $=s=>document.querySelector(s),canvas=$("#chart"),ctx=canvas.getContext("2d");
+state.eventType="all";state.selectedEvent=null;
 
 async function loadData(){
   try{
@@ -93,18 +101,37 @@ function draw(){
     ctx.beginPath();ctx.moveTo(xx-3,y(d.o));ctx.lineTo(xx,y(d.c));ctx.stroke();
   }
   drawEvents(data,x,p,ph);
+  renderEventFilters();
   $("#range-label").textContent=new Date(data[0].t).toLocaleDateString()+" → "+new Date(data.at(-1).t).toLocaleDateString();
 }
 function drawEvents(data,x,p,ph){
-  const events=[["2012-11-28","HALVING #1"],["2016-07-09","HALVING #2"],["2020-05-11","HALVING #3"],["2024-04-20","HALVING #4"]];
   const first=data[0].t,last=data.at(-1).t;ctx.font="10px system-ui";
-  for(const [date,label] of events){
-    const t=Date.parse(date+"T00:00:00Z");if(t<first||t>last)continue;
-    const i=data.findIndex(d=>d.t>=t);if(i<0)continue;const xx=x(i);
-    ctx.strokeStyle="#555";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xx,p.t);ctx.lineTo(xx,p.t+ph);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle="#888";ctx.fillText(label,Math.min(xx+5,canvas.clientWidth-p.r-85),p.t+12);
-  }
+  EVENTS.filter(e=>state.eventType==="all"||e.type===state.eventType).forEach(e=>{
+    const t=Date.parse(e.date+"T00:00:00Z");if(t<first||t>last)return;
+    const i=data.findIndex(d=>d.t>=t);if(i<0)return;const xx=x(i),selected=state.selectedEvent===e;
+    ctx.strokeStyle=selected?"#aaa":"#555";ctx.lineWidth=selected?2:1;ctx.setLineDash(selected?[]:[4,4]);
+    ctx.beginPath();ctx.moveTo(xx,p.t);ctx.lineTo(xx,p.t+ph);ctx.stroke();ctx.setLineDash([]);ctx.lineWidth=1;
+    ctx.fillStyle=selected?"#ddd":"#888";ctx.fillText(e.title,Math.min(xx+5,canvas.clientWidth-p.r-85),p.t+12);
+  });
 }
+function renderEventFilters(){
+  const box=$("#event-filters");if(!box)return;
+  box.innerHTML=Object.entries(EVENT_TYPES).map(([k,v])=>'<button class="'+(state.eventType===k?"active":"")+'" data-event-type="'+k+'">'+v+'</button>').join("");
+  box.querySelectorAll("[data-event-type]").forEach(b=>b.addEventListener("click",()=>{state.eventType=b.dataset.eventType;state.selectedEvent=null;renderEventFilters();renderEventDetail();draw()}));
+}
+function renderEventDetail(){
+  const box=$("#event-detail");if(!box)return;
+  if(!state.selectedEvent){box.innerHTML='<span class="muted">Selecione um evento no gráfico ou por categoria.</span>';return}
+  const e=state.selectedEvent;
+  box.innerHTML='<div class="event-title">'+e.title+'</div><div class="event-meta">'+new Date(e.date+"T00:00:00Z").toLocaleDateString("pt-BR")+' · '+EVENT_TYPES[e.type]+'</div><div><b>Contexto</b><br>'+e.why+'</div><div><b>Leitura estratégica</b><br>'+e.read+'</div>';
+}
+canvas.addEventListener("click",e=>{
+  const data=state.candles.slice(state.viewStart,state.viewEnd+1);if(!data.length)return;
+  const rect=canvas.getBoundingClientRect(),p={l:10,r:58},pw=rect.width-p.l-p.r;
+  const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left-p.l)/pw)),idx=Math.round(ratio*Math.max(data.length-1,1)),t=data[idx]?.t;
+  const candidates=EVENTS.filter(ev=>state.eventType==="all"||ev.type===state.eventType).filter(ev=>{const et=Date.parse(ev.date+"T00:00:00Z");return Math.abs(et-t)<14*86400000});
+  if(candidates.length){state.selectedEvent=candidates[0];renderEventDetail();draw();}
+});
 function format(v){return v>=1000?v.toLocaleString("en-US",{maximumFractionDigits:0}):v.toFixed(2)}
 document.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>$("#status").textContent=b.textContent.toUpperCase()));
-canvas.style.cursor="grab";loadData().finally(resize);
+canvas.style.cursor="grab";renderEventFilters();renderEventDetail();loadData().finally(resize);
