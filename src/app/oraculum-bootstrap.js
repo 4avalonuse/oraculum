@@ -56,9 +56,20 @@ attachInvestigationLibrary({
         : 'Nenhum dado selecionado.';
     }
   },
-  onInvestigate() {
+  async onInvestigate() {
     navigation.navigate('visao');
-    timeline.refresh();
+    const result = await timeline.refresh();
+    const eventTimestamps = result?.events?.map(event => Number(event.timestamp)).filter(Number.isFinite) || [];
+    if (eventTimestamps.length) {
+      const focused = window.ochama?.focusTimestampRange?.(eventTimestamps);
+      if (status) {
+        status.textContent = focused
+          ? eventTimestamps.length === 1
+            ? 'Evento posicionado no gráfico.'
+            : eventTimestamps.length + ' eventos posicionados no gráfico.'
+          : 'Eventos selecionados estão fora do período disponível.';
+      }
+    }
   }
 });
 
