@@ -1,4 +1,5 @@
 import { loadOrPopulate } from "./data/client.js";
+import { normalizeCandles } from "./data/normalize.js";
 
 const DATASET={provider:"yahoo",symbol:"BTC-USD",kind:"ohlcv",interval:"1d",currency:"USD"};
 const EVENTS=[
@@ -16,7 +17,7 @@ async function loadData(){
   try{
     $("#status").textContent="CARREGANDO";
     const loaded=await loadOrPopulate(DATASET);
-    state.candles=loaded.candles.map(normalize).filter(Boolean);
+    state.candles=normalizeCandles(loaded.candles);
     if(!state.candles.length) throw Error("dataset vazio");
     fit();
     $("#status").textContent="OK";
@@ -26,10 +27,6 @@ async function loadData(){
     $("#status").textContent="ERRO";
     $("#source-label").textContent=e.message;
   }
-}
-function normalize(r){
-  const t=Number(r.timestamp??r.time??r.date),o=Number(r.open),h=Number(r.high),l=Number(r.low),c=Number(r.close);
-  return[t,o,h,l,c].every(Number.isFinite)?{t,o,h,l,c}:null;
 }
 function fit(){state.viewStart=0;state.viewEnd=Math.max(0,state.candles.length-1);draw()}
 $("#fit").addEventListener("click",fit);
