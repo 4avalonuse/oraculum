@@ -71,6 +71,12 @@ export async function loadCandles(options) {
   return unpack(payload, dataset);
 }
 
+export async function loadOrPopulate(options) {
+  const loaded = await loadCandles(options);
+  if (loaded.candles.length) return loaded;
+  return refreshCandles(options);
+}
+
 export async function refreshCandles(options) {
   const dataset = await findDataset(options);
   const payload = await request(
