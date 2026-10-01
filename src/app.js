@@ -15,7 +15,7 @@ const EVENTS=[
 const EVENT_TYPES={all:"Todos",protocol:"Protocolo",macro:"Macro",market:"Mercado",company:"Empresas"};
 const $=s=>document.querySelector(s);
 const canvas=$("#chart"),status=$("#status");
-const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d",loadId:0};
+const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d",chartType:"candle",scaleType:"linear",loadId:0};
 
 function bounds(candles){
  return {
@@ -50,6 +50,8 @@ async function loadData(interval=state.interval){
   const viewport=createViewport();
   viewport.setDataBounds(bounds(state.candles));
   const chart=createChart(canvas,{getCandles:()=>state.candles,getEvents:()=>EVENTS,getEventType:()=>state.eventType,getSelectedEvent:()=>state.selectedEvent,onEventSelect},viewport);
+  chart.setType(state.chartType);
+  viewport.setYScaleType(state.scaleType);
   state.viewport=viewport;state.chart=chart;
   const fitCount=Math.min(120,state.candles.length),shown=state.candles.slice(-fitCount);
   viewport.fitX({min:shown[0].timestamp,max:shown.at(-1).timestamp});
@@ -59,8 +61,11 @@ async function loadData(interval=state.interval){
   state.controlCleanup=attachChartControls({
    fitButton:$("#fit"),typeButton:$("#chart-type"),scaleButton:$("#scale-type"),
    viewport,candles:state.candles,draw:chart.draw,
-   onTypeChange:type=>chart.setType(type)
+   onTypeChange:type=>{state.chartType=type;chart.setType(type)},
+   onViewportChanged:()=>{state.scaleType=viewport.getYScaleType()}
   });
+  $("#chart-type").textContent=state.chartType==="line"?"LINE":"CANDLE";
+  $("#scale-type").textContent=state.scaleType==="logarithmic"?"LOG":"NORMAL";
   chart.draw();
   status.textContent="OK";
   $("#source-label").textContent=(loaded.meta?.provider||"Yahoo")+" · "+({1h:"horário",1d:"diário",1w:"semanal",1M:"mensal"}[state.interval]||state.interval);
