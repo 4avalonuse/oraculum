@@ -3,6 +3,8 @@ function uv(v,t){return t==="logarithmic"?Math.exp(v):v}
 function price(v){return v>=1000?v.toLocaleString("en-US",{maximumFractionDigits:0}):v.toLocaleString("en-US",{maximumFractionDigits:2})}
 export function createChart(canvas,{getCandles,getEvents,getEventType,getSelectedEvent,onEventSelect},viewport){
   const ctx=canvas.getContext("2d");let type="candle";
+  function resize(){const r=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));draw()}
+  const observer=new ResizeObserver(resize);observer.observe(canvas);
   function draw(){
     const w=canvas.clientWidth,h=canvas.clientHeight,d=getCandles(),s=viewport.getState();ctx.setTransform(devicePixelRatio||1,0,0,devicePixelRatio||1,0,0);ctx.clearRect(0,0,w,h);if(!d.length)return;
     const p={left:10,right:58,top:10,bottom:24},pw=w-p.left-p.right,ph=h-p.top-p.bottom,a=sv(s.y.min,s.yScaleType),b=sv(s.y.max,s.yScaleType),span=b-a||1,xspan=s.x.max-s.x.min||1,x=t=>p.left+((t-s.x.min)/xspan)*pw,y=v=>p.top+(b-sv(v,s.yScaleType))/span*ph;
@@ -16,5 +18,5 @@ export function createChart(canvas,{getCandles,getEvents,getEventType,getSelecte
   }
   function setType(next){type=next==="line"?"line":"candle";draw()}
   canvas.addEventListener("click",e=>{const s=viewport.getState(),r=canvas.getBoundingClientRect(),w=Math.max(1,r.width-68),ratio=Math.max(0,Math.min(1,(e.clientX-r.left-10)/w)),t=s.x.min+(s.x.max-s.x.min)*ratio,c=getEvents().filter(ev=>getEventType()==="all"||ev.type===getEventType()).filter(ev=>Math.abs(Date.parse(ev.date+"T00:00:00Z")-t)<14*86400000);if(c.length){onEventSelect?.(c[0]);draw()}});
-  return{draw,setType};
+  resize();return{draw,setType,destroy(){observer.disconnect()}};
 }
