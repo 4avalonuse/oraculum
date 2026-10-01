@@ -12,10 +12,26 @@ export function createViewport(){
     getYScaleType(){return scale},
     setYScaleType(t){if(t==="logarithmic"&&bounds.y.min<=0)return false;scale=t==="logarithmic"?"logarithmic":"linear";return true},
     panX(d){range.x=cx({min:range.x.min+d,max:range.x.max+d})},
-    panYByPixels(px,h){const span=range.y.max-range.y.min;range.y=cy({min:range.y.min+(px/Math.max(1,h))*span,max:range.y.max+(px/Math.max(1,h))*span})},
+    panYByPixels(px,h){
+ const ratio=px/Math.max(1,h);
+ if(scale==="logarithmic"){
+  const a=Math.log(Math.max(range.y.min,.000001)),b=Math.log(Math.max(range.y.max,.000001)),span=b-a,delta=ratio*span;
+  range.y=cy({min:Math.exp(a+delta),max:Math.exp(b+delta)});
+ }else{
+  const span=range.y.max-range.y.min,delta=ratio*span;
+  range.y=cy({min:range.y.min+delta,max:range.y.max+delta});
+ }
+},
     zoomX(f,a){const r=range.x,span=r.max-r.min,next=Math.max((bounds.x.max-bounds.x.min)/1000,Math.min(bounds.x.max-bounds.x.min,span*f)),anchor=Number.isFinite(a)?a:(r.min+r.max)/2,ratio=(anchor-r.min)/span;range.x=cx({min:anchor-ratio*next,max:anchor+(1-ratio)*next})},
     zoomY(f,a){const r=range.y,span=r.max-r.min,next=Math.max((bounds.y.max-bounds.y.min)/1000,Math.min(bounds.y.max-bounds.y.min,span*f)),anchor=Number.isFinite(a)?a:(r.min+r.max)/2,ratio=(anchor-r.min)/span;range.y=cy({min:anchor-ratio*next,max:anchor+(1-ratio)*next})},
     fitX(t){range.x=cx(t)},fitY(t){range.y=cy(t)},fitAll(){range={x:{...bounds.x},y:{...bounds.y}}},
-    priceAtYRatio(r){return range.y.max-(range.y.max-range.y.min)*clamp(r,0,1)}
+    priceAtYRatio(r){
+ const q=clamp(r,0,1);
+ if(scale==="logarithmic"){
+  const a=Math.log(Math.max(range.y.min,.000001)),b=Math.log(Math.max(range.y.max,.000001));
+  return Math.exp(b-(b-a)*q);
+ }
+ return range.y.max-(range.y.max-range.y.min)*q;
+}
   };
 }
