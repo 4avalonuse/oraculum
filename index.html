@@ -1,1 +1,48 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ORACULUM</title><link rel="stylesheet" href="./src/styles.css?v=20261001-2"></head><body><main id="app"><header class="topbar"><div class="brand">ORACULUM</div><div class="asset">BTCUSD</div><div class="status" id="status">DADOS</div></header><section class="workspace"><aside class="sidebar"><div class="section-label">WORKSPACE</div><button data-action="new">Novo</button><button data-action="open">Abrir</button><div class="section-label">INVESTIGAÇÃO</div><button data-action="datasets">Datasets</button><button data-action="events">Eventos</button><button data-action="relations">Relações</button><button data-action="hypotheses">Hipóteses</button></aside><section class="canvas"><section class="chart-card"><div class="chart-head"><div><strong>BTC / USD</strong><small id="source-label">carregando...</small></div></div><div class="chart-wrap"><canvas id="chart"></canvas><div class="chart-controls"><div class="interval-controls" id="interval-controls"><button class="chart-btn interval-btn" data-interval="1h">H</button><button class="chart-btn interval-btn" data-interval="1d">D</button><button class="chart-btn interval-btn" data-interval="1w">W</button><button class="chart-btn interval-btn" data-interval="1M">M</button></div><button class="chart-btn" id="fit">FIT</button><button class="chart-btn" id="chart-type">CANDLE</button><button class="chart-btn" id="scale-type">NORMAL</button></div></div><div class="chart-foot"><span id="range-label">—</span><span id="data-label">—</span></div></section><section class="event-panel"><div class="event-tools"><strong>CONTEXTO ESTRATÉGICO</strong><div id="event-filters" class="event-filters"></div></div><div id="event-detail" class="event-detail"><span class="muted">Selecione um evento no gráfico ou por categoria.</span></div></section></section></section></main><script type="module" src="./src/app.js?v=20261001-2"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ORACULUM</title>
+<link rel="stylesheet" href="./src/styles.css">
+</head>
+<body>
+<main id="app">
+<header class="topbar">
+  <div class="brand">ORACULUM</div>
+  <div class="asset">BTCUSD</div>
+  <div id="status" class="status">DADOS</div>
+</header>
+<section class="workspace">
+  <aside class="sidebar">
+    <div class="section-label">WORKSPACE</div>
+    <button>Novo</button><button>Abrir</button>
+    <div class="section-label">INVESTIGAÇÃO</div>
+    <button>Datasets</button><button>Eventos</button>
+    <button>Relações</button><button>Hipóteses</button>
+  </aside>
+  <section class="canvas-area">
+    <section class="chart-card">
+      <div class="chart-head">
+        <div><strong>BTC / USD</strong><small id="source">inicializando...</small></div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart"></canvas>
+        <div class="chart-controls">
+          <button data-interval="1h">H</button>
+          <button data-interval="1d" class="active">D</button>
+          <button data-interval="1w">W</button>
+          <button data-interval="1M">M</button>
+          <button id="fit">FIT</button>
+          <button id="type">CANDLE</button>
+          <button id="scale">NORMAL</button>
+        </div>
+      </div>
+      <div class="chart-foot"><span id="range">—</span><span id="count">—</span></div>
+    </section>
+  </section>
+</section>
+</main>
+<script src="./src/app.js"></script>
+</body>
+</html>
