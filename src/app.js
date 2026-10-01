@@ -89,27 +89,27 @@ function draw(){
   const w=canvas.clientWidth,h=canvas.clientHeight;
   ctx.clearRect(0,0,w,h);
   const data=state.candles.slice(state.viewStart,state.viewEnd+1); if(!data.length)return;
-  const p={l:10,r:58,t:10,b:24},pw=w-p.l-p.r,ph=h-p.t-p.b;
-  const min=Math.min(...data.map(x=>x.l)),max=Math.max(...data.map(x=>x.h)),span=max-min||1;
-  const x=i=>p.l+i/Math.max(data.length-1,1)*pw,y=v=>p.t+(max-v)/span*ph;
+  const p={l:10,r:58,t:10,b:24},pw=w-p.low-p.r,ph=h-p.timestamp-p.b;
+  const min=Math.min(...data.map(x=>x.low)),max=Math.max(...data.map(x=>x.high)),span=max-min||1;
+  const x=i=>p.low+i/Math.max(data.length-1,1)*pw,y=v=>p.timestamp+(max-v)/span*ph;
   ctx.font="10px system-ui";ctx.strokeStyle="#252525";
-  for(let i=0;i<5;i++){const yy=p.t+i*ph/4;ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(p.l+pw,yy);ctx.stroke();ctx.fillStyle="#666";ctx.fillText(format(max-i*span/4),w-p.r+8,yy+3)}
+  for(let i=0;i<5;i++){const yy=p.timestamp+i*ph/4;ctx.beginPath();ctx.moveTo(p.low,yy);ctx.lineTo(p.low+pw,yy);ctx.stroke();ctx.fillStyle="#666";ctx.fillText(format(max-i*span/4),w-p.r+8,yy+3)}
   const step=Math.max(1,Math.floor(data.length/100));
   for(let i=0;i<data.length;i+=step){
-    const d=data[i],xx=x(i);ctx.strokeStyle="#999";ctx.beginPath();ctx.moveTo(xx,y(d.h));ctx.lineTo(xx,y(d.l));ctx.stroke();
-    ctx.beginPath();ctx.moveTo(xx-3,y(d.o));ctx.lineTo(xx,y(d.c));ctx.stroke();
+    const d=data[i],xx=x(i);ctx.strokeStyle="#999";ctx.beginPath();ctx.moveTo(xx,y(d.high));ctx.lineTo(xx,y(d.low));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(xx-3,y(d.open));ctx.lineTo(xx,y(d.close));ctx.stroke();
   }
   drawEvents(data,x,p,ph);
-  $("#range-label").textContent=new Date(data[0].t).toLocaleDateString()+" → "+new Date(data.at(-1).t).toLocaleDateString();
+  $("#range-label").textContent=new Date(data[0].timestamp).toLocaleDateString()+" → "+new Date(data.at(-1).timestamp).toLocaleDateString();
 }
 function drawEvents(data,x,p,ph){
-  const first=data[0].t,last=data.at(-1).t;ctx.font="10px system-ui";
+  const first=data[0].timestamp,last=data.at(-1).timestamp;ctx.font="10px system-ui";
   EVENTS.filter(e=>state.eventType==="all"||e.type===state.eventType).forEach(e=>{
     const t=Date.parse(e.date+"T00:00:00Z");if(t<first||t>last)return;
-    const i=data.findIndex(d=>d.t>=t);if(i<0)return;const xx=x(i),selected=state.selectedEvent===e;
+    const i=data.findIndex(d=>d.timestamp>=t);if(i<0)return;const xx=x(i),selected=state.selectedEvent===e;
     ctx.strokeStyle=selected?"#aaa":"#555";ctx.lineWidth=selected?2:1;ctx.setLineDash(selected?[]:[4,4]);
-    ctx.beginPath();ctx.moveTo(xx,p.t);ctx.lineTo(xx,p.t+ph);ctx.stroke();ctx.setLineDash([]);ctx.lineWidth=1;
-    ctx.fillStyle=selected?"#ddd":"#888";ctx.fillText(e.title,Math.min(xx+5,canvas.clientWidth-p.r-85),p.t+12);
+    ctx.beginPath();ctx.moveTo(xx,p.timestamp);ctx.lineTo(xx,p.timestamp+ph);ctx.stroke();ctx.setLineDash([]);ctx.lineWidth=1;
+    ctx.fillStyle=selected?"#ddd":"#888";ctx.fillText(e.title,Math.min(xx+5,canvas.clientWidth-p.r-85),p.timestamp+12);
   });
 }
 function renderEventFilters(){
@@ -125,8 +125,8 @@ function renderEventDetail(){
 }
 canvas.addEventListener("click",e=>{
   const data=state.candles.slice(state.viewStart,state.viewEnd+1);if(!data.length)return;
-  const rect=canvas.getBoundingClientRect(),p={l:10,r:58},pw=rect.width-p.l-p.r;
-  const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left-p.l)/pw)),idx=Math.round(ratio*Math.max(data.length-1,1)),t=data[idx]?.t;
+  const rect=canvas.getBoundingClientRect(),p={l:10,r:58},pw=rect.width-p.low-p.r;
+  const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left-p.low)/pw)),idx=Math.round(ratio*Math.max(data.length-1,1)),t=data[idx]?.timestamp;
   const candidates=EVENTS.filter(ev=>state.eventType==="all"||ev.type===state.eventType).filter(ev=>{const et=Date.parse(ev.date+"T00:00:00Z");return Math.abs(et-t)<14*86400000});
   if(candidates.length){state.selectedEvent=candidates[0];renderEventDetail();draw();}
 });
