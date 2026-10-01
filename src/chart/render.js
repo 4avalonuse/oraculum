@@ -17,6 +17,7 @@ export function createChart(canvas,{getCandles,getEvents,getEventType,getSelecte
     const r0=visible[0],r1=visible.at(-1);if(r0&&r1)document.querySelector("#range-label").textContent=new Date(r0.timestamp).toLocaleDateString()+" → "+new Date(r1.timestamp).toLocaleDateString();
   }
   function setType(next){type=next==="line"?"line":"candle";draw()}
-  canvas.addEventListener("click",e=>{const s=viewport.getState(),r=canvas.getBoundingClientRect(),w=Math.max(1,r.width-68),ratio=Math.max(0,Math.min(1,(e.clientX-r.left-10)/w)),t=s.x.min+(s.x.max-s.x.min)*ratio,c=getEvents().filter(ev=>getEventType()==="all"||ev.type===getEventType()).filter(ev=>Math.abs(Date.parse(ev.date+"T00:00:00Z")-t)<14*86400000);if(c.length){onEventSelect?.(c[0]);draw()}});
-  resize();return{draw,setType,destroy(){observer.disconnect()}};
+  const onClick=e=>{const s=viewport.getState(),r=canvas.getBoundingClientRect(),w=Math.max(1,r.width-68),ratio=Math.max(0,Math.min(1,(e.clientX-r.left-10)/w)),t=s.x.min+(s.x.max-s.x.min)*ratio,c=getEvents().filter(ev=>getEventType()==="all"||ev.type===getEventType()).filter(ev=>Math.abs(Date.parse(ev.date+"T00:00:00Z")-t)<14*86400000);if(c.length){onEventSelect?.(c[0]);draw()}};
+  canvas.addEventListener("click",onClick);
+  resize();return{draw,setType,destroy(){observer.disconnect();canvas.removeEventListener("click",onClick)}};
 }
