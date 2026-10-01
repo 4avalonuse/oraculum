@@ -1,84 +1,16 @@
-import { loadOrPopulate } from "./data/client.js?v=20261001-3";
-import { normalizeCandles } from "./data/normalize.js?v=20261001-3";
-import { createViewport } from "./chart/viewport.js?v=20261001-3";
-import { createChart } from "./chart/render.js?v=20261001-3";
-import { attachChartInteraction } from "./chart/interaction.js?v=20261001-3";
-import { attachChartControls } from "./chart/controls.js?v=20261001-3";
-
-const DATASET={provider:"yahoo",symbol:"BTC-USD",kind:"ohlcv",interval:"1d",currency:"USD"};
-const EVENTS=[
- {date:"2012-11-28",title:"Halving #1",type:"protocol",why:"Primeiro halving do Bitcoin.",read:"Redução programada da emissão; observar a mudança estrutural da oferta ao longo do ciclo."},
- {date:"2016-07-09",title:"Halving #2",type:"protocol",why:"Segundo halving do Bitcoin.",read:"Novo corte na emissão; comparar comportamento do preço antes e depois do evento."},
- {date:"2020-05-11",title:"Halving #3",type:"protocol",why:"Terceiro halving do Bitcoin.",read:"Redução da recompensa por bloco; útil para estudar ciclos de oferta e defasagens temporais."},
- {date:"2024-04-20",title:"Halving #4",type:"protocol",why:"Quarto halving do Bitcoin.",read:"Novo choque programado na emissão; ponto de referência para analisar o ciclo atual."}
-];
-const EVENT_TYPES={all:"Todos",protocol:"Protocolo",macro:"Macro",market:"Mercado",company:"Empresas"};
+const API="https://oraculum-data-api.4avalonuse.workers.dev";
+const DATA={provider:"yahoo",symbol:"BTC-USD",kind:"ohlcv",interval:"1d",currency:"USD"};
+const state={rows:[],interval:"1d",type:"candle",scale:"linear",start:0,end:0};
 const $=s=>document.querySelector(s);
-const canvas=$("#chart"),status=$("#status");
-const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d",chartType:"candle",scaleType:"linear",loadId:0};
-
-function bounds(candles){
- return {
-  x:{min:candles[0].timestamp,max:candles.at(-1).timestamp},
-  y:{min:Math.min(...candles.map(c=>c.low)),max:Math.max(...candles.map(c=>c.high))}
- };
-}
-function renderEventFilters(){
- const box=$("#event-filters");if(!box)return;
- box.innerHTML=Object.entries(EVENT_TYPES).map(([k,v])=>'<button class="'+(state.eventType===k?"active":"")+'" data-event-type="'+k+'">'+v+'</button>').join("");
- box.querySelectorAll("[data-event-type]").forEach(b=>b.addEventListener("click",()=>{state.eventType=b.dataset.eventType;state.selectedEvent=null;renderEventFilters();renderEventDetail();state.chart?.draw()}));
-}
-function renderEventDetail(){
- const box=$("#event-detail");if(!box)return;
- if(!state.selectedEvent){box.innerHTML='<span class="muted">Selecione um evento no gráfico ou por categoria.</span>';return}
- const e=state.selectedEvent;
- box.innerHTML='<div class="event-title">'+e.title+'</div><div class="event-meta">'+new Date(e.date+"T00:00:00Z").toLocaleDateString("pt-BR")+' · '+EVENT_TYPES[e.type]+'</div><div><b>Contexto</b><br>'+e.why+'</div><div><b>Leitura estratégica</b><br>'+e.read+'</div>';
-}
-function onEventSelect(event){state.selectedEvent=event;renderEventDetail()}
-async function loadData(interval=state.interval){
- const loadId=++state.loadId;
- try{
-  status.textContent="CARREGANDO";
-  state.interval=interval;
-  const loaded=await loadOrPopulate({...DATASET,interval});
-  if(loadId!==state.loadId)return;
-  state.candles=normalizeCandles(loaded.candles);
-  if(!state.candles.length)throw new Error("dataset vazio");
-  state.interactionCleanup?.();
-  state.controlCleanup?.();
-  state.chart?.destroy?.();
-  const viewport=createViewport();
-  viewport.setDataBounds(bounds(state.candles));
-  const chart=createChart(canvas,{getCandles:()=>state.candles,getEvents:()=>EVENTS,getEventType:()=>state.eventType,getSelectedEvent:()=>state.selectedEvent,onEventSelect},viewport);
-  chart.setType(state.chartType);
-  viewport.setYScaleType(state.scaleType);
-  state.viewport=viewport;state.chart=chart;
-  const fitCount=Math.min(120,state.candles.length),shown=state.candles.slice(-fitCount);
-  viewport.fitX({min:shown[0].timestamp,max:shown.at(-1).timestamp});
-  viewport.fitY({min:Math.min(...shown.map(c=>c.low)),max:Math.max(...shown.map(c=>c.high))});
-  state.interactionCleanup=attachChartInteraction({canvas,viewport,draw:chart.draw});
-  document.querySelectorAll(".interval-btn").forEach(button=>button.classList.toggle("active",button.dataset.interval===state.interval));
-  state.controlCleanup=attachChartControls({
-   fitButton:$("#fit"),typeButton:$("#chart-type"),scaleButton:$("#scale-type"),
-   viewport,candles:state.candles,draw:chart.draw,
-   onTypeChange:type=>{state.chartType=type;chart.setType(type)},
-   onViewportChanged:()=>{state.scaleType=viewport.getYScaleType()},
-   onScaleChange:scale=>{state.scaleType=scale}
-  });
-  $("#chart-type").textContent=state.chartType==="line"?"LINE":"CANDLE";
-  $("#scale-type").textContent=state.scaleType==="logarithmic"?"LOG":"NORMAL";
-  chart.draw();
-  status.textContent="OK";
-  $("#source-label").textContent=(loaded.meta?.provider||"Yahoo")+" · "+({1h:"horário",1d:"diário",1w:"semanal",1M:"mensal"}[state.interval]||state.interval);
-  $("#data-label").textContent=state.candles.length+" candles";
- }catch(e){
-  if(loadId!==state.loadId)return;
-  status.textContent="ERRO";
-  $("#source-label").textContent=e.message;
-  console.error("[ORACULUM]",e);
- }
-}
-document.querySelectorAll(".interval-btn").forEach(button=>button.addEventListener("click",()=>loadData(button.dataset.interval)));
-renderEventFilters();
-renderEventDetail();
-loadData();
+const canvas=$("#chart"),ctx=canvas.getContext("2d");
+function num(v,n){const x=Number(v);if(!Number.isFinite(x))throw Error("Candle inválido: "+n);return x}
+function normalize(rows){if(!Array.isArray(rows)||!rows.length)throw Error("Nenhum candle recebido");const out=rows.map((r,i)=>{let t=num(r.timestamp??r.t??r.time??r.date,"timestamp");if(Math.abs(t)<1e12)t*=1000;const c={t,o:num(r.open??r.o,"open"),h:num(r.high??r.h,"high"),l:num(r.low??r.l,"low"),c:num(r.close??r.c,"close")};if(c.h<c.l||c.h<c.o||c.h<c.c||c.l>c.o||c.l>c.c)throw Error("OHLC inválido no índice "+i);return c});out.sort((a,b)=>a.t-b.t);for(let i=1;i<out.length;i++)if(out[i].t===out[i-1].t)throw Error("Timestamp duplicado");return out}
+async function getJson(path,options){const r=await fetch(API+path,{...options,cache:"no-store",headers:{Accept:"application/json"}});const text=await r.text();let j=null;try{j=text?JSON.parse(text):null}catch{throw Error("Data API retornou JSON inválido")}if(!r.ok)throw Error(j?.error||j?.message||("HTTP "+r.status));return j}
+async function findDataset(){const j=await getJson("/api/datasets");const list=Array.isArray(j)?j:j?.data;if(!Array.isArray(list))throw Error("Catálogo inválido");const d=list.find(x=>x?.provider===DATA.provider&&x?.symbol===DATA.symbol&&x?.interval===state.interval&&x?.kind===DATA.kind&&(x?.currency===DATA.currency));if(!d?.id)throw Error("Dataset não encontrado: "+DATA.provider+"/"+DATA.symbol+"/"+state.interval);return d}
+async function load(){const id=++state.loadId;$("#status").textContent="CARREGANDO";$("#source").textContent="consultando Data API...";try{const dataset=await findDataset();let j=await getJson("/api/datasets/"+encodeURIComponent(dataset.id));if(!j?.ok||!Array.isArray(j.data))throw Error("Contrato do dataset inválido");if(!j.data.length){j=await getJson("/api/datasets/"+encodeURIComponent(dataset.id)+"/refresh",{method:"POST"});if(!j?.ok||!Array.isArray(j.data))throw Error("Refresh retornou contrato inválido")}const rows=normalize(j.data);if(id!==state.loadId)return;state.rows=rows;state.start=Math.max(0,rows.length-120);state.end=rows.length-1;$("#status").textContent="OK";$("#source").textContent=(j.meta?.provider||dataset.provider)+" · "+state.interval;$("#count").textContent=rows.length+" candles";draw()}catch(e){if(id!==state.loadId)return;$("#status").textContent="ERRO";$("#source").textContent=e.message;console.error("[ORACULUM]",e)}}
+function fit(){if(!state.rows.length)return;state.start=0;state.end=state.rows.length-1;draw()}
+function visible(){return state.rows.slice(state.start,state.end+1)}
+function price(v){return v>=1000?v.toLocaleString("en-US",{maximumFractionDigits:0}):v.toLocaleString("en-US",{maximumFractionDigits:2})}
+function resize(){const r=canvas.getBoundingClientRect(),d=window.devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));draw()}
+function draw(){const rows=visible(),w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;const d=window.devicePixelRatio||1;ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);if(!rows.length)return;const p={l:10,r:58,t:10,b:24},pw=w-p.l-p.r,ph=h-p.t-p.b;const lo=Math.min(...rows.map(x=>x.l)),hi=Math.max(...rows.map(x=>x.h));const ymin=state.scale==="log"?Math.log(Math.max(lo,.000001)):lo,ymax=state.scale==="log"?Math.log(Math.max(hi,.000001)):hi,span=ymax-ymin||1;const yy=v=>{const q=state.scale==="log"?Math.log(Math.max(v,.000001)):v;return p.t+(ymax-q)/span*ph};for(let i=0;i<5;i++){const y=p.t+i*ph/4;ctx.strokeStyle="#252525";ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();const q=ymax-(ymax-ymin)*i/4;ctx.fillStyle="#666";ctx.font="10px system-ui";ctx.fillText(price(state.scale==="log"?Math.exp(q):q),w-p.r+7,y+3)}const step=pw/Math.max(rows.length,1),bw=Math.max(2,Math.min(10,step*.62));rows.forEach((c,i)=>{const x=p.l+(i/(Math.max(rows.length-1,1)))*pw;if(state.type==="line"){if(i===0){ctx.beginPath();ctx.strokeStyle="#dbe4ee";ctx.lineWidth=2}ctx.lineTo(x,yy(c.c));if(i===rows.length-1)ctx.stroke()}else{ctx.strokeStyle=c.c>=c.o?"#4ade80":"#f87171";ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(x,yy(c.h));ctx.lineTo(x,yy(c.l));ctx.stroke();ctx.fillRect(x-bw/2,Math.min(yy(c.o),yy(c.c)),bw,Math.max(1,Math.abs(yy(c.c)-yy(c.o))))}});const a=rows[0],b=rows[rows.length-1];$("#range").textContent=new Date(a.t).toLocaleDateString()+" → "+new Date(b.t).toLocaleDateString()}
+$("#fit").onclick=fit;$("#type").onclick=()=>{state.type=state.type==="candle"?"line":"candle";$("#type").textContent=state.type==="candle"?"CANDLE":"LINE";draw()};$("#scale").onclick=()=>{state.scale=state.scale==="linear"?"log":"linear";$("#scale").textContent=state.scale==="linear"?"NORMAL":"LOG";draw()};document.querySelectorAll("[data-interval]").forEach(b=>b.onclick=()=>{state.interval=b.dataset.interval;document.querySelectorAll("[data-interval]").forEach(x=>x.classList.toggle("active",x===b));load()});canvas.addEventListener("wheel",e=>{e.preventDefault();if(!state.rows.length)return;const n=state.end-state.start+1,next=Math.max(20,Math.min(state.rows.length,Math.round(n*(e.deltaY>0?1.12:.89))));const r=canvas.getBoundingClientRect(),q=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),a=state.start+q*(n-1);state.start=Math.round(a-q*(next-1));state.end=state.start+next-1;state.start=Math.max(0,state.start);state.end=Math.min(state.rows.length-1,state.end);draw()},{passive:false});let drag=null;canvas.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0)return;canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,start:state.start,end:state.end};canvas.style.cursor="grabbing"});canvas.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,shift=Math.round(dx/(canvas.clientWidth||1)*(drag.end-drag.start+1));state.start=Math.max(0,Math.min(state.rows.length-1,drag.start-shift));state.end=Math.max(state.start,Math.min(state.rows.length-1,drag.end-shift));draw()});canvas.addEventListener("pointerup",()=>{drag=null;canvas.style.cursor="grab"});canvas.addEventListener("pointercancel",()=>{drag=null;canvas.style.cursor="grab"});new ResizeObserver(resize).observe(canvas);resize();load();
