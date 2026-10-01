@@ -1,4 +1,5 @@
-const API_BASE="https://oraculum-data-api.4avalonuse.workers.dev";
+import { loadCandles } from "./data/client.js";
+
 const DATASET={provider:"binance-us",symbol:"BTCUSD",kind:"ohlcv",interval:"1d",currency:"USD"};
 const EVENTS=[
  {date:"2012-11-28",title:"Halving #1",type:"protocol",why:"Primeiro halving do Bitcoin.",read:"Redução programada da emissão; observar a mudança estrutural da oferta ao longo do ciclo."},
@@ -14,16 +15,17 @@ state.eventType="all";state.selectedEvent=null;
 async function loadData(){
   try{
     $("#status").textContent="CARREGANDO";
-    const u=new URL(API_BASE+"/candles");
-    Object.entries(DATASET).forEach(([k,v])=>u.searchParams.set(k,v));
-    const r=await fetch(u); if(!r.ok) throw Error("HTTP "+r.status);
-    const j=await r.json(),rows=Array.isArray(j)?j:(j.candles||j.data||[]);
-    state.candles=rows.map(normalize).filter(Boolean);
+    const loaded=await loadCandles(DATASET);
+    state.candles=loaded.candles.map(normalize).filter(Boolean);
     if(!state.candles.length) throw Error("dataset vazio");
-    fit(); $("#status").textContent="OK";
-    $("#source-label").textContent="Binance.US · diário";
+    fit();
+    $("#status").textContent="OK";
+    $("#source-label").textContent=(loaded.meta?.provider||"Binance.US")+" · diário";
     $("#data-label").textContent=state.candles.length+" candles";
-  }catch(e){$("#status").textContent="ERRO";$("#source-label").textContent=e.message}
+  }catch(e){
+    $("#status").textContent="ERRO";
+    $("#source-label").textContent=e.message;
+  }
 }
 function normalize(r){
   const t=Number(r.timestamp??r.time??r.date),o=Number(r.open),h=Number(r.high),l=Number(r.low),c=Number(r.close);
