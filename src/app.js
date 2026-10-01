@@ -1,9 +1,9 @@
-import { loadOrPopulate } from "./data/client.js";
-import { normalizeCandles } from "./data/normalize.js";
-import { createViewport } from "./chart/viewport.js";
-import { createChart } from "./chart/render.js";
-import { attachChartInteraction } from "./chart/interaction.js";
-import { attachChartControls } from "./chart/controls.js";
+import { loadOrPopulate } from "./data/client.js?v=20261001-3";
+import { normalizeCandles } from "./data/normalize.js?v=20261001-3";
+import { createViewport } from "./chart/viewport.js?v=20261001-3";
+import { createChart } from "./chart/render.js?v=20261001-3";
+import { attachChartInteraction } from "./chart/interaction.js?v=20261001-3";
+import { attachChartControls } from "./chart/controls.js?v=20261001-3";
 
 const DATASET={provider:"yahoo",symbol:"BTC-USD",kind:"ohlcv",interval:"1d",currency:"USD"};
 const EVENTS=[
