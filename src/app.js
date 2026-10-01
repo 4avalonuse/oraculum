@@ -15,7 +15,7 @@ const EVENTS=[
 const EVENT_TYPES={all:"Todos",protocol:"Protocolo",macro:"Macro",market:"Mercado",company:"Empresas"};
 const $=s=>document.querySelector(s);
 const canvas=$("#chart"),status=$("#status");
-const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null};
+const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d"};
 
 function bounds(candles){
  return {
@@ -35,12 +35,16 @@ function renderEventDetail(){
  box.innerHTML='<div class="event-title">'+e.title+'</div><div class="event-meta">'+new Date(e.date+"T00:00:00Z").toLocaleDateString("pt-BR")+' · '+EVENT_TYPES[e.type]+'</div><div><b>Contexto</b><br>'+e.why+'</div><div><b>Leitura estratégica</b><br>'+e.read+'</div>';
 }
 function onEventSelect(event){state.selectedEvent=event;renderEventDetail()}
-async function loadData(){
+async function loadData(interval=state.interval){
  try{
   status.textContent="CARREGANDO";
-  const loaded=await loadOrPopulate(DATASET);
+  state.interval=interval;
+  const loaded=await loadOrPopulate({...DATASET,interval});
   state.candles=normalizeCandles(loaded.candles);
   if(!state.candles.length)throw new Error("dataset vazio");
+  state.interactionCleanup?.();
+  state.controlCleanup?.();
+  state.chart?.destroy?.();
   const viewport=createViewport();
   viewport.setDataBounds(bounds(state.candles));
   const chart=createChart(canvas,{getCandles:()=>state.candles,getEvents:()=>EVENTS,getEventType:()=>state.eventType,getSelectedEvent:()=>state.selectedEvent,onEventSelect},viewport);
@@ -49,6 +53,7 @@ async function loadData(){
   viewport.fitX({min:shown[0].timestamp,max:shown.at(-1).timestamp});
   viewport.fitY({min:Math.min(...shown.map(c=>c.low)),max:Math.max(...shown.map(c=>c.high))});
   state.interactionCleanup=attachChartInteraction({canvas,viewport,draw:chart.draw});
+  document.querySelectorAll(".interval-btn").forEach(button=>button.classList.toggle("active",button.dataset.interval===state.interval));
   state.controlCleanup=attachChartControls({
    fitButton:$("#fit"),typeButton:$("#chart-type"),scaleButton:$("#scale-type"),
    viewport,candles:state.candles,draw:chart.draw,
@@ -56,7 +61,7 @@ async function loadData(){
   });
   chart.draw();
   status.textContent="OK";
-  $("#source-label").textContent=(loaded.meta?.provider||"Yahoo")+" · diário";
+  $("#source-label").textContent=(loaded.meta?.provider||"Yahoo")+" · "+({1h:"horário",1d:"diário",1w:"semanal",1M:"mensal"}[state.interval]||state.interval);
   $("#data-label").textContent=state.candles.length+" candles";
  }catch(e){
   status.textContent="ERRO";
@@ -64,6 +69,7 @@ async function loadData(){
   console.error("[ORACULUM]",e);
  }
 }
+document.querySelectorAll(".interval-btn").forEach(button=>button.addEventListener("click",()=>loadData(button.dataset.interval)));
 renderEventFilters();
 renderEventDetail();
 loadData();
