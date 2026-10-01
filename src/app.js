@@ -1,4 +1,4 @@
-import { loadCandles } from "./data/client.js";
+import { loadOrPopulate } from "./data/client.js";
 
 const DATASET={provider:"binance-us",symbol:"BTCUSD",kind:"ohlcv",interval:"1d",currency:"USD"};
 const EVENTS=[
@@ -15,7 +15,7 @@ state.eventType="all";state.selectedEvent=null;
 async function loadData(){
   try{
     $("#status").textContent="CARREGANDO";
-    const loaded=await loadCandles(DATASET);
+    const loaded=await loadOrPopulate(DATASET);
     state.candles=loaded.candles.map(normalize).filter(Boolean);
     if(!state.candles.length) throw Error("dataset vazio");
     fit();
