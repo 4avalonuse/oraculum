@@ -5,7 +5,6 @@ export function attachChartControls({fitButton,typeButton,scaleButton,viewport,c
  const down=()=>{clearTimeout(timer);longPressed=false;timer=setTimeout(()=>{longPressed=true;fitAll()},550)};
  const up=()=>{clearTimeout(timer);timer=null;if(!longPressed)fitVisible();longPressed=false};
  fitButton?.addEventListener("pointerdown",down);fitButton?.addEventListener("pointerup",up);fitButton?.addEventListener("pointercancel",up);
- typeButton?.addEventListener("click",()=>{const next=typeButton.textContent==="CANDLE"?"line":"candle";typeButton.textContent=next==="line"?"LINE":"CANDLE";onTypeChange(next);draw()});
  const onType=()=>{const next=typeButton.textContent==="CANDLE"?"line":"candle";typeButton.textContent=next==="line"?"LINE":"CANDLE";onTypeChange(next);draw()};
  const onScale=()=>{const next=viewport.getYScaleType()==="logarithmic"?"linear":"logarithmic";if(!viewport.setYScaleType(next))return;scaleButton.textContent=next==="linear"?"NORMAL":"LOG";draw()};
  typeButton?.addEventListener("click",onType);scaleButton?.addEventListener("click",onScale);
