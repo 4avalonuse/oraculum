@@ -62,7 +62,8 @@ async function loadData(interval=state.interval){
    fitButton:$("#fit"),typeButton:$("#chart-type"),scaleButton:$("#scale-type"),
    viewport,candles:state.candles,draw:chart.draw,
    onTypeChange:type=>{state.chartType=type;chart.setType(type)},
-   onViewportChanged:()=>{state.scaleType=viewport.getYScaleType()}
+   onViewportChanged:()=>{state.scaleType=viewport.getYScaleType()},
+   onScaleChange:scale=>{state.scaleType=scale}
   });
   $("#chart-type").textContent=state.chartType==="line"?"LINE":"CANDLE";
   $("#scale-type").textContent=state.scaleType==="logarithmic"?"LOG":"NORMAL";
