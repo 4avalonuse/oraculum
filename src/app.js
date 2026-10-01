@@ -15,7 +15,7 @@ const EVENTS=[
 const EVENT_TYPES={all:"Todos",protocol:"Protocolo",macro:"Macro",market:"Mercado",company:"Empresas"};
 const $=s=>document.querySelector(s);
 const canvas=$("#chart"),status=$("#status");
-const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d"};
+const state={candles:[],eventType:"all",selectedEvent:null,viewport:null,chart:null,interactionCleanup:null,controlCleanup:null,interval:"1d",loadId:0};
 
 function bounds(candles){
  return {
@@ -36,10 +36,12 @@ function renderEventDetail(){
 }
 function onEventSelect(event){state.selectedEvent=event;renderEventDetail()}
 async function loadData(interval=state.interval){
+ const loadId=++state.loadId;
  try{
   status.textContent="CARREGANDO";
   state.interval=interval;
   const loaded=await loadOrPopulate({...DATASET,interval});
+  if(loadId!==state.loadId)return;
   state.candles=normalizeCandles(loaded.candles);
   if(!state.candles.length)throw new Error("dataset vazio");
   state.interactionCleanup?.();
@@ -64,6 +66,7 @@ async function loadData(interval=state.interval){
   $("#source-label").textContent=(loaded.meta?.provider||"Yahoo")+" · "+({1h:"horário",1d:"diário",1w:"semanal",1M:"mensal"}[state.interval]||state.interval);
   $("#data-label").textContent=state.candles.length+" candles";
  }catch(e){
+  if(loadId!==state.loadId)return;
   status.textContent="ERRO";
   $("#source-label").textContent=e.message;
   console.error("[ORACULUM]",e);
