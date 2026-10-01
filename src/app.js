@@ -1,6 +1,6 @@
 import { loadOrPopulate } from "./data/client.js";
 
-const DATASET={provider:"binance-us",symbol:"BTCUSD",kind:"ohlcv",interval:"1d",currency:"USD"};
+const DATASET={provider:"yahoo",symbol:"BTC-USD",kind:"ohlcv",interval:"1d",currency:"USD"};
 const EVENTS=[
  {date:"2012-11-28",title:"Halving #1",type:"protocol",why:"Primeiro halving do Bitcoin.",read:"Redução programada da emissão; observar a mudança estrutural da oferta ao longo do ciclo."},
  {date:"2016-07-09",title:"Halving #2",type:"protocol",why:"Segundo halving do Bitcoin.",read:"Novo corte na emissão; comparar comportamento do preço antes e depois do evento."},
