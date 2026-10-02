@@ -86,3 +86,15 @@ export async function refreshCandles(options) {
 
   return unpack(payload, dataset);
 }
+
+
+export function createDataClient(apiBase = API_BASE) {
+  const base = String(apiBase).replace(/\\\/$/, '');
+  const scopedRequest = (path, options = {}) => request(path, options);
+  // Keep the public client contract explicit while reusing the module's API implementation.
+  // The current request helper uses API_BASE, so temporarily route the default contract only.
+  if (base !== API_BASE) {
+    throw new Error('Data client: API base customizada não suportada neste núcleo');
+  }
+  return { loadCandles, loadOrPopulate, refreshCandles };
+}
