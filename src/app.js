@@ -11,6 +11,7 @@ const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
 let timelineEvents=[];
 let activeEventCategory='ALL';
+let selectedEventIds=new Set();
 
 const EVENT_COLORS={
   Crypto:'#d7d7d7',
@@ -36,8 +37,8 @@ async function loadEvents(){
     if(!response.ok)throw new Error('Eventos: HTTP '+response.status);
     const payload=await response.json();
     timelineEvents=(Array.isArray(payload.data)?payload.data:[])
-      .sort((a,b)=>a.timestamp-b.timestamp)
-      .slice(-2);
+      .sort((a,b)=>a.timestamp-b.timestamp);
+    selectedEventIds=new Set(timelineEvents.map(event=>String(event.id)));
     renderEventMenu();
   }catch(error){
     console.error('[ORACULUM TIMELINE]',error);
@@ -56,7 +57,7 @@ function renderEventMenu(){
 
   const head=document.createElement('div');
   head.className='event-menu-head';
-  head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+visibleEvents.length+'</span>';
+  head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+selectedEventIds.size+'/'+timelineEvents.length+'</span>';
   menu.appendChild(head);
 
   const filters=document.createElement('div');
@@ -81,14 +82,16 @@ function renderEventMenu(){
   visibleEvents.forEach(event=>{
     const category=eventCategory(event);
     const row=document.createElement('button');
-    row.className='event-row';
+    row.className='event-row'+(selectedEventIds.has(String(event.id))?' selected':'');
     row.style.setProperty('--event-color',eventColor(category));
-    row.innerHTML='<i></i><span class="event-row-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span><strong>'+String(event.title||'Evento')+'</strong>';
+    row.innerHTML='<i></i><span class="event-row-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span><strong>'+String(event.title||'Evento')+'</strong><span class="event-row-state">'+(selectedEventIds.has(String(event.id))?'ON':'OFF')+'</span>';
     row.title=event.description||event.title||'Evento';
     row.addEventListener('click',()=>{
-      activeEventCategory=category;
+      const id=String(event.id);
+      if(selectedEventIds.has(id))selectedEventIds.delete(id);
+      else selectedEventIds.add(id);
       renderEventMenu();
-      document.querySelectorAll('.timeline-event').forEach(marker=>marker.classList.remove('selected'));
+      if(active?.candles&&active?.viewport)renderTimeline(active.candles,active.viewport);
     });
     list.appendChild(row);
   });
@@ -100,7 +103,7 @@ function renderTimeline(candles,viewport){
   if(!host||!lines||!candles.length)return;
   const state=viewport.getState();
   const min=state.x.min,max=state.x.max,span=max-min||1;
-  const events=timelineEvents.filter(e=>e.timestamp>=min&&e.timestamp<=max && (activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
+  const events=timelineEvents.filter(e=>selectedEventIds.has(String(e.id)) && e.timestamp>=min&&e.timestamp<=max && (activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
   host.innerHTML='';
   lines.innerHTML='';
   if(!events.length)return;
@@ -159,7 +162,7 @@ async function load(interval='1d'){
       viewport,candles,draw:chart.draw,onTypeChange:chart.setChartType
     });
 
-    active={destroy(){
+    active={candles,viewport,destroy(){
       detachControls?.();detachInteraction?.();chart.destroy();
     }};
 
