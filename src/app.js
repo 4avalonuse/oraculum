@@ -23,27 +23,30 @@ async function loadEvents(){
   }
 }
 
-function renderTimeline(candles){
-  const host=$('#timeline');
-  if(!host||!candles.length)return;
-  const min=candles[0].timestamp,max=candles.at(-1).timestamp,span=max-min||1;
+function renderTimeline(candles,viewport){
+  const host=$('#timeline'),lines=$('#timeline-lines');
+  if(!host||!lines||!candles.length)return;
+  const state=viewport.getState();
+  const min=state.x.min,max=state.x.max,span=max-min||1;
   const events=timelineEvents.filter(e=>e.timestamp>=min&&e.timestamp<=max);
-  host.innerHTML='<div class="timeline-axis"></div>';
-  if(!events.length){
-    host.insertAdjacentHTML('beforeend','<div class="timeline-empty">Nenhum evento no período visível.</div>');
-    return;
-  }
+  host.innerHTML='';
+  lines.innerHTML='';
+  if(!events.length)return;
+  const plotLeft=10,plotRight=58;
   events.forEach(event=>{
-    const pct=((event.timestamp-min)/span)*100;
-    const el=document.createElement('div');
-    el.className='timeline-event';
-    el.style.left=pct+'%';
-    el.title=event.description||event.title;
-    el.innerHTML='<div class="timeline-event-label">'+
-      '<span>'+String(event.title||'Evento').replaceAll('<','&lt;')+'</span>'+
-      '<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>'+
-      '</div>';
-    host.appendChild(el);
+    const ratio=(event.timestamp-min)/span;
+    const pct=(plotLeft+(100-(plotLeft+plotRight)/1)*ratio);
+    const line=document.createElement('div');
+    line.className='timeline-line';
+    line.style.left='calc('+plotLeft+'px + '+ratio+' * (100% - '+(plotLeft+plotRight)+'px))';
+    line.title=event.description||event.title||'Evento';
+    lines.appendChild(line);
+    const marker=document.createElement('div');
+    marker.className='timeline-event';
+    marker.style.left='calc('+plotLeft+'px + '+ratio+' * (100% - '+(plotLeft+plotRight)+'px))';
+    marker.title=(event.title||'Evento')+(event.description?' — '+event.description:'');
+    marker.innerHTML='<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>';
+    host.appendChild(marker);
   });
 }
 
@@ -78,7 +81,7 @@ async function load(interval='1d'){
     viewport.fitY(visible.y);
 
     const chart=createChart(host,candles,viewport);
-    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw});
+    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,onViewportChanged:()=>renderTimeline(candles,viewport)});
     const detachControls=attachChartControls({
       fitButton:$('#fit-toggle'),typeButton:$('#chart-type-toggle'),scaleButton:$('#scale-toggle'),
       viewport,candles,draw:chart.draw,onTypeChange:chart.setChartType
@@ -92,7 +95,7 @@ async function load(interval='1d'){
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
-    renderTimeline(candles);
+    renderTimeline(candles,viewport);
   }catch(error){
     console.error('[ORACULUM]',error);
     $('#status').textContent='ERRO';
