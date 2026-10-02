@@ -19,27 +19,20 @@
       <div><strong>BTC / USD</strong><small id="source">Data API</small></div>
       <a class="expand" href="https://4avalonuse.github.io/Ochama/" target="_blank" rel="noopener">AMPLIAR ↗</a>
     </div>
-    <div id="chart" class="chart-wrap">
-      <div class="chart-controls">
+    <div class="chart-stack">
+      <div id="chart" class="chart-wrap">
+        <div class="chart-controls">
         <button data-interval="1h">H</button><button data-interval="1d" class="active">D</button>
         <button data-interval="1w">W</button><button data-interval="1M">M</button>
         <button id="fit-toggle">FIT</button><button id="chart-type-toggle">CANDLE</button><button id="scale-toggle">NORMAL</button>
+        </div>
       </div>
+      <div id="timeline" class="timeline" aria-label="Timeline de eventos"></div>
+      <div id="timeline-lines" class="timeline-lines" aria-hidden="true"></div>
     </div>
     <div class="chart-foot"><span id="range-label">—</span><span id="count">—</span></div>
   </section>
-  <section class="timeline-card" aria-label="Timeline de eventos">
-    <div class="timeline-head">
-      <div>
-        <div class="section-kicker">TIMELINE</div>
-        <strong>CONTEXTO TEMPORAL</strong>
-      </div>
-      <div class="timeline-legend"><span class="legend-dot"></span> EVENTOS</div>
-    </div>
-    <div id="timeline" class="timeline">
-      <div class="timeline-empty">Carregando eventos…</div>
-    </div>
-  </section>
+
 </section>
 </main>
 <script type="module" src="./src/app.js"></script>
