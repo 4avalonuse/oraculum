@@ -32,18 +32,18 @@ function renderTimeline(candles,viewport){
   host.innerHTML='';
   lines.innerHTML='';
   if(!events.length)return;
-  const plotLeft=10,plotRight=58;
+  const plotLeft=10,plotRight=58,plotWidth=Math.max(1,host.clientWidth-plotLeft-plotRight);
   events.forEach(event=>{
-    const ratio=(event.timestamp-min)/span;
-    const pct=(plotLeft+(100-(plotLeft+plotRight)/1)*ratio);
+    const ratio=Math.max(0,Math.min(1,(event.timestamp-min)/span));
+    const x=plotLeft+ratio*plotWidth;
     const line=document.createElement('div');
     line.className='timeline-line';
-    line.style.left='calc('+plotLeft+'px + '+ratio+' * (100% - '+(plotLeft+plotRight)+'px))';
+    line.style.left=x+'px';
     line.title=event.description||event.title||'Evento';
     lines.appendChild(line);
     const marker=document.createElement('div');
     marker.className='timeline-event';
-    marker.style.left='calc('+plotLeft+'px + '+ratio+' * (100% - '+(plotLeft+plotRight)+'px))';
+    marker.style.left=x+'px';
     marker.title=(event.title||'Evento')+(event.description?' — '+event.description:'');
     marker.innerHTML='<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>';
     host.appendChild(marker);
