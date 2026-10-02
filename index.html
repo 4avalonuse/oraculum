@@ -28,7 +28,18 @@
     </div>
     <div class="chart-foot"><span id="range-label">—</span><span id="count">—</span></div>
   </section>
-  <section class="timeline-placeholder"><div class="section-kicker">TIMELINE</div><div>Eventos alinhados ao eixo temporal entrarão aqui.</div></section>
+  <section class="timeline-card" aria-label="Timeline de eventos">
+    <div class="timeline-head">
+      <div>
+        <div class="section-kicker">TIMELINE</div>
+        <strong>CONTEXTO TEMPORAL</strong>
+      </div>
+      <div class="timeline-legend"><span class="legend-dot"></span> EVENTOS</div>
+    </div>
+    <div id="timeline" class="timeline">
+      <div class="timeline-empty">Carregando eventos…</div>
+    </div>
+  </section>
 </section>
 </main>
 <script type="module" src="./src/app.js"></script>
