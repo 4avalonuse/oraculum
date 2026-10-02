@@ -95,6 +95,25 @@ function renderEventMenu(){
   menu.appendChild(list);
 }
 
+function focusEvent(event,candles,viewport){
+  if(!event||!candles.length||!viewport)return;
+  const state=viewport.getState(), bounds=viewport.getBounds();
+  const step=candles[1]?.timestamp-candles[0]?.timestamp||86400000;
+  const targetSpan=Math.max((state.x.max-state.x.min)*0.4,step*30);
+  const half=targetSpan/2;
+  const xMin=Math.max(bounds.x.min,event.timestamp-half);
+  const xMax=Math.min(bounds.x.max,event.timestamp+half);
+  const nearby=candles.filter(c=>c.timestamp>=xMin&&c.timestamp<=xMax);
+  if(!nearby.length)return;
+  const low=Math.min(...nearby.map(c=>c.low)),high=Math.max(...nearby.map(c=>c.high));
+  const pad=(high-low)*0.12||Math.max(Math.abs(high)*0.01,0.000001);
+  viewport.setState({
+    x:{min:xMin,max:xMax},
+    y:{min:Math.max(bounds.y.min,low-pad),max:Math.min(bounds.y.max,high+pad)},
+    yScaleType:state.yScaleType
+  });
+}
+
 function renderTimeline(candles,viewport){
   const host=$('#timeline'),lines=$('#timeline-lines');
   if(!host||!lines||!candles.length)return;
@@ -117,7 +136,7 @@ function renderTimeline(candles,viewport){
     marker.className='timeline-event';
     marker.style.left=x+'px';
     marker.title=(event.title||'Evento')+(event.description?' — '+event.description:'');
-    marker.innerHTML='<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>';
+    marker.innerHTML='<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>';\n    marker.addEventListener('click',()=>focusEvent(event,candles,viewport));
     host.appendChild(marker);
   });
 }
