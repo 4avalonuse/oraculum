@@ -10,17 +10,89 @@ const dataClient=createDataClient(API_BASE);
 const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
 let timelineEvents=[];
+let activeEventCategory='ALL';
+
+const EVENT_COLORS={
+  Crypto:'#d7d7d7',
+  Macro:'#d5a84b',
+  Regulation:'#6ea8dc',
+  Liquidity:'#9b7bd8',
+  Market:'#7fbf8f'
+};
+
+function eventCategory(event){
+  return String(event?.category||'Other').trim()||'Other';
+}
+function eventColor(category){
+  if(EVENT_COLORS[category])return EVENT_COLORS[category];
+  const palette=['#d7d7d7','#d5a84b','#6ea8dc','#9b7bd8','#7fbf8f','#d27c9c'];
+  let hash=0; for(const char of category)hash=(hash*31+char.charCodeAt(0))>>>0;
+  return palette[hash%palette.length];
+}
 
 async function loadEvents(){
   try{
     const response=await fetch(API_BASE+'/api/events');
     if(!response.ok)throw new Error('Eventos: HTTP '+response.status);
     const payload=await response.json();
-    timelineEvents=Array.isArray(payload.data)?payload.data:[];
+    timelineEvents=(Array.isArray(payload.data)?payload.data:[])
+      .sort((a,b)=>a.timestamp-b.timestamp)
+      .slice(-2);
+    renderEventMenu();
   }catch(error){
     console.error('[ORACULUM TIMELINE]',error);
     timelineEvents=[];
   }
+}
+
+function renderEventMenu(){
+  const menu=$('#event-menu');
+  if(!menu)return;
+  const categories=[...new Set(timelineEvents.map(eventCategory))];
+  const visibleEvents=activeEventCategory==='ALL'
+    ? timelineEvents
+    : timelineEvents.filter(event=>eventCategory(event)===activeEventCategory);
+  menu.innerHTML='';
+
+  const head=document.createElement('div');
+  head.className='event-menu-head';
+  head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+visibleEvents.length+'</span>';
+  menu.appendChild(head);
+
+  const filters=document.createElement('div');
+  filters.className='event-menu-filters';
+  const allButton=document.createElement('button');
+  allButton.className='event-filter'+(activeEventCategory==='ALL'?' active':'');
+  allButton.innerHTML='<i></i>TODOS';
+  allButton.addEventListener('click',()=>{activeEventCategory='ALL';renderEventMenu();});
+  filters.appendChild(allButton);
+  categories.forEach(category=>{
+    const button=document.createElement('button');
+    button.className='event-filter'+(activeEventCategory===category?' active':'');
+    button.style.setProperty('--event-color',eventColor(category));
+    button.innerHTML='<i></i>'+category.toUpperCase();
+    button.addEventListener('click',()=>{activeEventCategory=category;renderEventMenu();});
+    filters.appendChild(button);
+  });
+  menu.appendChild(filters);
+
+  const list=document.createElement('div');
+  list.className='event-menu-list';
+  visibleEvents.forEach(event=>{
+    const category=eventCategory(event);
+    const row=document.createElement('button');
+    row.className='event-row';
+    row.style.setProperty('--event-color',eventColor(category));
+    row.innerHTML='<i></i><span class="event-row-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span><strong>'+String(event.title||'Evento')+'</strong>';
+    row.title=event.description||event.title||'Evento';
+    row.addEventListener('click',()=>{
+      activeEventCategory=category;
+      renderEventMenu();
+      document.querySelectorAll('.timeline-event').forEach(marker=>marker.classList.remove('selected'));
+    });
+    list.appendChild(row);
+  });
+  menu.appendChild(list);
 }
 
 function renderTimeline(candles,viewport){
@@ -28,7 +100,7 @@ function renderTimeline(candles,viewport){
   if(!host||!lines||!candles.length)return;
   const state=viewport.getState();
   const min=state.x.min,max=state.x.max,span=max-min||1;
-  const events=timelineEvents.filter(e=>e.timestamp>=min&&e.timestamp<=max);
+  const events=timelineEvents.filter(e=>e.timestamp>=min&&e.timestamp<=max && (activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
   host.innerHTML='';
   lines.innerHTML='';
   if(!events.length)return;
