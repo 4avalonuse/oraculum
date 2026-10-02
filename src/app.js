@@ -9,6 +9,43 @@ const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
 const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
+let timelineEvents=[];
+
+async function loadEvents(){
+  try{
+    const response=await fetch(API_BASE+'/api/events');
+    if(!response.ok)throw new Error('Eventos: HTTP '+response.status);
+    const payload=await response.json();
+    timelineEvents=Array.isArray(payload.data)?payload.data:[];
+  }catch(error){
+    console.error('[ORACULUM TIMELINE]',error);
+    timelineEvents=[];
+  }
+}
+
+function renderTimeline(candles){
+  const host=$('#timeline');
+  if(!host||!candles.length)return;
+  const min=candles[0].timestamp,max=candles.at(-1).timestamp,span=max-min||1;
+  const events=timelineEvents.filter(e=>e.timestamp>=min&&e.timestamp<=max);
+  host.innerHTML='<div class="timeline-axis"></div>';
+  if(!events.length){
+    host.insertAdjacentHTML('beforeend','<div class="timeline-empty">Nenhum evento no período visível.</div>');
+    return;
+  }
+  events.forEach(event=>{
+    const pct=((event.timestamp-min)/span)*100;
+    const el=document.createElement('div');
+    el.className='timeline-event';
+    el.style.left=pct+'%';
+    el.title=event.description||event.title;
+    el.innerHTML='<div class="timeline-event-label">'+
+      '<span>'+String(event.title||'Evento').replaceAll('<','&lt;')+'</span>'+
+      '<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>'+
+      '</div>';
+    host.appendChild(el);
+  });
+}
 
 const $=s=>document.querySelector(s);
 
@@ -55,6 +92,7 @@ async function load(interval='1d'){
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
+    renderTimeline(candles);
   }catch(error){
     console.error('[ORACULUM]',error);
     $('#status').textContent='ERRO';
@@ -71,4 +109,5 @@ document.querySelectorAll('[data-interval]').forEach(button=>{
   });
 });
 
+loadEvents();
 load('1d');
