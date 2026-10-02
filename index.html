@@ -36,7 +36,27 @@
     <div class="chart-foot"><span id="range-label">—</span><span id="count">—</span></div>
   </section>
 
-</section>
+    <section class="analysis-card" id="asset-analysis">
+      <div class="analysis-head">
+        <div><strong>ANÁLISE DE ATIVOS</strong><small>BTC como ativo principal</small></div>
+        <span id="analysis-status">AGUARDANDO</span>
+      </div>
+      <div class="asset-picks">
+        <label class="asset-pick primary"><input type="checkbox" checked disabled><span>BTC</span><small>PRINCIPAL</small></label>
+        <label class="asset-pick"><input id="sol-select" type="checkbox"><span>SOL</span><small>COMPARAR</small></label>
+      </div>
+      <div id="comparison-panel" class="comparison-panel is-hidden">
+        <div class="comparison-head">
+          <div><strong>BTC × SOL</strong><small>Base 100 · retornos relativos · escala logarítmica</small></div>
+          <span id="comparison-period">—</span>
+        </div>
+        <div id="comparison-chart" class="comparison-chart" aria-label="Comparação normalizada BTC e SOL"></div>
+        <div class="comparison-legend"><span><i class="legend-btc"></i>BTC</span><span><i class="legend-sol"></i>SOL</span><span class="comparison-note">Preços nominais permanecem disponíveis na análise completa.</span></div>
+      </div>
+      <div id="analysis-results" class="analysis-results is-hidden"></div>
+      <button id="full-analysis" class="full-analysis is-hidden">ANÁLISE COMPLETA ↗</button>
+    </section>
+  </section>
 </main>
 <script type="module" src="./src/app.js"></script>
 </body>
