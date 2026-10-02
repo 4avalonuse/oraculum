@@ -22,8 +22,10 @@
     <div class="chart-stack">
       <div id="chart" class="chart-wrap">
         <div class="chart-controls">
-        <button data-interval="1h">H</button><button data-interval="1d" class="active">D</button>
-        <button data-interval="1w">W</button><button data-interval="1M">M</button>
+        <div class="interval-control"><button id="interval-toggle">D</button><div id="interval-menu" class="interval-menu">
+          <button data-interval="1h">H</button><button data-interval="1d" class="active">D</button><button data-interval="1w">W</button><button data-interval="1M">M</button>
+        </div></div>
+        <button id="refresh-toggle" title="Atualizar dados">↻</button>
         <button id="fit-toggle">FIT</button><button id="chart-type-toggle">CANDLE</button><button id="scale-toggle">NORMAL</button>
         </div>
       </div>

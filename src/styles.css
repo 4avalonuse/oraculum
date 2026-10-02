@@ -53,3 +53,10 @@ button{padding:9px 10px;border:1px solid #282828;border-radius:5px;background:#1
   .event-menu-list{grid-template-columns:1fr}
   .event-row{padding:7px}
 }
+
+.interval-control{position:relative}
+.interval-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:5;gap:3px;padding:4px;border:1px solid #282828;border-radius:5px;background:#101010}
+.interval-menu.open{display:flex}
+.interval-menu button{min-width:28px}
+#refresh-toggle{min-width:32px;font-size:15px;line-height:1}
+#refresh-toggle.is-loading{opacity:.45;pointer-events:none}
