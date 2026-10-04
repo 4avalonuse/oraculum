@@ -18,18 +18,30 @@ function eventColor(category){
   return palette[hash%palette.length];
 }
 
-export function attachTimeline({dataClient,getActive}){
+export function attachTimeline({dataClient,getActive,getActiveSymbol}){
   const $=s=>document.querySelector(s);
   let timelineEvents=[];
   let activeEventCategory='ALL';
   let selectedEventIds=new Set();
+
+  function eventAppliesToAsset(event,symbol){
+    const ids=Array.isArray(event?.assetIds)?event.assetIds:[];
+    if(event?.scope==='global'||event?.scope==='market')return true;
+    if(!ids.length)return false;
+    const assetId=String(symbol||'').toLowerCase().replace(/-usd$/,'-usd');
+    return ids.some(id=>String(id).toLowerCase()===assetId || String(id).toLowerCase()===String(symbol||'').toLowerCase());
+  }
+
+  function relevantEvents(){
+    return timelineEvents.filter(event=>eventAppliesToAsset(event,getActiveSymbol?.()));
+  }
 
   function renderTimeline(candles,viewport){
     const host=$('#timeline'),lines=$('#timeline-lines');
     if(!host||!lines||!candles.length)return;
     const state=viewport.getState();
     const min=state.x.min,max=state.x.max,span=max-min||1;
-    const events=timelineEvents.filter(e=>selectedEventIds.has(String(e.id))&&e.timestamp>=min&&e.timestamp<=max&&(activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
+    const events=relevantEvents().filter(e=>selectedEventIds.has(String(e.id))&&e.timestamp>=min&&e.timestamp<=max&&(activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
     host.innerHTML='';
     lines.innerHTML='';
     if(!events.length)return;
@@ -54,12 +66,14 @@ export function attachTimeline({dataClient,getActive}){
   function renderEventMenu(){
     const menu=$('#event-menu');
     if(!menu)return;
-    const categories=[...new Set(timelineEvents.map(eventCategory))];
-    const visibleEvents=activeEventCategory==='ALL'?timelineEvents:timelineEvents.filter(event=>eventCategory(event)===activeEventCategory);
+    const scopedEvents=relevantEvents();
+    const categories=[...new Set(scopedEvents.map(eventCategory))];
+    const visibleEvents=activeEventCategory==='ALL'?scopedEvents:scopedEvents.filter(event=>eventCategory(event)===activeEventCategory);
     menu.innerHTML='';
     const head=document.createElement('div');
     head.className='event-menu-head';
-    head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+selectedEventIds.size+'/'+timelineEvents.length+'</span>';
+    const selectedVisible=[...selectedEventIds].filter(id=>scopedEvents.some(event=>String(event.id)===id)).length;
+    head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+selectedVisible+'/'+scopedEvents.length+'</span>';
     menu.appendChild(head);
     const filters=document.createElement('div');
     filters.className='event-menu-filters';
@@ -110,5 +124,5 @@ export function attachTimeline({dataClient,getActive}){
   }
 
   loadEvents();
-  return {renderTimeline,loadEvents,getState:()=>({events:[...timelineEvents],category:activeEventCategory,selectedIds:new Set(selectedEventIds)})};
+  return {renderTimeline,loadEvents,refreshMenu:renderEventMenu,getState:()=>({events:[...timelineEvents],category:activeEventCategory,selectedIds:new Set(selectedEventIds)})};
 }
