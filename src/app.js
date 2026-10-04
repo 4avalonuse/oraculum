@@ -6,7 +6,7 @@ import { attachChartInteraction } from './chart/interaction.js';
 import { attachChartControls } from './chart/controls.js';
 import { attachComparisonAnalysis } from './analysis/comparison.js';
 import { attachTimeline } from './events/timeline.js';
-import { getAsset,DEFAULT_ASSET } from './data/assets.js';
+import { getAsset,DEFAULT_ASSET,ASSETS } from './data/assets.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
@@ -114,5 +114,7 @@ attachComparisonAnalysis({
   dataClient,
   normalizeCandles,
   getCandles:()=>active?.candles||[],
-  getInterval:()=>activeInterval
+  getInterval:()=>activeInterval,
+  getActiveSymbol:()=>activeSymbol,
+  assets:ASSETS
 });
