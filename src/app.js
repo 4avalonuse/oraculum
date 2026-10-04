@@ -55,6 +55,7 @@ async function load(interval='1d'){
     }};
 
     $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
+    timeline.refreshMenu?.();
     $('#source').textContent=(loaded.meta?.provider||getAsset(activeSymbol).provider)+' · '+(intervals[interval]||interval);
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
@@ -107,7 +108,7 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
   }
 });
 
-const timeline=attachTimeline({dataClient,getActive:()=>active});
+const timeline=attachTimeline({dataClient,getActive:()=>active,getActiveSymbol:()=>activeSymbol});
 load('1d');
 
 attachComparisonAnalysis({
