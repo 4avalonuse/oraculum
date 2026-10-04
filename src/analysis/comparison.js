@@ -18,7 +18,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const legend=$('#comparison-legend');if(legend)legend.innerHTML=series.map((s,i)=>'<span><i class="legend-'+i+'"></i>'+s.symbol+'</span>').join('');
  };
  const render=(result,series)=>{
-   state.result=result;state.selected=series.map(x=>x.key);
+   state.result=result;state.selected=series.map(x=>x.key);$('#comparison-panel').classList.remove('is-hidden');
    $('#analysis-status').textContent='CONCLUÍDA';
    $('#comparison-period').textContent=new Date(result.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(result.rowsEnd).toLocaleDateString('pt-BR')+' · '+result.observations+' observações';
    renderChart(state.rows,series);
@@ -30,7 +30,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
  async function run(){
    const activeSymbol=getActiveSymbol(),checked=[...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value),symbols=[activeSymbol,...checked.filter(x=>x!==activeSymbol)];
-   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');
+   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#comparison-panel').classList.add('is-hidden');
    try{
      const interval=getInterval()||'1d';
      const series=[];
@@ -51,7 +51,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    modal.innerHTML='<div class="analysis-modal-backdrop"></div><section class="analysis-modal-panel" role="dialog" aria-modal="true"><header><div><strong>ANÁLISE COMPLETA</strong><small>'+r.observations+' observações alinhadas · '+r.interval+'</small></div><button class="analysis-close" aria-label="Fechar">×</button></header><div class="analysis-modal-body"><section><h3>PERFORMANCE E RISCO</h3><table><thead><tr><th>Ativo</th><th>Retorno</th><th>CAGR</th><th>Vol.</th><th>DD</th><th>Sharpe</th><th>Win rate</th></tr></thead><tbody>'+rows+'</tbody></table></section><section><h3>RELAÇÕES ESTATÍSTICAS</h3><table><thead><tr><th>Ref.</th><th>Alvo</th><th>Corr.</th><th>Beta</th><th>R²</th><th>Lead/Lag</th></tr></thead><tbody>'+rel+'</tbody></table></section><section><h3>DIAGNÓSTICOS</h3><div class="analysis-diagnostics"><p><b>Janela:</b> '+new Date(r.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(r.rowsEnd).toLocaleDateString('pt-BR')+'.</p><p><b>Normalização:</b> comparação visual em base 100 e escala log.</p><p><b>Retornos:</b> log-retornos; volatilidade, Sharpe e Sortino anualizados conforme o intervalo.</p><p><b>Interpretação:</b> correlação, beta e lead/lag indicam associação estatística, não causalidade.</p></div></section></div></section>';
    const close=()=>modal.remove();modal.querySelector('.analysis-close').onclick=close;modal.querySelector('.analysis-modal-backdrop').onclick=close;document.body.appendChild(modal);
  });
- const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>assets[k]).filter(Boolean);renderChart(state.rows,selected)}};
+ const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>({...assets[k],key:k})).filter(Boolean);renderChart(state.rows,selected)}};
  window.addEventListener('resize',onResize);
  return {run,destroy(){window.removeEventListener('resize',onResize)}};
 }
