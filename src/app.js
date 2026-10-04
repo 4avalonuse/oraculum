@@ -6,11 +6,13 @@ import { attachChartInteraction } from './chart/interaction.js';
 import { attachChartControls } from './chart/controls.js';
 import { attachComparisonAnalysis } from './analysis/comparison.js';
 import { attachTimeline } from './events/timeline.js';
+import { getAsset,DEFAULT_ASSET } from './data/assets.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
 const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
+let activeSymbol=DEFAULT_ASSET;
 const $=s=>document.querySelector(s);
 
 function boundsFor(c){
@@ -30,7 +32,7 @@ async function load(interval='1d'){
   host.classList.remove('is-error');
   try{
     const loaded=await dataClient.loadOrPopulate({
-      provider:'yahoo',symbol:'BTC-USD',kind:'ohlcv',interval:intervals[interval]||interval,currency:'USD'
+      provider:getAsset(activeSymbol).provider,symbol:activeSymbol,kind:'ohlcv',interval:intervals[interval]||interval,currency:'USD'
     });
     const candles=normalizeCandles(loaded.candles);
     active?.destroy();
@@ -52,7 +54,8 @@ async function load(interval='1d'){
       detachControls?.();detachInteraction?.();chart.destroy();
     }};
 
-    $('#source').textContent=(loaded.meta?.provider||'yahoo')+' · '+(intervals[interval]||interval);
+    $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
+    $('#source').textContent=(loaded.meta?.provider||getAsset(activeSymbol).provider)+' · '+(intervals[interval]||interval);
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
@@ -65,6 +68,13 @@ async function load(interval='1d'){
     host.classList.add('is-error');
   }
 }
+
+const assetSelect=$('#asset-select');
+assetSelect?.addEventListener('change',()=>{
+  activeSymbol=assetSelect.value;
+  $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
+  load(activeInterval);
+});
 
 let activeInterval='1d';
 const intervalToggle=$('#interval-toggle');
