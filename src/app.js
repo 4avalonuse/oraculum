@@ -5,124 +5,12 @@ import { createChart } from './chart/render.js';
 import { attachChartInteraction } from './chart/interaction.js';
 import { attachChartControls } from './chart/controls.js';
 import { attachComparisonAnalysis } from './analysis/comparison.js';
+import { attachTimeline } from './events/timeline.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
 const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
-let timelineEvents=[];
-let activeEventCategory='ALL';
-let selectedEventIds=new Set();
-
-const EVENT_COLORS={
-  Crypto:'#d7d7d7',
-  Macro:'#d5a84b',
-  Regulation:'#6ea8dc',
-  Liquidity:'#9b7bd8',
-  Market:'#7fbf8f'
-};
-
-function eventCategory(event){
-  return String(event?.category||'Other').trim()||'Other';
-}
-function eventColor(category){
-  if(EVENT_COLORS[category])return EVENT_COLORS[category];
-  const palette=['#d7d7d7','#d5a84b','#6ea8dc','#9b7bd8','#7fbf8f','#d27c9c'];
-  let hash=0; for(const char of category)hash=(hash*31+char.charCodeAt(0))>>>0;
-  return palette[hash%palette.length];
-}
-
-async function loadEvents(){
-  try{
-    const events=await dataClient.loadEvents();
-    timelineEvents=events.sort((a,b)=>a.timestamp-b.timestamp);
-    selectedEventIds=new Set(timelineEvents.map(event=>String(event.id)));
-    renderEventMenu();
-  }catch(error){
-    console.error('[ORACULUM TIMELINE]',error);
-    timelineEvents=[];
-  }
-}
-
-function renderEventMenu(){
-  const menu=$('#event-menu');
-  if(!menu)return;
-  const categories=[...new Set(timelineEvents.map(eventCategory))];
-  const visibleEvents=activeEventCategory==='ALL'
-    ? timelineEvents
-    : timelineEvents.filter(event=>eventCategory(event)===activeEventCategory);
-  menu.innerHTML='';
-
-  const head=document.createElement('div');
-  head.className='event-menu-head';
-  head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+selectedEventIds.size+'/'+timelineEvents.length+'</span>';
-  menu.appendChild(head);
-
-  const filters=document.createElement('div');
-  filters.className='event-menu-filters';
-  const allButton=document.createElement('button');
-  allButton.className='event-filter'+(activeEventCategory==='ALL'?' active':'');
-  allButton.innerHTML='<i></i>TODOS';
-  allButton.addEventListener('click',()=>{activeEventCategory='ALL';renderEventMenu();});
-  filters.appendChild(allButton);
-  categories.forEach(category=>{
-    const button=document.createElement('button');
-    button.className='event-filter'+(activeEventCategory===category?' active':'');
-    button.style.setProperty('--event-color',eventColor(category));
-    button.innerHTML='<i></i>'+category.toUpperCase();
-    button.addEventListener('click',()=>{activeEventCategory=category;renderEventMenu();});
-    filters.appendChild(button);
-  });
-  menu.appendChild(filters);
-
-  const list=document.createElement('div');
-  list.className='event-menu-list';
-  visibleEvents.forEach(event=>{
-    const category=eventCategory(event);
-    const row=document.createElement('button');
-    row.className='event-row'+(selectedEventIds.has(String(event.id))?' selected':'');
-    row.style.setProperty('--event-color',eventColor(category));
-    row.innerHTML='<i></i><span class="event-row-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span><strong>'+String(event.title||'Evento')+'</strong><span class="event-row-state">'+(selectedEventIds.has(String(event.id))?'ON':'OFF')+'</span>';
-    row.title=event.description||event.title||'Evento';
-    row.addEventListener('click',()=>{
-      const id=String(event.id);
-      if(selectedEventIds.has(id))selectedEventIds.delete(id);
-      else selectedEventIds.add(id);
-      renderEventMenu();
-      if(active?.candles&&active?.viewport)renderTimeline(active.candles,active.viewport);
-    });
-    list.appendChild(row);
-  });
-  menu.appendChild(list);
-}
-
-function renderTimeline(candles,viewport){
-  const host=$('#timeline'),lines=$('#timeline-lines');
-  if(!host||!lines||!candles.length)return;
-  const state=viewport.getState();
-  const min=state.x.min,max=state.x.max,span=max-min||1;
-  const events=timelineEvents.filter(e=>selectedEventIds.has(String(e.id)) && e.timestamp>=min&&e.timestamp<=max && (activeEventCategory==='ALL'||eventCategory(e)===activeEventCategory));
-  host.innerHTML='';
-  lines.innerHTML='';
-  if(!events.length)return;
-  const plotLeft=10,plotRight=58,plotWidth=Math.max(1,host.clientWidth-plotLeft-plotRight);
-  events.forEach(event=>{
-    const ratio=Math.max(0,Math.min(1,(event.timestamp-min)/span));
-    const x=plotLeft+ratio*plotWidth;
-    const line=document.createElement('div');
-    line.className='timeline-line';
-    line.style.left=x+'px';
-    line.title=event.description||event.title||'Evento';
-    lines.appendChild(line);
-    const marker=document.createElement('div');
-    marker.className='timeline-event';
-    marker.style.left=x+'px';
-    marker.title=(event.title||'Evento')+(event.description?' — '+event.description:'');
-    marker.innerHTML='<span class="timeline-event-date">'+new Date(event.timestamp).toLocaleDateString('pt-BR')+'</span>';
-    host.appendChild(marker);
-  });
-}
-
 const $=s=>document.querySelector(s);
 
 function boundsFor(c){
@@ -154,7 +42,7 @@ async function load(interval='1d'){
     viewport.fitY(visible.y);
 
     const chart=createChart(host,candles,viewport);
-    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,onViewportChanged:()=>renderTimeline(candles,viewport)});
+    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,onViewportChanged:()=>timeline.renderTimeline(candles,viewport)});
     const detachControls=attachChartControls({
       fitButton:$('#fit-toggle'),typeButton:$('#chart-type-toggle'),scaleButton:$('#scale-toggle'),
       viewport,candles,draw:chart.draw,onTypeChange:chart.setChartType
@@ -168,7 +56,7 @@ async function load(interval='1d'){
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
-    renderTimeline(candles,viewport);
+    timeline.renderTimeline(candles,viewport);
   }catch(error){
     console.error('[ORACULUM]',error);
     $('#status').textContent='ERRO';
@@ -209,7 +97,7 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
   }
 });
 
-loadEvents();
+const timeline=attachTimeline({dataClient,getActive:()=>active});
 load('1d');
 
 attachComparisonAnalysis({
