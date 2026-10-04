@@ -75,3 +75,152 @@ button{padding:9px 10px;border:1px solid #282828;border-radius:5px;background:#1
 .full-analysis{margin:0 12px 12px;width:calc(100% - 24px);font-size:10px;letter-spacing:.08em;background:#141414}.is-hidden{display:none!important}
 .analysis-modal{position:fixed;inset:0;z-index:100}.analysis-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}.analysis-modal-panel{position:absolute;inset:4vh 4vw;background:#0b0b0b;border:1px solid #333;box-shadow:0 20px 70px #000;display:flex;flex-direction:column;overflow:hidden}.analysis-modal-panel header{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:1px solid #242424}.analysis-modal-panel header strong{display:block;font-size:12px;letter-spacing:.08em}.analysis-modal-panel header small{display:block;color:#666;font-size:9px;margin-top:3px}.analysis-close{min-width:32px;font-size:20px;padding:3px 8px}.analysis-modal-body{overflow:auto;padding:14px}.analysis-modal-body section{border:1px solid #202020;background:#0d0d0d;margin-bottom:10px;padding:12px}.analysis-modal-body h3{margin:0 0 10px;font-size:10px;letter-spacing:.1em;color:#aaa}.analysis-note,.analysis-diagnostics p{margin:6px 0;color:#777;font-size:10px;line-height:1.5}.analysis-modal-body table{width:100%;border-collapse:collapse;font-size:10px}.analysis-modal-body th,.analysis-modal-body td{text-align:left;padding:7px;border-bottom:1px solid #1e1e1e;color:#999}.analysis-modal-body th{color:#666;font-size:8px;text-transform:uppercase}
 @media(max-width:700px){.results-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analysis-modal-panel{inset:2vh 2vw}.comparison-chart{height:220px}.comparison-note{display:none}.asset-pick{min-width:100px}}
+
+
+/* ORACULUM — light cyberpunk / investigative UI */
+:root{
+  --bg:#050912;
+  --panel:#08111d;
+  --panel-2:#0b1624;
+  --line:#15314a;
+  --line-soft:#102538;
+  --text:#dcecff;
+  --muted:#7890a8;
+  --blue:#27a9ff;
+  --blue-soft:#0d6ea8;
+  --yellow:#f2c94c;
+  --red:#ff4d5a;
+}
+html{background:var(--bg)}
+body{
+  background:
+    radial-gradient(circle at 72% -10%,rgba(39,169,255,.10),transparent 34%),
+    linear-gradient(180deg,#07101b 0%,var(--bg) 48%,#04070d 100%);
+  color:var(--text);
+  font-size:14px;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;
+  background-image:linear-gradient(rgba(39,169,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(39,169,255,.035) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.topbar{
+  height:58px;padding:0 18px;gap:16px;
+  background:rgba(5,12,21,.92);border-bottom:1px solid var(--line);
+  box-shadow:0 0 24px rgba(0,110,190,.08);
+}
+.brand{font-size:15px;color:#eef8ff;text-shadow:0 0 14px rgba(39,169,255,.25)}
+.asset{font-size:13px;color:#9eb5ca}
+#asset-select{
+  background:#091523;color:var(--text);border:1px solid #17405d;border-radius:6px;
+  padding:8px 10px;font-size:13px;
+}
+.status{font-size:11px;color:#65bfff;letter-spacing:.08em}
+.workspace{min-height:calc(100vh - 58px)}
+.sidebar{background:rgba(5,12,21,.72);border-right:1px solid var(--line)}
+.section-label{color:#54718b;font-size:11px}
+button{
+  padding:10px 12px;border:1px solid #17405d;border-radius:6px;
+  background:linear-gradient(180deg,#0c1a29,#09131f);color:#cfe7f8;
+  font-size:13px;transition:border-color .15s,box-shadow .15s,background .15s;
+}
+button:hover{border-color:#287fac;box-shadow:0 0 12px rgba(39,169,255,.10)}
+button:focus-visible{outline:1px solid var(--blue);outline-offset:2px}
+.sidebar button{margin-bottom:6px}
+.canvas-area{padding:18px}
+.chart-card,.analysis-card{
+  border:1px solid var(--line);background:rgba(7,17,29,.88);
+  box-shadow:0 12px 36px rgba(0,0,0,.22);
+}
+.chart-head{height:54px;border-bottom:1px solid var(--line-soft);padding:0 12px}
+.chart-head strong,.analysis-head strong,.comparison-head strong{font-size:14px;letter-spacing:.09em;color:#e4f3ff}
+.chart-head small,.analysis-head small,.comparison-head small{font-size:11px;color:var(--muted)}
+.chart-wrap{background:#06101b}
+.chart-controls{top:10px;right:10px;gap:5px}
+.chart-controls button{font-size:11px;padding:7px 9px;min-width:36px}
+.chart-controls button.active{
+  color:#fff;border-color:var(--blue);background:#0b2940;
+  box-shadow:0 0 12px rgba(39,169,255,.13);
+}
+.chart-foot{padding:9px 12px;border-top:1px solid var(--line-soft);color:#6f8aa1;font-size:11px}
+.timeline{background:#07111d;border-top:1px solid var(--line);height:48px}
+.timeline::before{background:#1c3a52}
+.timeline-event::before{border-color:#55baff;background:#07111d;box-shadow:0 0 7px rgba(39,169,255,.35)}
+.timeline-event-date{color:#64829a;font-size:9px}
+.timeline-line,.timeline-line::after{background:var(--blue);opacity:.42}
+.event-menu{background:#07111d;border-top:1px solid var(--line);padding:10px 12px}
+.event-menu-head{color:#6d8aa3;font-size:10px}
+.event-menu-count{color:#46627a;font-size:9px}
+.event-filter,.event-row{
+  border-color:#15344b;background:#091827;color:#8da8bc;border-radius:5px;
+}
+.event-filter{padding:6px 8px;font-size:9px}
+.event-filter.active{color:#e4f4ff;border-color:#267eae;background:#0b2031}
+.event-filter i,.event-row i{box-shadow:0 0 7px color-mix(in srgb,var(--event-color,#666) 45%,transparent)}
+.event-row{padding:8px 9px}
+.event-row-date{font-size:9px;color:#5d7990}
+.event-row strong{font-size:10px;color:#b9d0e2}
+.event-row-state{font-size:8px;color:#5e778b}
+.event-row.selected{border-color:var(--yellow);box-shadow:0 0 10px rgba(242,201,76,.08)}
+.interval-menu{border-color:#17405d;background:#091725;box-shadow:0 12px 28px rgba(0,0,0,.35)}
+#refresh-toggle{color:var(--blue);font-size:17px}
+.analysis-card{margin-top:14px}
+.analysis-head,.comparison-head{padding:13px;border-bottom:1px solid var(--line-soft)}
+#analysis-status,.comparison-head>span{font-size:9px;color:#5ebcff;letter-spacing:.08em}
+.asset-picks{padding:11px;border-bottom:1px solid var(--line-soft)}
+.asset-pick{
+  min-width:126px;padding:9px 11px;border-color:#17354b;background:#091827;
+}
+.asset-pick:hover{border-color:#247dab}
+.asset-pick span{font-size:12px;color:#d3e8f7}
+.asset-pick small{font-size:8px;color:#66849a}
+.asset-pick input{accent-color:var(--blue)}
+.comparison-chart svg{background:#06101b}
+.cmp-axis{stroke:#16334a}
+.cmp-labels,.comparison-chart svg>text{fill:#5d7a92;font-size:9px}
+.cmp-btc{stroke:var(--blue)}
+.cmp-sol{stroke:var(--yellow)}
+.comparison-legend{font-size:10px;color:#9bb3c5}
+.comparison-legend i{background:var(--blue)}
+.comparison-legend .legend-sol{background:var(--yellow)}
+.analysis-results{border-top:1px solid var(--line-soft)}
+.analysis-metric{padding:10px;border-color:#17334a;background:#091725}
+.analysis-metric span{font-size:9px;color:#66849a}
+.analysis-metric strong{font-size:15px;color:#e0f2ff}
+.analysis-metric small{font-size:8px;color:#536f84}
+.full-analysis{font-size:11px;background:#0b2132;border-color:#1b638d;color:#d7efff}
+.analysis-modal-backdrop{background:rgba(1,7,13,.82)}
+.analysis-modal-panel{background:#07111d;border-color:#1b4058;box-shadow:0 20px 80px rgba(0,0,0,.65)}
+.analysis-modal-panel header{border-bottom-color:var(--line)}
+.analysis-modal-body section{border-color:#17334a;background:#091725}
+.analysis-modal-body h3{font-size:11px;color:#a8c4d7}
+.analysis-modal-body p,.analysis-note,.analysis-diagnostics p{font-size:11px;color:#7892a6}
+.analysis-modal-body table{font-size:11px}
+.analysis-modal-body th{font-size:9px;color:#66849a}
+.analysis-modal-body td{color:#a7bfd0;border-bottom-color:#153047}
+.expand{color:#55baff;font-size:11px;text-decoration:none;letter-spacing:.08em}
+.expand:hover{color:#f2c94c}
+#status.is-error,.is-error #status{color:var(--red)}
+@media(max-width:700px){
+  body{font-size:14px}
+  .topbar{height:56px;padding:0 12px;gap:10px}
+  .brand{font-size:14px}
+  #asset-select{font-size:13px;padding:8px}
+  .status{font-size:10px}
+  .sidebar{background:#07111d}
+  .section-label{font-size:10px}
+  button{font-size:13px;min-height:40px}
+  .canvas-area{padding:9px}
+  .chart-head{height:52px}
+  .chart-head strong{font-size:14px}
+  .chart-head small{font-size:10px}
+  .chart-controls{top:8px;right:8px;gap:4px}
+  .chart-controls button{font-size:11px;padding:7px 8px;min-height:34px}
+  .timeline{height:40px}
+  .timeline-event{height:40px}
+  .event-menu{padding:8px}
+  .event-filter{font-size:9px;min-height:34px}
+  .event-row{padding:8px;min-height:42px}
+  .event-row strong{font-size:10px}
+  .asset-pick{min-height:54px}
+}
