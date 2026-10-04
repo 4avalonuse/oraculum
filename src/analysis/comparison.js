@@ -1,48 +1,57 @@
-/* ORACULUM — análise comparativa BTC/SOL */
-function mean(v){return v.reduce((a,b)=>a+b,0)/Math.max(1,v.length)}
-function median(v){const x=[...v].sort((a,b)=>a-b),m=Math.floor(x.length/2);return x.length?(x.length%2?x[m]:(x[m-1]+x[m])/2):NaN}
-function std(v){if(v.length<2)return 0;const m=mean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1))}
-function cov(a,b){if(a.length<2)return 0;const ma=mean(a),mb=mean(b);return a.reduce((s,x,i)=>s+(x-ma)*(b[i]-mb),0)/(a.length-1)}
-function corr(a,b){const sa=std(a),sb=std(b);return sa&&sb?cov(a,b)/(sa*sb):0}
+/* ORACULUM — análise sob demanda de múltiplas séries */
+import {analyzeSeries,alignSeries} from './engine.js';
+
 function fmt(v,d=2){if(!Number.isFinite(v))return '—';return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:d}).format(v)}
 function pct(v,d=2){return Number.isFinite(v)?fmt(v*100,d)+'%':'—'}
-function align(btc,sol){const map=new Map(sol.map(x=>[Number(x.timestamp),x]));return btc.map(x=>{const y=map.get(Number(x.timestamp));return y&&Number.isFinite(x.close)&&Number.isFinite(y.close)?{timestamp:Number(x.timestamp),btc:x.close,sol:y.close}:null}).filter(Boolean)}
-function returns(rows,key){const out=[];for(let i=1;i<rows.length;i++){const a=rows[i-1][key],b=rows[i][key];if(a>0&&b>0)out.push(Math.log(b/a))}return out}
-function drawdown(rows,key){let peak=rows[0]?.[key]||0,min=0,recovery=0,current=0,maxRecovery=0;for(const r of rows){if(r[key]>=peak){peak=r[key];current=0}else{current++;maxRecovery=Math.max(maxRecovery,current)}min=Math.min(min,r[key]/peak-1)}return {max:min,recovery:maxRecovery}}
-function leadLag(a,b,maxLag=5){const out=[];for(let lag=-maxLag;lag<=maxLag;lag++){const x=[],y=[];for(let i=0;i<a.length;i++){const j=i+lag;if(j>=0&&j<b.length){x.push(a[i]);y.push(b[j])}}out.push({lag,corr:corr(x,y)})}return out}
-function regression(x,y){const beta=cov(x,y)/(cov(x,x)||1),alpha=mean(y)-beta*mean(x),r=corr(x,y);return {alpha,beta,r,r2:r*r}}
-function annualPeriods(interval){return interval==='1h'?8760:interval==='1w'?52:interval==='1M'?12:365}
-function cagr(first,last,years){return first>0&&last>0&&years>0?(last/first)**(1/years)-1:NaN}
-function sharpe(r,p){const s=std(r);return s?mean(r)/s*Math.sqrt(p):NaN}
-function sortino(r,p){const downside=r.filter(x=>x<0),s=std(downside);return s?mean(r)/s*Math.sqrt(p):NaN}
-function quantile(v,q){if(!v.length)return NaN;const x=[...v].sort((a,b)=>a-b),i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
-function distribution(r,p){const positive=r.filter(x=>x>0),negative=r.filter(x=>x<0);return {win:positive.length/r.length,best:Math.max(...r),worst:Math.min(...r),q25:quantile(r,.25),q75:quantile(r,.75),upVol:std(positive)*Math.sqrt(p),downVol:std(negative)*Math.sqrt(p)}}
 function metric(label,value,note=''){return '<div class="analysis-metric"><span>'+label+'</span><strong>'+value+'</strong>'+(note?'<small>'+note+'</small>':'')+'</div>'}
 
-export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval}){
- const $=s=>document.querySelector(s),state={btc:null,sol:null,rows:null,metrics:null};
- function renderComparison(rows){
-  const host=$('#comparison-chart');if(!host||!rows.length)return;
-  const w=Math.max(320,host.clientWidth||800),h=260,p={l:42,r:14,t:14,b:24},base=rows[0],bv=rows.map(r=>100*r.btc/base.btc),sv=rows.map(r=>100*r.sol/base.sol),lo=Math.log(Math.min(...bv,...sv)),hi=Math.log(Math.max(...bv,...sv));
-  const line=vals=>vals.map((v,i)=>{const x=p.l+i*(w-p.l-p.r)/Math.max(1,vals.length-1),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
-  const ticks=[0,.5,1].map(t=>{const v=Math.exp(lo+(hi-lo)*t);return '<text x="'+(p.l-6)+'" y="'+(h-p.b-t*(h-p.t-p.b)+3)+'" text-anchor="end">'+fmt(v,0)+'</text>'}).join('');
-  host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><polyline points="'+line(bv)+'" class="cmp-btc"/><polyline points="'+line(sv)+'" class="cmp-sol"/><g class="cmp-labels">'+ticks+'</g><text x="'+p.l+'" y="'+(h-6)+'">início</text><text x="'+(w-p.r)+'" y="'+(h-6)+'" text-anchor="end">agora</text></svg>';
+export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
+ const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[]};
+ const renderChart=(rows,series)=>{
+   const host=$('#comparison-chart');if(!host||!rows.length)return;
+   const w=Math.max(320,host.clientWidth||800),h=260,p={l:42,r:14,t:14,b:24};
+   const normalized=series.map(s=>rows.map(r=>100*r[s.key]/rows[0][s.key]));
+   const all=normalized.flat(),lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
+   const line=vals=>vals.map((v,i)=>{const x=p.l+i*(w-p.l-p.r)/Math.max(1,vals.length-1),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
+   const polylines=normalized.map((v,i)=>'<polyline points="'+line(v)+'" class="cmp-line cmp-'+i+'"/>').join('');
+   host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/>'+polylines+'<text x="'+p.l+'" y="'+(h-6)+'">início</text><text x="'+(w-p.r)+'" y="'+(h-6)+'" text-anchor="end">agora</text></svg>';
+   const legend=$('#comparison-legend');if(legend)legend.innerHTML=series.map((s,i)=>'<span><i class="legend-'+i+'"></i>'+s.symbol+'</span>').join('');
+ };
+ const render=(result,series)=>{
+   state.result=result;state.selected=series.map(x=>x.key);
+   $('#analysis-status').textContent='CONCLUÍDA';
+   $('#comparison-period').textContent=new Date(result.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(result.rowsEnd).toLocaleDateString('pt-BR')+' · '+result.observations+' observações';
+   renderChart(state.rows,series);
+   const primary=result.series[series[0].key];
+   const relations=result.relations;
+   let html='<div class="analysis-section-label">RESUMO · '+primary.symbol+' COMO REFERÊNCIA</div><div class="results-grid">'+metric('Retorno',pct(primary.total))+metric('CAGR',pct(primary.cagr))+metric('Volatilidade',pct(primary.vol),'anualizada')+metric('Drawdown',pct(primary.drawdown))+metric('Sharpe',fmt(primary.sharpe,3))+metric('Sortino',fmt(primary.sortino,3))+metric('Win rate',pct(primary.winRate))+metric('ATH','$ '+fmt(primary.ath))+ '</div>';
+   if(relations.length)html+='<div class="analysis-section-label">RELAÇÕES</div><div class="results-grid">'+relations.map(r=>metric(r.target.toUpperCase()+' · CORR.',fmt(r.correlation,3)) + metric(r.target.toUpperCase()+' · BETA',fmt(r.beta,3)) + metric(r.target.toUpperCase()+' · R²',pct(r.r2)) + metric(r.target.toUpperCase()+' · LEAD/LAG',String(r.leadLag.lag))).join('')+'</div>';
+   const el=$('#analysis-results');el.innerHTML=html;el.classList.remove('is-hidden');$('#full-analysis').classList.remove('is-hidden');
+ };
+ async function run(){
+   const activeSymbol=getActiveSymbol(),checked=[...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value),symbols=[activeSymbol,...checked.filter(x=>x!==activeSymbol)];
+   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');
+   try{
+     const interval=getInterval()||'1d';
+     const series=[];
+     for(const key of symbols){const meta=assets[key];const loaded=key===activeSymbol?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:key,kind:'ohlcv',interval,currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,candles})}
+     const rows=alignSeries(series);if(rows.length<10)throw new Error('Poucos timestamps comuns para esta análise.');
+     state.rows=rows;
+     const result=analyzeSeries(rows,series,interval);result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;
+     render(result,series);
+   }catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
  }
- function calculate(rows){
-  const interval=getInterval()||'1d',p=annualPeriods(interval),rb=returns(rows,'btc'),rs=returns(rows,'sol'),n=Math.min(rb.length,rs.length),b=rb.slice(-n),s=rs.slice(-n),reg=regression(b,s),lagRows=leadLag(b,s,5),lag=lagRows.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],years=Math.max(1/p,(rows.at(-1).timestamp-rows[0].timestamp)/(365.25*86400000)),db=drawdown(rows,'btc'),ds=drawdown(rows,'sol'),distB=distribution(b,p),distS=distribution(s,p),rollWindow=Math.min(30,n),rolling=[];
-  for(let i=rollWindow;i<=n;i++)rolling.push(corr(b.slice(i-rollWindow,i),s.slice(i-rollWindow,i)));
-  return {interval,p,n,years,correlation:corr(b,s),covariance:cov(b,s),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,volB:std(b)*Math.sqrt(p),volS:std(s)*Math.sqrt(p),totalB:rows.at(-1).btc/rows[0].btc-1,totalS:rows.at(-1).sol/rows[0].sol-1,cagrB:cagr(rows[0].btc,rows.at(-1).btc,years),cagrS:cagr(rows[0].sol,rows.at(-1).sol,years),drawB:db.max,drawS:ds.max,recoveryB:db.recovery,recoveryS:ds.recovery,sharpeB:sharpe(b,p),sharpeS:sharpe(s,p),sortinoB:sortino(b,p),sortinoS:sortino(s,p),autoB:corr(b.slice(1),b.slice(0,-1)),autoS:corr(s.slice(1),s.slice(0,-1)),leadLag:lag,leadLagRows:lagRows,meanB:mean(b),meanS:mean(s),medianB:median(b),medianS:median(s),distB,distS,rollingCorr:rolling.length?rolling.at(-1):NaN,rollingLow:rolling.length?Math.min(...rolling):NaN,rollingHigh:rolling.length?Math.max(...rolling):NaN,athB:Math.max(...rows.map(x=>x.btc)),athS:Math.max(...rows.map(x=>x.sol)),atlB:Math.min(...rows.map(x=>x.btc)),atlS:Math.min(...rows.map(x=>x.sol))};
- }
- function renderAnalysis(rows){
-  const m=calculate(rows);state.metrics=m;$('#analysis-status').textContent='PRONTO';$('#comparison-period').textContent=new Date(rows[0].timestamp).toLocaleDateString('pt-BR')+' → '+new Date(rows.at(-1).timestamp).toLocaleDateString('pt-BR')+' · '+m.n+' retornos';renderComparison(rows);
-  const el=$('#analysis-results');el.innerHTML='<div class="analysis-section-label">RESUMO</div><div class="results-grid">'+metric('Correlação',fmt(m.correlation,3),'retornos log')+metric('Beta SOL → BTC',fmt(m.beta,3),'regressão')+metric('R²',pct(m.r2),'variância explicada')+metric('Retorno BTC',pct(m.totalB))+metric('Retorno SOL',pct(m.totalS))+metric('Vol. BTC',pct(m.volB),'anualizada')+metric('Vol. SOL',pct(m.volS),'anualizada')+metric('Lead/Lag',String(m.leadLag.lag),'máx. |correlação|')+'</div>';el.classList.remove('is-hidden');$('#full-analysis').classList.remove('is-hidden');
- }
- function buildFullAnalysis(){
-  const m=state.metrics,r=state.rows;if(!m||!r?.length)return;const lagRows=m.leadLagRows.map(x=>'<tr><td>'+x.lag+'</td><td>'+fmt(x.corr,4)+'</td></tr>').join('');
-  const modal=document.createElement('div');modal.className='analysis-modal';modal.innerHTML='<div class="analysis-modal-backdrop"></div><section class="analysis-modal-panel" role="dialog" aria-modal="true"><header><div><strong>ANÁLISE COMPLETA · BTC × SOL</strong><small>'+r.length+' observações alinhadas · retornos log · '+new Date(r[0].timestamp).toLocaleDateString('pt-BR')+' → '+new Date(r.at(-1).timestamp).toLocaleDateString('pt-BR')+'</small></div><button class="analysis-close" aria-label="Fechar">×</button></header><div class="analysis-modal-body"><section><h3>Performance</h3><div class="results-grid">'+metric('Retorno BTC',pct(m.totalB))+metric('Retorno SOL',pct(m.totalS))+metric('CAGR BTC',pct(m.cagrB))+metric('CAGR SOL',pct(m.cagrS))+metric('ATH BTC','$ '+fmt(m.athB))+metric('ATH SOL','$ '+fmt(m.athS))+metric('ATL BTC','$ '+fmt(m.atlB))+metric('ATL SOL','$ '+fmt(m.atlS))+'</div></section><section><h3>Risco e distribuição</h3><div class="results-grid">'+metric('Vol. BTC',pct(m.volB))+metric('Vol. SOL',pct(m.volS))+metric('Drawdown BTC',pct(m.drawB))+metric('Drawdown SOL',pct(m.drawS))+metric('Recovery BTC',String(m.recoveryB),'períodos')+metric('Recovery SOL',String(m.recoveryS),'períodos')+metric('Sharpe BTC',fmt(m.sharpeB,3))+metric('Sharpe SOL',fmt(m.sharpeS,3))+metric('Sortino BTC',fmt(m.sortinoB,3))+metric('Sortino SOL',fmt(m.sortinoS,3))+metric('Win rate BTC',pct(m.distB.win))+metric('Win rate SOL',pct(m.distS.win))+metric('Melhor BTC',pct(m.distB.best))+metric('Pior BTC',pct(m.distB.worst))+metric('Melhor SOL',pct(m.distS.best))+metric('Pior SOL',pct(m.distS.worst))+'</div></section><section><h3>Relação estatística</h3><div class="results-grid">'+metric('Observações',String(m.n))+metric('Correlação',fmt(m.correlation,5))+metric('Covariância',fmt(m.covariance,6))+metric('Beta',fmt(m.beta,5))+metric('Alpha',fmt(m.alpha,6))+metric('R²',pct(m.r2))+metric('Média BTC',pct(m.meanB))+metric('Média SOL',pct(m.meanS))+metric('Mediana BTC',pct(m.medianB))+metric('Mediana SOL',pct(m.medianS))+metric('Autocorr. BTC',fmt(m.autoB,4),'lag 1')+metric('Autocorr. SOL',fmt(m.autoS,4),'lag 1')+metric('Corr. rolling',fmt(m.rollingCorr,4),'janela '+Math.min(30,m.n)+' períodos')+metric('Rolling mín.',fmt(m.rollingLow,4))+metric('Rolling máx.',fmt(m.rollingHigh,4))+metric('Lead/Lag',String(m.leadLag.lag),'máx. |correlação|')+'</div><table><thead><tr><th>Lag</th><th>Correlação</th></tr></thead><tbody>'+lagRows+'</tbody></table></section><section><h3>Diagnósticos</h3><div class="analysis-diagnostics"><p><b>Amostra:</b> '+r.length+' timestamps comuns entre BTC e SOL.</p><p><b>Janela:</b> '+fmt(m.years,2)+' anos aproximados · '+m.interval+' · fator anual '+m.p+'.</p><p><b>Normalização:</b> ambas as séries começam em 100; o gráfico usa escala log para preservar diferenças relativas.</p><p><b>Sharpe/Sortino:</b> calculados sobre retornos log e anualizados pelo intervalo selecionado; são diagnósticos, não garantia de desempenho futuro.</p><p><b>Interpretação:</b> associação, regressão e lead/lag não estabelecem causalidade. Testes econométricos mais fortes entram como módulos próprios.</p></div></section></div></section>';
-  const close=()=>modal.remove();modal.querySelector('.analysis-close').onclick=close;modal.querySelector('.analysis-modal-backdrop').onclick=close;document.body.appendChild(modal);
- }
- $('#sol-select')?.addEventListener('change',async e=>{const panel=$('#comparison-panel'),status=$('#analysis-status');if(!e.target.checked){panel.classList.add('is-hidden');$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');status.textContent='AGUARDANDO';return}status.textContent='CALCULANDO';try{const interval=getInterval()||'1d',loaded=await dataClient.loadOrPopulate({provider:'yahoo',symbol:'SOL-USD',kind:'ohlcv',interval,currency:'USD'}),sol=normalizeCandles(loaded.candles),btc=getCandles()||[],rows=align(btc,sol);if(rows.length<10)throw new Error('Poucos timestamps comuns para comparar BTC e SOL.');state.btc=btc;state.sol=sol;state.rows=rows;panel.classList.remove('is-hidden');renderAnalysis(rows)}catch(error){console.error('[ORACULUM ANALYSIS]',error);status.textContent='ERRO';panel.classList.add('is-hidden')}});
- $('#full-analysis')?.addEventListener('click',buildFullAnalysis);const onResize=()=>{if(state.rows?.length)renderComparison(state.rows)};window.addEventListener('resize',onResize);
- return {getState:()=>({...state}),destroy(){window.removeEventListener('resize',onResize)}};
+ const button=$('#analyze-assets');
+ button?.addEventListener('click',run);
+ $('#full-analysis')?.addEventListener('click',()=>{
+   const r=state.result;if(!r)return;
+   const modal=document.createElement('div');modal.className='analysis-modal';
+   const rows=Object.values(r.series).map(s=>'<tr><td>'+s.symbol+'</td><td>'+pct(s.total)+'</td><td>'+pct(s.cagr)+'</td><td>'+pct(s.vol)+'</td><td>'+pct(s.drawdown)+'</td><td>'+fmt(s.sharpe,3)+'</td><td>'+pct(s.winRate)+'</td></tr>').join('');
+   const rel=r.relations.map(x=>'<tr><td>'+x.primary.toUpperCase()+'</td><td>'+x.target.toUpperCase()+'</td><td>'+fmt(x.correlation,4)+'</td><td>'+fmt(x.beta,4)+'</td><td>'+pct(x.r2)+'</td><td>'+x.leadLag.lag+'</td></tr>').join('');
+   modal.innerHTML='<div class="analysis-modal-backdrop"></div><section class="analysis-modal-panel" role="dialog" aria-modal="true"><header><div><strong>ANÁLISE COMPLETA</strong><small>'+r.observations+' observações alinhadas · '+r.interval+'</small></div><button class="analysis-close" aria-label="Fechar">×</button></header><div class="analysis-modal-body"><section><h3>PERFORMANCE E RISCO</h3><table><thead><tr><th>Ativo</th><th>Retorno</th><th>CAGR</th><th>Vol.</th><th>DD</th><th>Sharpe</th><th>Win rate</th></tr></thead><tbody>'+rows+'</tbody></table></section><section><h3>RELAÇÕES ESTATÍSTICAS</h3><table><thead><tr><th>Ref.</th><th>Alvo</th><th>Corr.</th><th>Beta</th><th>R²</th><th>Lead/Lag</th></tr></thead><tbody>'+rel+'</tbody></table></section><section><h3>DIAGNÓSTICOS</h3><div class="analysis-diagnostics"><p><b>Janela:</b> '+new Date(r.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(r.rowsEnd).toLocaleDateString('pt-BR')+'.</p><p><b>Normalização:</b> comparação visual em base 100 e escala log.</p><p><b>Retornos:</b> log-retornos; volatilidade, Sharpe e Sortino anualizados conforme o intervalo.</p><p><b>Interpretação:</b> correlação, beta e lead/lag indicam associação estatística, não causalidade.</p></div></section></div></section>';
+   const close=()=>modal.remove();modal.querySelector('.analysis-close').onclick=close;modal.querySelector('.analysis-modal-backdrop').onclick=close;document.body.appendChild(modal);
+ });
+ const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>assets[k]).filter(Boolean);renderChart(state.rows,selected)}};
+ window.addEventListener('resize',onResize);
+ return {run,destroy(){window.removeEventListener('resize',onResize)}};
 }
