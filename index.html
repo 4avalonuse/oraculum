@@ -10,13 +10,15 @@
 <main id="app">
 <header class="topbar">
   <div class="brand">ORACULUM</div>
-  <select id="asset-select" aria-label="Ativo principal"><option value="BTC-USD">BTC</option></select>
+  <select id="asset-select" aria-label="Ativo principal">
+    <option value="BTC-USD">BTC</option><option value="SOL-USD">SOL</option><option value="RENDER-USD">RENDER</option><option value="JUP-USD">JUP</option><option value="ONDO-USD">ONDO</option>
+  </select>
   <div id="status" class="status">CARREGANDO</div>
 </header>
 <section class="oraculum">
   <section class="chart-card">
     <div class="chart-head">
-      <div><strong>BTC / USD</strong><small id="source">Data API</small></div>
+      <div><strong id="asset-title">BTC / USD</strong><small id="source">Data API</small></div>
       <a class="expand" href="https://4avalonuse.github.io/Ochama/" target="_blank" rel="noopener">AMPLIAR ↗</a>
     </div>
     <div class="chart-stack">
