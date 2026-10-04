@@ -224,3 +224,13 @@ button:focus-visible{outline:1px solid var(--blue);outline-offset:2px}
   .event-row strong{font-size:10px}
   .asset-pick{min-height:54px}
 }
+
+.investigation-next{margin-top:14px;padding:15px 16px;border:1px solid var(--line);background:linear-gradient(90deg,rgba(8,23,38,.95),rgba(7,14,24,.88));display:flex;align-items:center;justify-content:space-between;gap:14px}
+.investigation-next strong{display:block;font-size:11px;letter-spacing:.12em;color:var(--yellow)}
+.investigation-next small{display:block;margin-top:4px;color:var(--muted);font-size:11px}
+.spacework-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 12px;border:1px solid #276e91;border-radius:6px;color:#d9f2ff;text-decoration:none;background:#0a2030;font-size:11px;letter-spacing:.08em}
+.spacework-link[aria-disabled="true"]{opacity:.65;cursor:not-allowed}
+.analysis-section-label{padding:9px 0 7px;color:#5c87a5;font-size:9px;letter-spacing:.12em}
+.analysis-modal-body .results-grid{margin-bottom:8px}
+.analysis-modal-body table{margin-top:10px}
+@media(max-width:700px){.investigation-next{align-items:stretch;flex-direction:column}.spacework-link{width:100%}}
