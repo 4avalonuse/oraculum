@@ -12,9 +12,13 @@ VARIABLE: id, name, type, source, metadata.
 
 OBSERVATION: variable_id, timestamp, value.
 
-EVENT: id, timestamp, type, title, source, impact, metadata.
+EVENT: id, timestamp, category, type, title, description, source, importance, scope, assets[], metadata.
+
+EVENT SCOPE: `asset` para eventos próprios de um ativo; `market` para eventos compartilhados do mercado; `global` para eventos macro/global. Eventos compartilhados não são duplicados por ativo: uma única ocorrência pode referenciar vários ativos ou nenhum. Bitcoin Halving permanece como evento `protocol` específico de BTC.
 
 RELATION: id, source_id, target_id, relation_type, lag, metadata.
+
+EVENT CATEGORIES: `protocol`, `macro`, `regulatory`, `market`, `ecosystem`, `corporate`.
 
 HYPOTHESIS: id, workspace_id, statement, status, created_at, updated_at.
 
