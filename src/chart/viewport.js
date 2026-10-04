@@ -23,8 +23,8 @@ export function createViewport(){
  }else{
   const span=range.y.max-range.y.min,delta=ratio*span;
   range.y=cy({min:range.y.min+delta,max:range.y.max+delta});
- notify();
  }
+ notify();
 },
     zoomX(f,a){const r=range.x,span=r.max-r.min,next=Math.max((bounds.x.max-bounds.x.min)/1000,Math.min(bounds.x.max-bounds.x.min,span*f)),anchor=Number.isFinite(a)?a:(r.min+r.max)/2,ratio=(anchor-r.min)/span;range.x=cx({min:anchor-ratio*next,max:anchor+(1-ratio)*next});notify()},
     zoomY(f,a){const r=range.y,span=r.max-r.min,next=Math.max((bounds.y.max-bounds.y.min)/1000,Math.min(bounds.y.max-bounds.y.min,span*f)),anchor=Number.isFinite(a)?a:(r.min+r.max)/2,ratio=(anchor-r.min)/span;range.y=cy({min:anchor-ratio*next,max:anchor+(1-ratio)*next});notify()},
