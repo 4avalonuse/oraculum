@@ -97,7 +97,7 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
   button.classList.add('is-loading');
   try{
     const loaded=await dataClient.refreshCandles({
-      provider:'yahoo',symbol:'BTC-USD',kind:'ohlcv',interval:intervals[activeInterval],currency:'USD'
+      provider:getAsset(activeSymbol).provider,symbol:activeSymbol,kind:'ohlcv',interval:intervals[activeInterval],currency:'USD'
     });
     if(loaded?.candles?.length){
       await load(activeInterval);
