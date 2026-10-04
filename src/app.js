@@ -33,11 +33,8 @@ function eventColor(category){
 
 async function loadEvents(){
   try{
-    const response=await fetch(API_BASE+'/api/events');
-    if(!response.ok)throw new Error('Eventos: HTTP '+response.status);
-    const payload=await response.json();
-    timelineEvents=(Array.isArray(payload.data)?payload.data:[])
-      .sort((a,b)=>a.timestamp-b.timestamp);
+    const events=await dataClient.loadEvents();
+    timelineEvents=events.sort((a,b)=>a.timestamp-b.timestamp);
     selectedEventIds=new Set(timelineEvents.map(event=>String(event.id)));
     renderEventMenu();
   }catch(error){
