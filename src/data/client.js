@@ -94,7 +94,12 @@ function createClient(apiBase = API_BASE) {
     return unpack(payload, dataset);
   }
 
-  return { loadCandles, loadOrPopulate, refreshCandles };
+  async function loadEvents() {
+    const payload = await request("/api/events");
+    return Array.isArray(payload?.data) ? payload.data : [];
+  }
+
+  return { loadCandles, loadOrPopulate, refreshCandles, loadEvents };
 }
 
 const defaultClient = createClient();
