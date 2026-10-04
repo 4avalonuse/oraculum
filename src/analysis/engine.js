@@ -28,3 +28,16 @@ export function analyzeSeries(rows,series,interval){
   return out
 }
 export function rollingCorrelation(a,b,window=30){if(a.length<window)return NaN;const values=[];for(let i=window;i<=a.length;i++)values.push(corr(a.slice(i-window,i),b.slice(i-window,i)));return values.at(-1)}
+
+
+export function deflateValues(values,cpi){
+  if(!Array.isArray(values)||!Array.isArray(cpi)) return [];
+  const map=new Map(cpi.map(x=>[Number(x.timestamp),Number(x.value)]).filter(x=>Number.isFinite(x[0])&&Number.isFinite(x[1])&&x[1]>0));
+  const base=[...map.values()].at(-1);
+  return values.map(x=>({timestamp:Number(x.timestamp),nominal:Number(x.value),real:map.has(Number(x.timestamp))?Number(x.value)*base/map.get(Number(x.timestamp)):null}));
+}
+
+export function realReturn(first,last,cpiFirst,cpiLast){
+  if(!(first>0&&last>0&&cpiFirst>0&&cpiLast>0)) return NaN;
+  return (last/cpiLast)/(first/cpiFirst)-1;
+}
