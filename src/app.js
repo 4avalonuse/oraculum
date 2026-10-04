@@ -180,14 +180,6 @@ async function load(interval='1d'){
   }
 }
 
-document.querySelectorAll('[data-interval]').forEach(button=>{
-  button.addEventListener('click',()=>{
-    document.querySelectorAll('[data-interval]').forEach(x=>x.classList.toggle('active',x===button));
-    load(button.dataset.interval);
-  });
-});
-
-
 let activeInterval='1d';
 const intervalToggle=$('#interval-toggle');
 const intervalMenu=$('#interval-menu');
