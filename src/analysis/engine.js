@@ -4,7 +4,7 @@ export function std(v){if(v.length<2)return 0;const m=mean(v);return Math.sqrt(v
 export function cov(a,b){if(a.length<2)return 0;const ma=mean(a),mb=mean(b);return a.reduce((s,x,i)=>s+(x-ma)*(b[i]-mb),0)/(a.length-1)}
 export function corr(a,b){const sa=std(a),sb=std(b);return sa&&sb?cov(a,b)/(sa*sb):0}
 export function returns(values){const out=[];for(let i=1;i<values.length;i++){const a=values[i-1],b=values[i];if(a>0&&b>0)out.push(Math.log(b/a))}return out}
-export function drawdown(values){let peak=values[0]||0,min=0,recovery=0,current=0;for(const value of values){if(value>=peak){peak=value;current=0}else{current++;maxRecovery=Math.max(maxRecovery,current)}min=Math.min(min,value/peak-1)}return {max:min,recovery:maxRecovery}}
+export function drawdown(values){let peak=values[0]||0,min=0,current=0;for(const value of values){if(value>=peak){peak=value;current=0}else{current++}min=Math.min(min,peak?value/peak-1:0)}return {max:min,recovery:current}}
 export function regression(x,y){const beta=cov(x,y)/(cov(x,x)||1),alpha=mean(y)-beta*mean(x),r=corr(x,y);return {alpha,beta,r,r2:r*r}}
 export function annualPeriods(interval){return interval==='1h'?8760:interval==='1w'?52:interval==='1M'?12:365}
 export function cagr(first,last,years){return first>0&&last>0&&years>0?(last/first)**(1/years)-1:NaN}
@@ -28,7 +28,6 @@ export function analyzeSeries(rows,series,interval){
   return out
 }
 export function rollingCorrelation(a,b,window=30){if(a.length<window)return NaN;const values=[];for(let i=window;i<=a.length;i++)values.push(corr(a.slice(i-window,i),b.slice(i-window,i)));return values.at(-1)}
-
 
 export function deflateValues(values,cpi){
   if(!Array.isArray(values)||!Array.isArray(cpi)) return [];
