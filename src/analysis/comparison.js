@@ -34,7 +34,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    try{
      const interval=getInterval()||'1d';
      const series=[];
-     for(const key of symbols){const meta=assets[key];const loaded=key===activeSymbol?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:key,kind:'ohlcv',interval,currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,candles})}
+     for(const key of symbols){const meta=assets[key];const loaded=key===activeSymbol?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||key,kind:'ohlcv',interval,currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,candles})}
      const rows=alignSeries(series);if(rows.length<10)throw new Error('Poucos timestamps comuns para esta análise.');
      state.rows=rows;
      const result=analyzeSeries(rows,series,interval);result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;
