@@ -32,7 +32,7 @@ async function load(interval='1d'){
   host.classList.remove('is-error');
   try{
     const loaded=await dataClient.loadOrPopulate({
-      provider:getAsset(activeSymbol).provider,symbol:activeSymbol,kind:'ohlcv',interval:intervals[interval]||interval,currency:'USD'
+      provider:getAsset(activeSymbol).provider,symbol:getAsset(activeSymbol).providerSymbol||activeSymbol,kind:'ohlcv',interval:intervals[interval]||interval,currency:'USD'
     });
     const candles=normalizeCandles(loaded.candles);
     active?.destroy();
@@ -98,7 +98,7 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
   button.classList.add('is-loading');
   try{
     const loaded=await dataClient.refreshCandles({
-      provider:getAsset(activeSymbol).provider,symbol:activeSymbol,kind:'ohlcv',interval:intervals[activeInterval],currency:'USD'
+      provider:getAsset(activeSymbol).provider,symbol:getAsset(activeSymbol).providerSymbol||activeSymbol,kind:'ohlcv',interval:intervals[activeInterval],currency:'USD'
     });
     if(loaded?.candles?.length){
       await load(activeInterval);
