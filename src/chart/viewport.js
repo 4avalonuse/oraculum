@@ -7,13 +7,13 @@ export function createViewport(){
   const cx=r=>{const b=bounds.x,span=r.max-r.min,full=b.max-b.min;if(span>=full)return {...b};let min=clamp(r.min,b.min,b.max-span),max=min+span;if(max>b.max){max=b.max;min=max-span}return{min,max}};
   const cy=r=>{const b=bounds.y,span=r.max-r.min,full=b.max-b.min;if(span>=full)return {...b};let min=clamp(r.min,b.min,b.max-span),max=min+span;if(max>b.max){max=b.max;min=max-span}return{min,max}};
   return {
-    setDataBounds(b){const positiveMin=b.y.min>0?b.y.min:Math.min(...[b.y.min,b.y.max].filter(Number.isFinite).filter(v=>v>0));bounds={x:{...b.x},y:{min:positiveMin>0?positiveMin:b.y.min,max:b.y.max}};range={x:{...bounds.x},y:{...bounds.y}};if(scale==="logarithmic"&&bounds.y.min<=0)scale="linear"},
+    setDataBounds(b){bounds={x:{...b.x},y:{...b.y}};range={x:{...b.x},y:{...b.y}};if(scale==="logarithmic"&&b.y.min<=0)scale="linear"},
     getBounds(){return {x:{...bounds.x},y:{...bounds.y}}},
     getState(){return{x:{...range.x},y:{...range.y},yScaleType:scale}},
     setState(s){const x={min:Number(s?.x?.min),max:Number(s?.x?.max)},y={min:Number(s?.y?.min),max:Number(s?.y?.max)};if(!validRange(x)||!validRange(y))return false;if(s?.yScaleType==="logarithmic"&&bounds.y.min<=0)return false;scale=s?.yScaleType==="logarithmic"?"logarithmic":"linear";range={x:cx(x),y:cy(y)};return true},
     getYScaleType(){return scale},
     subscribe(fn){if(typeof fn!=="function")return()=>{};listeners.add(fn);return()=>listeners.delete(fn)},
-    setYScaleType(t){if(t==="logarithmic"&&bounds.y.min<=0)return false;scale=t==="logarithmic"?"logarithmic":"linear";return true},
+    setYScaleType(t){if(t==="logarithmic"){const positiveMin=range.y.min>0?range.y.min:range.y.max>0?range.y.max/1000000:0;if(!(positiveMin>0)||!(range.y.max>positiveMin))return false;range.y={min:positiveMin,max:range.y.max};scale="logarithmic";return true}scale="linear";return true},
     panX(d){range.x=cx({min:range.x.min+d,max:range.x.max+d});notify()},
     panYByPixels(px,h){
  const ratio=px/Math.max(1,h);
