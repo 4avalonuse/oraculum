@@ -33,8 +33,11 @@ export function createChart(host,candles,viewport){
     }else{
       const bw=Math.max(2,Math.min(10,step*.62));
       visible.forEach(c=>{const xx=x(c.timestamp);ctx.strokeStyle=c.close>=c.open?'#4ade80':'#f87171';ctx.fillStyle=ctx.strokeStyle;
-        ctx.beginPath();ctx.moveTo(xx,y(c.high));ctx.lineTo(xx,y(c.low));ctx.stroke();
-        ctx.fillRect(xx-bw/2,Math.min(y(c.open),y(c.close)),bw,Math.max(1,Math.abs(y(c.close)-y(c.open))));
+        const yo=y(c.open),yc=y(c.close),yh=y(c.high),yl=y(c.low);
+        // Keep very small/doji candles visible on dense/mobile charts without changing OHLC data.
+        ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();
+        const bodyTop=Math.min(yo,yc),bodyHeight=Math.max(2,Math.abs(yc-yo));
+        ctx.fillRect(xx-bw/2,bodyTop,bw,bodyHeight);
       });
     }
     const first=visible[0],last=visible.at(-1);
