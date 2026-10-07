@@ -11,9 +11,23 @@
 <main id="app">
 <header class="topbar">
   <div class="brand">ORACULUM</div>
-  <select id="asset-select" aria-label="Ativo principal">
-    <option value="BTC-USD">BTC</option><option value="SOL-USD">SOL</option><option value="RENDER-USD">RENDER</option><option value="JUP-USD">JUP</option><option value="ONDO-USD">ONDO</option>
-  </select>
+  <div class="asset-picker">
+    <button id="asset-picker-toggle" class="asset-picker-toggle" aria-haspopup="true" aria-expanded="false">
+      <span class="asset-picker-kicker">ATIVO PRINCIPAL</span>
+      <strong id="asset-picker-label">BTC</strong>
+      <span class="asset-picker-chevron">⌄</span>
+    </button>
+    <div id="asset-picker-menu" class="asset-picker-menu" role="dialog" aria-label="Selecionar ativo principal">
+      <div class="asset-picker-head">
+        <div><strong>ESCOLHER ATIVO</strong><small>O gráfico superior acompanha a série selecionada.</small></div>
+        <button id="asset-picker-close" class="asset-picker-close" aria-label="Fechar seleção">×</button>
+      </div>
+      <div class="asset-picker-body">
+        <nav id="asset-category-list" class="asset-category-list" aria-label="Categorias"></nav>
+        <div id="asset-option-list" class="asset-option-list" aria-label="Ativos"></div>
+      </div>
+    </div>
+  </div>
   <div id="status" class="status">CARREGANDO</div>
 </header>
 <section class="oraculum">
@@ -70,7 +84,8 @@
           <label class="asset-pick"><input class="analysis-asset" value="CL=F" type="checkbox"><span>PETRÓLEO</span><small>FATOR</small></label>
           <label class="asset-pick"><input class="analysis-asset" value="^GSPC" type="checkbox"><span>S&amp;P 500</span><small>FATOR</small></label>
           <label class="asset-pick"><input class="analysis-asset" value="DX-Y.NYB" type="checkbox"><span>DXY</span><small>FATOR</small></label>
-          <label class="asset-pick"><input class="analysis-asset" value="^TNX" type="checkbox"><span>JUROS · US 10Y</span><small>FATOR</small></label><label class="asset-pick"><input class="analysis-asset" value="^VIX" type="checkbox"><span>VIX</span><small>FATOR</small></label>
+          <label class="asset-pick"><input class="analysis-asset" value="^TNX" type="checkbox"><span>JUROS · US 10Y</span><small>FATOR</small></label>
+          <label class="asset-pick"><input class="analysis-asset" value="^VIX" type="checkbox"><span>VIX</span><small>FATOR</small></label>
         </div>
         <div class="analysis-actions">
           <span>Os cálculos só rodam quando você clicar.</span>
