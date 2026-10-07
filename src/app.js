@@ -14,6 +14,7 @@ const dataClient=createDataClient(API_BASE);
 const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
 let activeSymbol=DEFAULT_ASSET;
+let activeInterval='1d';
 const $=s=>document.querySelector(s);
 
 function boundsFor(c){
@@ -78,7 +79,6 @@ attachAssetPicker({
   getActiveInterval:()=>activeInterval
 });
 
-let activeInterval='1d';
 const intervalToggle=$('#interval-toggle');
 const intervalMenu=$('#interval-menu');
 intervalToggle?.addEventListener('click',()=>intervalMenu?.classList.toggle('open'));
