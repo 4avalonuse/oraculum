@@ -1,57 +1,51 @@
-/* ORACULUM — análise sob demanda de múltiplas séries */
+/* ORACULUM — análise investigativa sob demanda */
 import {analyzeSeries,alignSeries} from './engine.js';
 
 function fmt(v,d=2){if(!Number.isFinite(v))return '—';return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:d}).format(v)}
 function pct(v,d=2){return Number.isFinite(v)?fmt(v*100,d)+'%':'—'}
-function metric(label,value,note=''){return '<div class="analysis-metric"><span>'+label+'</span><strong>'+value+'</strong>'+(note?'<small>'+note+'</small>':'')+'</div>'}
+function date(v){return Number.isFinite(Number(v))?new Date(Number(v)).toLocaleDateString('pt-BR'):'—'}
+function metric(label,value,note='',help=''){return '<div class="analysis-metric" title="'+help+'"><span>'+label+'</span><strong>'+value+'</strong>'+(note?'<small>'+note+'</small>':'')+(help?'<em>'+help+'</em>':'')+'</div>'}
+function statBlock(title,items){return '<section class="analysis-stat-block"><h3>'+title+'</h3><div class="results-grid">'+items.join('')+'</div></section>'}
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[]};
  const renderChart=(rows,series)=>{
    const host=$('#comparison-chart');if(!host||!rows.length)return;
-   const w=Math.max(320,host.clientWidth||800),h=260,p={l:42,r:14,t:14,b:24};
+   const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:18,b:32};
    const normalized=series.map(s=>rows.map(r=>100*r[s.key]/rows[0][s.key]));
    const all=normalized.flat(),lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
    const line=vals=>vals.map((v,i)=>{const x=p.l+i*(w-p.l-p.r)/Math.max(1,vals.length-1),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
    const polylines=normalized.map((v,i)=>'<polyline points="'+line(v)+'" class="cmp-line cmp-'+i+'"/>').join('');
-   host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/>'+polylines+'<text x="'+p.l+'" y="'+(h-6)+'">início</text><text x="'+(w-p.r)+'" y="'+(h-6)+'" text-anchor="end">agora</text></svg>';
+   host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação em base 100 e escala logarítmica"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">'+date(rows[0].timestamp)+'</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">'+date(rows.at(-1).timestamp)+'</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">100 = início</text></svg>';
    const legend=$('#comparison-legend');if(legend)legend.innerHTML=series.map((s,i)=>'<span><i class="legend-'+i+'"></i>'+s.symbol+'</span>').join('');
  };
- const render=(result,series)=>{
-   state.result=result;state.selected=series.map(x=>x.key);$('#comparison-panel').classList.remove('is-hidden');
-   $('#analysis-status').textContent='CONCLUÍDA';
-   $('#comparison-period').textContent=new Date(result.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(result.rowsEnd).toLocaleDateString('pt-BR')+' · '+result.observations+' observações';
-   renderChart(state.rows,series);
-   const primary=result.series[series[0].key];
-   const relations=result.relations;
-   let html='<div class="analysis-section-label">RESUMO · '+primary.symbol+' COMO REFERÊNCIA</div><div class="results-grid">'+metric('Retorno',pct(primary.total))+metric('CAGR',pct(primary.cagr))+metric('Volatilidade',pct(primary.vol),'anualizada')+metric('Drawdown',pct(primary.drawdown))+metric('Sharpe',fmt(primary.sharpe,3))+metric('Sortino',fmt(primary.sortino,3))+metric('Win rate',pct(primary.winRate))+metric('ATH','$ '+fmt(primary.ath))+ '</div>';
-   if(relations.length)html+='<div class="analysis-section-label">RELAÇÕES</div><div class="results-grid">'+relations.map(r=>metric(r.target.toUpperCase()+' · CORR.',fmt(r.correlation,3)) + metric(r.target.toUpperCase()+' · BETA',fmt(r.beta,3)) + metric(r.target.toUpperCase()+' · R²',pct(r.r2)) + metric(r.target.toUpperCase()+' · LEAD/LAG',String(r.leadLag.lag))).join('')+'</div>';
-   const el=$('#analysis-results');el.innerHTML=html;el.classList.remove('is-hidden');$('#full-analysis').classList.remove('is-hidden');
+ const renderContext=(result,series)=>{
+   const primary=series[0],targets=series.slice(1).map(s=>s.symbol).join(' + ')||'somente '+primary.symbol;
+   $('#analysis-context').innerHTML='<div class="context-row"><div><span>REFERÊNCIA</span><strong>'+primary.symbol+'</strong></div><div><span>COMPARANDO COM</span><strong>'+targets+'</strong></div><div><span>PERÍODO</span><strong>'+date(result.rowsStart)+' → '+date(result.rowsEnd)+'</strong></div><div><span>INTERVALO</span><strong>'+result.interval+'</strong></div><div><span>OBSERVAÇÕES</span><strong>'+result.observations+'</strong></div></div><div class="context-note"><b>Como ler:</b> todas as séries foram alinhadas pelos mesmos timestamps antes dos cálculos. O gráfico comparativo começa em <b>100</b>; a escala logarítmica mostra crescimento proporcional, não preço absoluto.</div>';
+   $('#analysis-context').classList.remove('is-hidden');
  };
+ const render=(result,series)=>{
+   state.result=result;state.selected=series.map(x=>x.key);$('#comparison-panel').classList.remove('is-hidden');$('#analysis-status').textContent='CONCLUÍDA';
+   $('#comparison-period').textContent=date(result.rowsStart)+' → '+date(result.rowsEnd)+' · '+result.observations+' observações';
+   renderContext(result,series);renderChart(state.rows,series);
+   const primary=result.series[series[0].key],relations=result.relations;
+   let html='<div class="analysis-section-label">RESULTADOS PRINCIPAIS · '+primary.symbol+' COMO REFERÊNCIA</div><div class="results-grid">'+metric('Retorno',pct(primary.total),'no período','Variação acumulada entre o primeiro e o último valor.')+metric('CAGR',pct(primary.cagr),'anualizado','Taxa composta anual equivalente ao período analisado.')+metric('Volatilidade',pct(primary.vol),'anualizada','Dispersão anualizada dos log-retornos.')+metric('Drawdown máximo',pct(primary.drawdown),'queda máxima','Maior perda de um pico até um vale no período.')+metric('Sharpe',fmt(primary.sharpe,3),'risco/retorno','Retorno médio ajustado pela volatilidade.')+metric('Sortino',fmt(primary.sortino,3),'risco de queda','Similar ao Sharpe, mas considera a dispersão negativa.')+metric('Win rate',pct(primary.winRate),'observações positivas','Percentual de períodos com retorno positivo.')+metric('ATH','$ '+fmt(primary.ath),'máxima observada','Maior preço observado na janela.')+'</div>';
+   if(relations.length)html+='<div class="analysis-section-label">RELAÇÕES · REFERÊNCIA × ALVO</div><div class="results-grid">'+relations.map(r=>metric(r.target.toUpperCase()+' · CORR.',fmt(r.correlation,3),'associação','Correlação dos retornos; não implica causalidade.')+metric(r.target.toUpperCase()+' · BETA',fmt(r.beta,3),'sensibilidade','Sensibilidade do alvo em relação à referência.')+metric(r.target.toUpperCase()+' · R²',pct(r.r2),'ajuste linear','Parcela da variação do alvo explicada pelo modelo linear.')+metric(r.target.toUpperCase()+' · LEAD/LAG',String(r.leadLag.lag),'intervalos','Defasagem com maior correlação absoluta testada.')).join('')+'</div>';
+   html+='<div class="analysis-section-label">AVANÇADO</div><div class="advanced-teaser"><span>Mediana, melhor/pior período, covariância, alpha, correlação móvel e diagnóstico de lead/lag.</span><button id="advanced-analysis">VER ESTATÍSTICAS AVANÇADAS ↗</button></div>';
+   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal(true);
+ };
+ function openModal(focusAdvanced=false){
+   const r=state.result;if(!r)return;const modal=document.createElement('div');modal.className='analysis-modal';
+   const rows=Object.values(r.series).map(s=>'<tr><td><b>'+s.symbol+'</b></td><td>'+pct(s.total)+'</td><td>'+pct(s.cagr)+'</td><td>'+pct(s.vol)+'</td><td>'+pct(s.drawdown)+'</td><td>'+fmt(s.sharpe,3)+'</td><td>'+pct(s.winRate)+'</td></tr>').join('');
+   const advanced=Object.values(r.series).map(s=>statBlock(s.symbol+' · DISTRIBUIÇÃO E RISCO',[metric('Média',pct(s.mean),'por intervalo','Média dos log-retornos.'),metric('Mediana',pct(s.median),'por intervalo','Valor central dos retornos; reduz o efeito de extremos.'),metric('Melhor período',pct(s.best),'máximo','Maior retorno em uma observação.'),metric('Pior período',pct(s.worst),'mínimo','Menor retorno em uma observação.'),metric('ATL','$ '+fmt(s.atl),'mínimo','Menor preço observado.'),metric('ATH','$ '+fmt(s.ath),'máximo','Maior preço observado.')])).join('');
+   const rel=r.relations.map(x=>statBlock(x.primary.toUpperCase()+' × '+x.target.toUpperCase(),[metric('Correlação',fmt(x.correlation,4),'retornos','Perto de +1 = juntos; perto de -1 = opostos.'),metric('Covariância',fmt(x.covariance,6),'retornos','Movimento conjunto em escala dependente dos ativos.'),metric('Beta',fmt(x.beta,4),'sensibilidade','Sensibilidade linear do alvo em relação à referência.'),metric('Alpha',fmt(x.alpha,6),'intercepto','Componente médio não explicado pelo beta no modelo simples.'),metric('R²',pct(x.r2),'ajuste linear','Quanto da variação do alvo é explicada pela referência.'),metric('Corr. móvel',fmt(x.rolling,4),'última janela','Correlação na janela móvel mais recente.'),metric('Lead/Lag',String(x.leadLag.lag),'intervalos','Defasagem com maior correlação absoluta entre -5 e +5.')])).join('');
+   modal.innerHTML='<div class="analysis-modal-backdrop"></div><section class="analysis-modal-panel" role="dialog" aria-modal="true"><header><div><strong>ANÁLISE COMPLETA</strong><small>'+r.observations+' observações · '+r.interval+' · '+date(r.rowsStart)+' → '+date(r.rowsEnd)+'</small></div><button class="analysis-close" aria-label="Fechar">×</button></header><div class="analysis-modal-body"><section><h3>O QUE FOI ANALISADO</h3><div class="analysis-explain"><b>Referência:</b> '+r.series[Object.keys(r.series)[0]].symbol+' · <b>Janela:</b> '+date(r.rowsStart)+' → '+date(r.rowsEnd)+' · <b>Observações:</b> '+r.observations+' · <b>Intervalo:</b> '+r.interval+'.<br>Os timestamps foram alinhados antes dos cálculos. Retornos usam log-retornos; volatilidade, Sharpe e Sortino são anualizados conforme o intervalo.</div></section><section><h3>PERFORMANCE E RISCO</h3><table><thead><tr><th>Ativo</th><th>Retorno</th><th>CAGR</th><th>Vol.</th><th>DD</th><th>Sharpe</th><th>Win rate</th></tr></thead><tbody>'+rows+'</tbody></table></section><section><h3>ESTATÍSTICAS AVANÇADAS</h3>'+advanced+'</section><section><h3>RELAÇÕES ESTATÍSTICAS</h3>'+rel+'</section><section><h3>INTERPRETAÇÃO</h3><div class="analysis-explain"><p><b>Correlação não é causalidade.</b> Mede associação estatística entre retornos.</p><p><b>Beta</b> mede sensibilidade relativa. <b>R²</b> mede o quanto o modelo linear simples explica da variação do alvo.</p><p><b>Lead/Lag</b> procura defasagens de até 5 intervalos. É diagnóstico exploratório, não prova de previsão.</p><p><b>Base 100 + log</b> permite comparar trajetórias com preços absolutos muito diferentes.</p></div></section></div></section>';
+   const close=()=>modal.remove();modal.querySelector('.analysis-close').onclick=close;modal.querySelector('.analysis-modal-backdrop').onclick=close;document.body.appendChild(modal);if(focusAdvanced)modal.querySelector('.analysis-stat-block')?.scrollIntoView();
+ }
  async function run(){
    const activeSymbol=getActiveSymbol(),checked=[...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value),symbols=[activeSymbol,...checked.filter(x=>x!==activeSymbol)];
-   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#comparison-panel').classList.add('is-hidden');
-   try{
-     const interval=getInterval()||'1d';
-     const series=[];
-     for(const key of symbols){const meta=assets[key];const loaded=key===activeSymbol?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||key,kind:'ohlcv',interval,currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,candles})}
-     const rows=alignSeries(series);if(rows.length<10)throw new Error('Poucos timestamps comuns para esta análise.');
-     state.rows=rows;
-     const result=analyzeSeries(rows,series,interval);result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;
-     render(result,series);
-   }catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
- }
- const button=$('#analyze-assets');
- button?.addEventListener('click',run);
- $('#full-analysis')?.addEventListener('click',()=>{
-   const r=state.result;if(!r)return;
-   const modal=document.createElement('div');modal.className='analysis-modal';
-   const rows=Object.values(r.series).map(s=>'<tr><td>'+s.symbol+'</td><td>'+pct(s.total)+'</td><td>'+pct(s.cagr)+'</td><td>'+pct(s.vol)+'</td><td>'+pct(s.drawdown)+'</td><td>'+fmt(s.sharpe,3)+'</td><td>'+pct(s.winRate)+'</td></tr>').join('');
-   const rel=r.relations.map(x=>'<tr><td>'+x.primary.toUpperCase()+'</td><td>'+x.target.toUpperCase()+'</td><td>'+fmt(x.correlation,4)+'</td><td>'+fmt(x.beta,4)+'</td><td>'+pct(x.r2)+'</td><td>'+x.leadLag.lag+'</td></tr>').join('');
-   modal.innerHTML='<div class="analysis-modal-backdrop"></div><section class="analysis-modal-panel" role="dialog" aria-modal="true"><header><div><strong>ANÁLISE COMPLETA</strong><small>'+r.observations+' observações alinhadas · '+r.interval+'</small></div><button class="analysis-close" aria-label="Fechar">×</button></header><div class="analysis-modal-body"><section><h3>PERFORMANCE E RISCO</h3><table><thead><tr><th>Ativo</th><th>Retorno</th><th>CAGR</th><th>Vol.</th><th>DD</th><th>Sharpe</th><th>Win rate</th></tr></thead><tbody>'+rows+'</tbody></table></section><section><h3>RELAÇÕES ESTATÍSTICAS</h3><table><thead><tr><th>Ref.</th><th>Alvo</th><th>Corr.</th><th>Beta</th><th>R²</th><th>Lead/Lag</th></tr></thead><tbody>'+rel+'</tbody></table></section><section><h3>DIAGNÓSTICOS</h3><div class="analysis-diagnostics"><p><b>Janela:</b> '+new Date(r.rowsStart).toLocaleDateString('pt-BR')+' → '+new Date(r.rowsEnd).toLocaleDateString('pt-BR')+'.</p><p><b>Normalização:</b> comparação visual em base 100 e escala log.</p><p><b>Retornos:</b> log-retornos; volatilidade, Sharpe e Sortino anualizados conforme o intervalo.</p><p><b>Interpretação:</b> correlação, beta e lead/lag indicam associação estatística, não causalidade.</p></div></section></div></section>';
-   const close=()=>modal.remove();modal.querySelector('.analysis-close').onclick=close;modal.querySelector('.analysis-modal-backdrop').onclick=close;document.body.appendChild(modal);
- });
- const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>({...assets[k],key:k})).filter(Boolean);renderChart(state.rows,selected)}};
- window.addEventListener('resize',onResize);
- return {run,destroy(){window.removeEventListener('resize',onResize)}};
+   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#comparison-panel').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
+   try{const interval=getInterval()||'1d',series=[];for(const key of symbols){const meta=assets[key],loaded=key===activeSymbol?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||key,kind:'ohlcv',interval,currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,candles})}const rows=alignSeries(series);if(rows.length<10)throw new Error('Poucos timestamps comuns para esta análise.');state.rows=rows;const result=analyzeSeries(rows,series,interval);result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;render(result,series)}catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}}
+ const button=$('#analyze-assets');button?.addEventListener('click',run);$('#full-analysis')?.addEventListener('click',()=>openModal(false));
+ const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>({...assets[k],key:k})).filter(Boolean);renderChart(state.rows,selected)}};window.addEventListener('resize',onResize);return{run,destroy(){window.removeEventListener('resize',onResize)}};
 }
