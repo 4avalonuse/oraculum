@@ -12,6 +12,7 @@ function betaCF(a,b,x){let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs
 function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(gammaln(a+b)-gammaln(a)-gammaln(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betaCF(a,b,x)/a:1-bt*betaCF(b,a,1-x)/b}
 function tCDF(t,df){if(!Number.isFinite(t)||df<=0)return NaN;if(t===0)return .5;const x=df/(df+t*t),p=.5*ibeta(x,df/2,.5);return t>0?1-p:p}
 function tP(t,df){return Number.isFinite(t)?Math.min(1,Math.max(0,2*(1-tCDF(Math.abs(t),df)))):NaN}
+function normalP(z){if(!Number.isFinite(z))return NaN;const x=Math.abs(z),p=0.2316419,b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429,t=1/(1+p*x),phi=Math.exp(-x*x/2)/Math.sqrt(2*Math.PI),cdf=1-phi*(b1*t+b2*t*t+b3*t**3+b4*t**4+b5*t**5);return 2*(1-cdf)}
 function tCritical(alpha,df){let lo=0,hi=20;for(let i=0;i<70;i++){const mid=(lo+hi)/2;if(tCDF(mid,df)<1-alpha/2)lo=mid;else hi=mid}return (lo+hi)/2}
 function fP(f,d1,d2){if(!(f>=0&&d1>0&&d2>0))return NaN;return 1-ibeta((d1*f)/(d1*f+d2),d1/2,d2/2)}
 function ols(y,x,names){
@@ -28,12 +29,12 @@ function hacCovariance(x,e,inv,lag){
   const n=e.length,k=x[0].length,S=Array.from({length:k},()=>Array(k).fill(0)),L=Math.max(0,Math.min(lag,n-1));
   for(let t=0;t<n;t++)for(let i=0;i<k;i++)for(let j=0;j<k;j++)S[i][j]+=e[t]*e[t]*x[t][i]*x[t][j];
   for(let l=1;l<=L;l++){const w=1-l/(L+1);for(let t=l;t<n;t++)for(let i=0;i<k;i++)for(let j=0;j<k;j++){const z=e[t]*e[t-l]*w;S[i][j]+=z*(x[t][i]*x[t-l][j]+x[t-l][i]*x[t][j])}}
-  const out=multiply(multiply(inv,S),inv);return out;
+  const out=multiply(multiply(inv,S),inv),correction=n>k?n/(n-k):1;return out.map(row=>row.map(v=>v*correction));
 }
 function vifValues(predictors){
   const k=predictors.length;if(k<2)return [];
   const out=[];
-  for(let j=0;j<k;j++){const y=predictors.map(r=>r[j]),others=predictors.map(r=>r.filter((_,i)=>i!==j)),x=others.map(r=>[1,...r]);const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fit=x.map(r=>r.reduce((s,v,i)=>s+v*b[i],0)),m=mean(y),sst=y.reduce((s,v)=>s+(v-m)**2,0),sse=y.reduce((s,v,i)=>s-(v-fit[i])**2,0),r2=sst?Math.max(0,Math.min(1,1-sse/sst)):0;out.push({index:j,vif:1/Math.max(1e-12,1-r2),r2})}return out;
+  for(let j=0;j<k;j++){const y=predictors.map(r=>r[j]),others=predictors.map(r=>r.filter((_,i)=>i!==j)),x=others.map(r=>[1,...r]);const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fit=x.map(r=>r.reduce((s,v,i)=>s+v*b[i],0)),m=mean(y),sst=y.reduce((s,v)=>s+(v-m)**2,0),sse=y.reduce((s,v,i)=>s+(v-fit[i])**2,0),r2=sst?Math.max(0,Math.min(1,1-sse/sst)):0;out.push({index:j,vif:1/Math.max(1e-12,1-r2),r2})}return out;
 }
 export function runExplanatoryModel(rows,series,options={}){
   if(!Array.isArray(rows)||!Array.isArray(series)||series.length<2)return {available:false,reason:'Selecione pelo menos uma variável além da referência.'};
@@ -42,6 +43,6 @@ export function runExplanatoryModel(rows,series,options={}){
   const y=returnsBySeries[0].slice(-n),predictors=returnsBySeries.slice(1).map(v=>v.slice(-n)),x=y.map((_,i)=>[1,...predictors.map(v=>v[i])]),names=['Intercepto',...series.slice(1).map(s=>s.symbol)],fit=ols(y,x,names);
   if(!fit)return {available:false,reason:'Não foi possível estimar o modelo: colinearidade perfeita ou variação insuficiente.'};
   const inv=inverse(multiply(transpose(x),x)),lag=options.hacLag==null?Math.floor(4*Math.pow(n/100,2/9)):Math.max(0,Number(options.hacLag)),hac=inv?hacCovariance(x,fit.residuals,inv,lag):null;
-  const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:2*(1-tCDF(Math.abs(t),Math.max(1000,n)))}});
+  const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:normalP(t)}});
   return {available:true,target:target.symbol,predictors:series.slice(1).map(s=>s.symbol),observations:fit.n,returnMode:mode,r2:fit.r2,adjustedR2:fit.adjustedR2,f:fit.f,fP:fit.fP,df:fit.df,coefficients:fit.coefficients,hacCoefficients,fitted:fit.fitted,residuals:fit.residuals,sse:fit.sse,sst:fit.sst,rmse:fit.rmse,hacLag:lag,vif:vifValues(predictors)};
 }
