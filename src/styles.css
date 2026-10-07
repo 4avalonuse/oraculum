@@ -329,3 +329,10 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
   .topbar{position:relative}.asset-picker{min-width:0}.asset-picker-toggle{min-width:112px;padding:6px 8px}.asset-picker-menu{position:fixed;top:64px;left:8px;right:8px;width:auto;max-height:calc(100vh - 74px)}
   .asset-picker-body{grid-template-columns:118px 1fr;min-height:0;max-height:calc(100vh - 132px)}.asset-category-list{overflow-y:auto}.asset-option-list{grid-template-columns:1fr;overflow-y:auto}.asset-category{padding:10px 8px;min-height:42px}.asset-category span{font-size:9px}.asset-option{min-height:58px}.asset-picker-head{padding:10px 11px}
 }
+
+
+/* Diagnóstico de auditoria */
+.diagnostic-copy{font-size:9px;padding:6px 9px;min-height:30px;color:#bfe8ff;background:#0a1d2a;border:1px solid #245b78;border-radius:5px;letter-spacing:.05em}
+.diagnostic-copy:hover{border-color:#45b9ee;background:#0d293a;color:#e6f8ff}
+.diagnostic-copy:disabled{opacity:.6;cursor:wait}
+@media(max-width:700px){.diagnostic-copy{font-size:8px;padding:6px 7px;min-height:34px;max-width:118px}.topbar{gap:7px}.status{font-size:9px}}
