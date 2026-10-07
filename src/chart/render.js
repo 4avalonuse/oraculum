@@ -42,10 +42,13 @@ export function createChart(host,candles,viewport){
       });
     }
     if(crosshair&&visible.length){
-      const cx=Math.max(p.left,Math.min(p.left+pw,crosshair.x));
+      // Keep the crosshair slightly above/left of the finger so the finger does not cover the candle.
+      // The touch position itself is unchanged; only the visual target is offset.
+      const crosshairOffsetX=24,crosshairOffsetY=34;
+      const cx=Math.max(p.left,Math.min(p.left+pw,crosshair.x-crosshairOffsetX));
       let nearest=visible[0],best=Infinity;
       visible.forEach(c=>{const d=Math.abs(x(c.timestamp)-cx);if(d<best){best=d;nearest=c}});
-      const cy=Math.max(p.top,Math.min(p.top+ph,crosshair.y));
+      const cy=Math.max(p.top,Math.min(p.top+ph,crosshair.y-crosshairOffsetY));
       const priceAt=uv(b-(cy-p.top)/ph*span,s.yScaleType);
       const yAt=y(priceAt);
       ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(180,210,230,.7)';ctx.lineWidth=1;
