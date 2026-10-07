@@ -25,11 +25,11 @@ export const ASSETS={
 
 export const ASSET_CATEGORIES=[
   {id:'crypto',label:'CRIPTO',short:'CRYPTO'},
-  {id:'commodity',label:'COMMODITIES',short:'COMMOD.'},
-  {id:'index',label:'ÍNDICES',short:'ÍNDICES'},
-  {id:'rates',label:'JUROS',short:'JUROS'},
   {id:'stock',label:'AÇÕES',short:'AÇÕES'},
-  {id:'btc-etf',label:'ETF · BTC',short:'ETF BTC'}
+  {id:'btc-etf',label:'ETF · BTC',short:'ETF BTC'},
+  {id:'index',label:'ÍNDICES',short:'ÍNDICES'},
+  {id:'commodity',label:'COMMODITIES',short:'COMMOD.'},
+  {id:'rates',label:'JUROS',short:'JUROS'}
 ];
 
 export const DEFAULT_ASSET='BTC-USD';
