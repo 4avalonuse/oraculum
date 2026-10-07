@@ -6,7 +6,8 @@ import { attachChartInteraction } from './chart/interaction.js';
 import { attachChartControls } from './chart/controls.js';
 import { attachComparisonAnalysis } from './analysis/comparison.js';
 import { attachTimeline } from './events/timeline.js';
-import { getAsset,DEFAULT_ASSET,ASSETS,ASSET_CATEGORIES,getAssetsByCategory } from './data/assets.js';
+import { getAsset,DEFAULT_ASSET,ASSETS } from './data/assets.js';
+import { attachAssetPicker } from './ui/asset-picker.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
@@ -70,74 +71,12 @@ async function load(interval='1d'){
   }
 }
 
-const pickerToggle=$('#asset-picker-toggle');
-const pickerMenu=$('#asset-picker-menu');
-const pickerClose=$('#asset-picker-close');
-const categoryList=$('#asset-category-list');
-const optionList=$('#asset-option-list');
-let activeAssetCategory=getAsset(DEFAULT_ASSET).category;
-
-function renderAssetPicker(){
-  if(!categoryList||!optionList)return;
-  categoryList.innerHTML=ASSET_CATEGORIES.map(category=>{
-    const count=getAssetsByCategory(category.id).length;
-    return '<button class="asset-category'+(category.id===activeAssetCategory?' active':'')+'" data-category="'+category.id+'" type="button">'+
-      '<span>'+category.label+'</span><small>'+count+'</small></button>';
-  }).join('');
-
-  optionList.innerHTML=getAssetsByCategory(activeAssetCategory).map(asset=>{
-    const selected=asset.value===activeSymbol;
-    return '<button class="asset-option'+(selected?' active':'')+'" data-asset="'+asset.value+'" type="button">'+
-      '<span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span>'+
-      (selected?'<b aria-hidden="true">✓</b>':'')+
-      '</button>';
-  }).join('');
-
-  categoryList.querySelectorAll('[data-category]').forEach(button=>{
-    button.addEventListener('click',()=>{
-      activeAssetCategory=button.dataset.category;
-      renderAssetPicker();
-    });
-  });
-
-  optionList.querySelectorAll('[data-asset]').forEach(button=>{
-    button.addEventListener('click',()=>{
-      const next=button.dataset.asset;
-      if(next===activeSymbol){
-        pickerMenu?.classList.remove('open');
-        pickerToggle?.setAttribute('aria-expanded','false');
-        return;
-      }
-      activeSymbol=next;
-      const asset=getAsset(activeSymbol);
-      activeAssetCategory=asset.category;
-      $('#asset-picker-label').textContent=asset.symbol;
-      $('#asset-title').textContent=asset.symbol+' / USD';
-      pickerMenu?.classList.remove('open');
-      pickerToggle?.setAttribute('aria-expanded','false');
-      renderAssetPicker();
-      load(activeInterval);
-    });
-  });
-}
-
-pickerToggle?.addEventListener('click',()=>{
-  const open=!pickerMenu?.classList.contains('open');
-  pickerMenu?.classList.toggle('open',open);
-  pickerToggle.setAttribute('aria-expanded',String(open));
-  if(open)renderAssetPicker();
+attachAssetPicker({
+  load,
+  getActiveSymbol:()=>activeSymbol,
+  setActiveSymbol:value=>{activeSymbol=value;},
+  getActiveInterval:()=>activeInterval
 });
-pickerClose?.addEventListener('click',()=>{
-  pickerMenu?.classList.remove('open');
-  pickerToggle?.setAttribute('aria-expanded','false');
-});
-document.addEventListener('click',event=>{
-  if(!event.target.closest('.asset-picker')){
-    pickerMenu?.classList.remove('open');
-    pickerToggle?.setAttribute('aria-expanded','false');
-  }
-});
-renderAssetPicker();
 
 let activeInterval='1d';
 const intervalToggle=$('#interval-toggle');
