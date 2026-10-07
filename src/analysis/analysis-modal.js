@@ -1,5 +1,8 @@
 /* ORACULUM — análise completa */
 import {wireMetricHelp} from './metric-help.js';
+function correlationMatrix(series){const items=series.map(s=>({key:s.key,symbol:s.symbol,returns:s.returns||[]}));const corr=(a,b)=>{const n=Math.min(a.length,b.length);if(n<2)return NaN;const x=a.slice(-n),y=b.slice(-n),mx=x.reduce((s,v)=>s+v,0)/n,my=y.reduce((s,v)=>s+v,0)/n;let xy=0,xx=0,yy=0;for(let i=0;i<n;i++){const dx=x[i]-mx,dy=y[i]-my;xy+=dx*dy;xx+=dx*dx;yy+=dy*dy}return xx&&yy?xy/Math.sqrt(xx*yy):NaN};return items.map((row,i)=>({...row,values:items.map((col,j)=>i===j?1:corr(row.returns,col.returns))}));}
+function corrClass(v){if(!Number.isFinite(v))return 'corr-na';if(v>=.7)return 'corr-strong-pos';if(v>=.3)return 'corr-pos';if(v>-0.3)return 'corr-neutral';if(v>-0.7)return 'corr-neg';return 'corr-strong-neg'}
+
 export function openModal({focusAdvanced=false,result:r,metric,statBlock,pct,fmt,date}){
    if(!r)return;const modal=document.createElement('div');modal.className='analysis-modal';
    const rows=Object.values(r.series).map(s=>'<tr><td><b>'+s.symbol+'</b></td><td>'+pct(s.total)+'</td><td>'+pct(s.cagr)+'</td><td>'+pct(s.vol)+'</td><td>'+pct(s.drawdown)+'</td><td>'+fmt(s.sharpe,3)+'</td><td>'+pct(s.winRate)+'</td></tr>').join('');
