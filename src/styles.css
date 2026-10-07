@@ -336,3 +336,30 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .diagnostic-copy:hover{border-color:#45b9ee;background:#0d293a;color:#e6f8ff}
 .diagnostic-copy:disabled{opacity:.6;cursor:wait}
 @media(max-width:700px){.diagnostic-copy{font-size:8px;padding:6px 7px;min-height:34px;max-width:118px}.topbar{gap:7px}.status{font-size:9px}}
+
+
+/* Bateria de testes controlados */
+.test-battery-panel{display:none;position:fixed;top:62px;right:12px;z-index:900;width:min(430px,calc(100vw - 24px));max-height:calc(100vh - 78px);overflow:auto;padding:13px;background:#07111d;border:1px solid #24516b;border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.72)}
+.test-battery-panel.open{display:block}
+.test-battery-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid #17364d}
+.test-battery-head strong{display:block;color:#e4f5ff;font-size:12px;letter-spacing:.1em}
+.test-battery-head span{display:block;margin-top:4px;color:#76a0b7;font-size:10px}
+.test-battery-close{width:34px;min-width:34px;height:34px;padding:0;font-size:22px}
+.test-battery-results{padding-top:9px}
+.battery-group{padding:9px 0;border-bottom:1px solid #132d40}
+.battery-label{margin-bottom:6px;color:#79b9df;font-size:9px;font-weight:700;letter-spacing:.1em}
+.battery-row{display:flex;align-items:flex-start;gap:9px;padding:7px 0}
+.battery-state{display:flex;align-items:center;justify-content:center;flex:0 0 21px;width:21px;height:21px;border-radius:50%;font-size:11px;font-weight:800}
+.battery-state.pass{background:#0d3027;color:#62e6b5;border:1px solid #236c55}
+.battery-state.fail{background:#32181b;color:#ff8989;border:1px solid #7b3439}
+.battery-row strong{display:block;color:#dceef7;font-size:11px}
+.battery-row small{display:block;margin-top:2px;color:#7691a3;font-size:9px;line-height:1.4}
+.battery-loading{padding:18px 4px;color:#8ca9ba;font-size:11px}
+.battery-error{margin-top:10px;padding:9px;border:1px solid #71343a;background:#241316;color:#ff9a9a;font-size:10px}
+.test-battery-copy{width:100%;margin-top:10px;color:#dff5ff;background:#0a2434;border-color:#286f91;font-size:10px;letter-spacing:.06em}
+@media(max-width:700px){
+  .test-battery-panel{top:64px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 76px)}
+  .test-battery-head strong{font-size:11px}
+  .battery-row strong{font-size:12px}
+  .battery-row small{font-size:10px}
+}
