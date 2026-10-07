@@ -71,7 +71,7 @@ async function runTestBattery(){
       method:'POST',cache:'no-store'
     });
     const body=await refresh.json();
-    const candles=body?.ok&&Array.isArray(body.data)?body.data:[];
+    const candles=extractCandles(body);
     series[symbol]=candles;
 
     const quality=qualityCheck(candles);
@@ -101,6 +101,24 @@ async function runTestBattery(){
     tests,
     checks
   };
+}
+
+function extractCandles(body){
+  const candidates=[body?.data,body?.data?.candles,body?.data?.rows,body?.candles,body?.rows,body?.result,body?.result?.candles,body?.result?.rows];
+  for(const value of candidates){
+    if(Array.isArray(value))return normalizeBatteryCandles(value);
+  }
+  return [];
+}
+
+function normalizeBatteryCandles(values){
+  return values.map(c=>({
+    timestamp:Number(c?.timestamp??c?.ts??c?.time??c?.date??NaN),
+    open:Number(c?.open??c?.o??NaN),
+    high:Number(c?.high??c?.h??NaN),
+    low:Number(c?.low??c?.l??NaN),
+    close:Number(c?.close??c?.c??NaN)
+  })).filter(c=>Number.isFinite(c.timestamp)&&Number.isFinite(c.close));
 }
 
 function qualityCheck(candles){
