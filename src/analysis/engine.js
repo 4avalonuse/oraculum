@@ -17,6 +17,9 @@ export function alignSeries(series){
   const base=series[0].candles;
   return base.map(c=>{const row={timestamp:Number(c.timestamp)};for(let i=0;i<series.length;i++){const hit=maps[i].get(Number(c.timestamp));if(!hit||!Number.isFinite(hit.close))return null;row[series[i].key]=hit.close}return row}).filter(Boolean)
 }
+import {describe,jarqueBera} from './descriptive.js';
+import {riskMetrics,calmar} from './risk.js';
+
 export function analyzeSeries(rows,series,interval,options={}){
   const periods=annualPeriods(interval),mode=options.returnMode==='simple'?'simple':'log',rollingWindow=Math.max(5,Number(options.rollingWindow)||30),years=Math.max(1/periods,(rows.at(-1).timestamp-rows[0].timestamp)/(365.25*86400000)),out={interval,periods,years,observations:rows.length,returnMode:mode,rollingWindow,series:{},relations:[]};
   for(const s of series){
