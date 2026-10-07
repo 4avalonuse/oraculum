@@ -55,10 +55,10 @@ export function createChart(host,candles,viewport){
       ctx.save();ctx.font='bold 11px system-ui';
       const priceW=ctx.measureText(priceText).width+14,dateW=ctx.measureText(dateText).width+14;
       ctx.fillStyle='#102538';ctx.strokeStyle='#2b6386';ctx.lineWidth=1;
-      ctx.fillRect(w-p.right+3,Math.max(p.top,Math.min(p.top+ph-22,yAt-11)),priceW,22);ctx.strokeRect(w-p.right+3,Math.max(p.top,Math.min(p.top+ph-22,yAt-11)),priceW,22);
-      ctx.fillStyle='#e6f5ff';ctx.fillText(priceText,w-p.right+10,Math.max(p.top+15,Math.min(p.top+ph-7,yAt+4)));
-      ctx.fillStyle='#0c2030';ctx.fillRect(Math.max(p.left,Math.min(p.left+pw-dateW,cx-dateW/2)),h-p.bottom+2,dateW,20);ctx.strokeRect(Math.max(p.left,Math.min(p.left+pw-dateW,cx-dateW/2)),h-p.bottom+2,dateW,20);
-      ctx.fillStyle='#d8efff';ctx.fillText(dateText,Math.max(p.left+7,Math.min(p.left+pw-dateW+7,cx-dateW/2+7)),h-p.bottom+16);
+      const priceY=Math.max(p.top,Math.min(p.top+ph-22,yAt-27));ctx.fillRect(w-p.right+3,priceY,priceW,22);ctx.strokeRect(w-p.right+3,priceY,priceW,22);
+      ctx.fillStyle='#e6f5ff';ctx.fillText(priceText,w-p.right+10,priceY+15);
+      ctx.fillStyle='#0c2030';const dateX=Math.max(p.left,Math.min(p.left+pw-dateW,cx-dateW/2-14));const dateY=Math.max(p.top+4,h-p.bottom-28);ctx.fillRect(dateX,dateY,dateW,20);ctx.strokeRect(dateX,dateY,dateW,20);
+      ctx.fillStyle='#d8efff';ctx.fillText(dateText,dateX+7,dateY+14);
       ctx.restore();
     }
     const first=visible[0],last=visible.at(-1);
