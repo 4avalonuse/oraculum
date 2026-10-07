@@ -281,3 +281,11 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
   .asset-pick small{font-size:9px}
   .analysis-block{min-width:0;overflow:hidden}
 }
+
+/* Ciência visível — ajuda contextual mais evidente */
+.metric-help{flex:0 0 30px!important;min-width:30px!important;width:30px!important;height:30px!important;min-height:30px!important;border-width:2px!important;font-size:16px!important;box-shadow:0 0 0 1px rgba(88,191,255,.12)}
+.metric-help::after{content:'\00a0';}
+.metric-label span{font-size:12px!important;font-weight:700}
+.analysis-info-panel header strong{font-size:17px!important}
+.analysis-info-body h3{font-size:11px!important}
+@media(max-width:700px){.metric-help{flex-basis:34px!important;width:34px!important;height:34px!important;font-size:18px!important}.metric-label span{font-size:13px!important}.analysis-info-body p{font-size:13px!important}.formula-box{font-size:16px!important}}
