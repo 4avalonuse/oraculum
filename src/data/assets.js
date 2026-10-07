@@ -1,6 +1,10 @@
 export const ASSETS={
   'BTC-USD':{symbol:'BTC',name:'Bitcoin',provider:'yahoo',category:'crypto'},
   'SOL-USD':{symbol:'SOL',name:'Solana',provider:'yahoo',category:'crypto'},
+
+  'TEST-A':{symbol:'TEST-A',name:'Controle · crescimento conhecido',provider:'synthetic',category:'test',kind:'ohlcv'},
+  'TEST-B':{symbol:'TEST-B',name:'Controle · beta conhecido',provider:'synthetic',category:'test',kind:'ohlcv'},
+  'TEST-C':{symbol:'TEST-C',name:'Controle · autocorrelação',provider:'synthetic',category:'test',kind:'ohlcv'},
   'RENDER-USD':{symbol:'RENDER',name:'Render',provider:'yahoo',category:'crypto'},
   'JUP-USD':{symbol:'JUP',providerSymbol:'JUP29210-USD',name:'Jupiter',provider:'yahoo',category:'crypto'},
   'ONDO-USD':{symbol:'ONDO',name:'Ondo',provider:'yahoo',category:'crypto'},
@@ -25,6 +29,7 @@ export const ASSETS={
 
 export const ASSET_CATEGORIES=[
   {id:'crypto',label:'CRIPTO',short:'CRYPTO'},
+  {id:'test',label:'TESTE',short:'TESTE'},
   {id:'stock',label:'AÇÕES',short:'AÇÕES'},
   {id:'btc-etf',label:'ETF · BTC',short:'ETF BTC'},
   {id:'index',label:'ÍNDICES',short:'ÍNDICES'},
