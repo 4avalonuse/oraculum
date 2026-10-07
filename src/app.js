@@ -44,7 +44,7 @@ async function load(interval='1d'){
     viewport.fitY(visible.y);
 
     const chart=createChart(host,candles,viewport);
-    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,onViewportChanged:()=>timeline.renderTimeline(candles,viewport)});
+    const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,setCrosshair:chart.setCrosshair,onViewportChanged:()=>timeline.renderTimeline(candles,viewport)});
     const detachControls=attachChartControls({
       fitButton:$('#fit-toggle'),typeButton:$('#chart-type-toggle'),scaleButton:$('#scale-toggle'),
       viewport,candles,draw:chart.draw,onTypeChange:chart.setChartType
