@@ -10,6 +10,7 @@ export function createChart(host,candles,viewport){
   const ctx=canvas.getContext('2d');
   if(!ctx)throw new Error('Canvas 2D indisponível');
   let type='candle';
+  let crosshair=null;
 
   function resize(){
     const r=host.getBoundingClientRect(),d=window.devicePixelRatio||1;
@@ -40,10 +41,31 @@ export function createChart(host,candles,viewport){
         ctx.fillRect(xx-bw/2,bodyTop,bw,bodyHeight);
       });
     }
+    if(crosshair&&visible.length){
+      const cx=Math.max(p.left,Math.min(p.left+pw,crosshair.x));
+      let nearest=visible[0],best=Infinity;
+      visible.forEach(c=>{const d=Math.abs(x(c.timestamp)-cx);if(d<best){best=d;nearest=c}});
+      const cy=Math.max(p.top,Math.min(p.top+ph,crosshair.y));
+      const priceAt=uv(b-(cy-p.top)/ph*span,s.yScaleType);
+      const yAt=y(priceAt);
+      ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(180,210,230,.7)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(cx,p.top);ctx.lineTo(cx,p.top+ph);ctx.moveTo(p.left,yAt);ctx.lineTo(p.left+pw,yAt);ctx.stroke();ctx.restore();
+      const dateText=new Date(nearest.timestamp).toLocaleDateString('pt-BR');
+      const priceText=price(nearest.close);
+      ctx.save();ctx.font='bold 11px system-ui';
+      const priceW=ctx.measureText(priceText).width+14,dateW=ctx.measureText(dateText).width+14;
+      ctx.fillStyle='#102538';ctx.strokeStyle='#2b6386';ctx.lineWidth=1;
+      ctx.fillRect(w-p.right+3,Math.max(p.top,Math.min(p.top+ph-22,yAt-11)),priceW,22);ctx.strokeRect(w-p.right+3,Math.max(p.top,Math.min(p.top+ph-22,yAt-11)),priceW,22);
+      ctx.fillStyle='#e6f5ff';ctx.fillText(priceText,w-p.right+10,Math.max(p.top+15,Math.min(p.top+ph-7,yAt+4)));
+      ctx.fillStyle='#0c2030';ctx.fillRect(Math.max(p.left,Math.min(p.left+pw-dateW,cx-dateW/2)),h-p.bottom+2,dateW,20);ctx.strokeRect(Math.max(p.left,Math.min(p.left+pw-dateW,cx-dateW/2)),h-p.bottom+2,dateW,20);
+      ctx.fillStyle='#d8efff';ctx.fillText(dateText,Math.max(p.left+7,Math.min(p.left+pw-dateW+7,cx-dateW/2+7)),h-p.bottom+16);
+      ctx.restore();
+    }
     const first=visible[0],last=visible.at(-1);
     if(first&&last){const el=document.querySelector('#range-label');if(el)el.textContent=new Date(first.timestamp).toLocaleDateString()+' → '+new Date(last.timestamp).toLocaleDateString()}
   }
   function setChartType(next){type=next==='line'?'line':'candle';draw()}
+  function setCrosshair(point){crosshair=point?{...point}:null;draw()}
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
-  return{canvas,draw,setChartType,destroy(){observer.disconnect();canvas.remove()}};
+  return{canvas,draw,setChartType,setCrosshair,destroy(){observer.disconnect();canvas.remove()}};
 }
