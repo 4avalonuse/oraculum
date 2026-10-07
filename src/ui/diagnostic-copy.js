@@ -76,7 +76,7 @@ export function attachDiagnosticCopy({getState}){
           selectedAnalysisAssets:[...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value),
           candles:quality
         },
-        api:{base:API_BASE,health,datasetsSummary:summarizeDatasets(datasets)},
+        api:{base:API_BASE,health,datasetsSummary:summarizeDatasets(datasets),testBattery:await runTestBattery(datasets)},
         chart:{
           type:document.querySelector('#chart-type-toggle')?.textContent||null,
           scale:document.querySelector('#scale-toggle')?.textContent||null
@@ -99,6 +99,129 @@ export function attachDiagnosticCopy({getState}){
       setTimeout(()=>{button.textContent=original;button.disabled=false},1800);
     }
   });
+}
+
+async function runTestBattery(datasetResult){
+  const rows=summarizeDatasets(datasetResult)?.datasets||[];
+  const tests=['TEST-A','TEST-B','TEST-C'];
+  const out={status:'RUNNING',generatedAt:new Date().toISOString(),tests:[]};
+
+  try{
+    const catalog=rows.filter(d=>d.provider==='synthetic'&&d.kind==='ohlcv'&&d.interval==='1d');
+    const bySymbol=Object.fromEntries(catalog.map(d=>[d.symbol,d]));
+    const series={};
+
+    for(const symbol of tests){
+      const dataset=bySymbol[symbol];
+      if(!dataset?.id){
+        out.tests.push({id:symbol,status:'FAIL',reason:'Dataset 1d não encontrado no catálogo'});
+        continue;
+      }
+
+      let response=await fetch(API_BASE+'/api/datasets/'+encodeURIComponent(dataset.id),{cache:'no-store'});
+      let payload=null;
+      try{payload=await response.json()}catch{}
+      let candles=payload?.ok&&Array.isArray(payload.data)?payload.data:[];
+
+      if(!candles.length){
+        response=await fetch(API_BASE+'/api/datasets/'+encodeURIComponent(dataset.id)+'/refresh',{method:'POST',cache:'no-store'});
+        try{payload=await response.json()}catch{}
+        candles=payload?.ok&&Array.isArray(payload.data)?payload.data:[];
+      }
+
+      series[symbol]=candles;
+      const returns=logReturns(candles);
+      out.tests.push({
+        id:symbol,
+        datasetId:dataset.id,
+        candles:candles.length,
+        returns:returns.length,
+        status:candles.length>=20?'PASS':'FAIL'
+      });
+    }
+
+    const a=series['TEST-A']||[];
+    const b=series['TEST-B']||[];
+    const c=series['TEST-C']||[];
+    const ra=logReturns(a);
+    const rb=logReturns(b);
+    const rc=logReturns(c);
+
+    const meanA=mean(ra);
+    const betaAB=regressionBeta(ra,rb);
+    const ac1C=autocorrelation(rc,1);
+
+    const checks=[
+      {
+        id:'TEST-A.mean-return',
+        expected:'média do retorno log > 0',
+        observed:meanA,
+        status:Number.isFinite(meanA)&&meanA>0?'PASS':'FAIL'
+      },
+      {
+        id:'TEST-B.beta-vs-A',
+        expected:'beta ≈ 2.00',
+        observed:betaAB,
+        tolerance:'[1.90, 2.10]',
+        status:Number.isFinite(betaAB)&&betaAB>=1.90&&betaAB<=2.10?'PASS':'FAIL'
+      },
+      {
+        id:'TEST-C.autocorrelation',
+        expected:'autocorrelação lag 1 > 0.20',
+        observed:ac1C,
+        status:Number.isFinite(ac1C)&&ac1C>0.20?'PASS':'FAIL'
+      }
+    ];
+
+    out.checks=checks;
+    out.summary={
+      passed:out.tests.filter(t=>t.status==='PASS').length+checks.filter(t=>t.status==='PASS').length,
+      failed:out.tests.filter(t=>t.status==='FAIL').length+checks.filter(t=>t.status==='FAIL').length,
+      total:out.tests.length+checks.length
+    };
+    out.status=out.summary.failed===0?'PASS':'FAIL';
+  }catch(error){
+    out.status='FAIL';
+    out.error=String(error?.message||error);
+  }
+  return out;
+}
+
+function logReturns(candles){
+  const out=[];
+  for(let i=1;i<candles.length;i++){
+    const a=Number(candles[i-1]?.close);
+    const b=Number(candles[i]?.close);
+    if(a>0&&b>0&&Number.isFinite(a)&&Number.isFinite(b))out.push(Math.log(b/a));
+  }
+  return out;
+}
+
+function mean(values){
+  return values.length?values.reduce((s,v)=>s+v,0)/values.length:NaN;
+}
+
+function regressionBeta(x,y){
+  const n=Math.min(x.length,y.length);
+  if(n<2)return NaN;
+  const xx=x.slice(0,n), yy=y.slice(0,n);
+  const mx=mean(xx), my=mean(yy);
+  let cov=0,varx=0;
+  for(let i=0;i<n;i++){
+    const dx=xx[i]-mx;
+    cov+=dx*(yy[i]-my);
+    varx+=dx*dx;
+  }
+  return varx?cov/varx:NaN;
+}
+
+function autocorrelation(values,lag=1){
+  if(values.length<=lag+1)return NaN;
+  const m=mean(values);
+  let num=0,den=0;
+  for(let i=0;i<values.length;i++)den+=(values[i]-m)**2;
+  for(let i=lag;i<values.length;i++)num+=(values[i]-m)*(values[i-lag]-m);
+  return den?num/den:NaN;
 }
 
 function pickCandle(c){
