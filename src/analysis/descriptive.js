@@ -1,5 +1,7 @@
-/* ORACULUM — estatística descritiva */
-import {mean,std,quantile} from './engine.js';
+/* ORACULUM — estatística descritiva. Independente do núcleo. */
+function mean(v){return v.length?v.reduce((a,b)=>a+b,0)/v.length:NaN}
+function std(v){if(v.length<2)return NaN;const m=mean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1))}
+function quantile(v,q){if(!v.length)return NaN;const x=[...v].sort((a,b)=>a-b),i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
 export function variance(v){return v.length>1?std(v)**2:NaN}
 export function skewness(v){const n=v.length;if(n<3)return NaN;const m=mean(v),s=std(v);if(!s)return 0;return n/((n-1)*(n-2))*v.reduce((a,x)=>a+((x-m)/s)**3,0)}
 export function kurtosis(v){const n=v.length;if(n<4)return NaN;const m=mean(v),s=std(v);if(!s)return 0;const sum=v.reduce((a,x)=>a+((x-m)/s)**4,0);return n*(n+1)/((n-1)*(n-2)*(n-3))*sum-3*(n-1)**2/((n-2)*(n-3))}
