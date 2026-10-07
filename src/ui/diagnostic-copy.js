@@ -109,7 +109,7 @@ function summarizeDatasets(result){
   if(!result)return null;
   if(!result.ok)return result;
   const body=result.body;
-  const rows=Array.isArray(body)?body:(body?.datasets||[]);
+  const rows=Array.isArray(body)?body:(body?.data||body?.datasets||[]);
   return {
     http:result.http,
     count:rows.length,
