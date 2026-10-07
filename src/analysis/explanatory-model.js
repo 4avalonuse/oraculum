@@ -26,8 +26,8 @@ function inverse(matrix){
   return a.map(row=>row.slice(n));
 }
 function normalP(t){
-  const z=Math.abs(t),b=.2316419,p=.39894228*Math.exp(-z*z/2),q=1-p*b*(.31938153+b*(-.356563782+b*(1.781477937+b*(-1.821255978+b*1.330274429))));
-  return Math.min(1,2*q);
+  const z=Math.abs(t),b=.2316419,p=.39894228*Math.exp(-z*z/2),cdf=1-p*b*(.31938153+b*(-.356563782+b*(1.781477937+b*(-1.821255978+b*1.330274429))));
+  return Math.min(1,Math.max(0,2*(1-cdf)));
 }
 function ols(y,x,names){
   const n=y.length,k=x[0].length;
