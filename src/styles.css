@@ -294,3 +294,7 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .formula-box{display:flex;align-items:center;justify-content:center;min-height:82px;padding:18px 14px!important;text-align:center;overflow:auto;background:#050d16!important;color:#f2f8fc!important;font-size:1.35rem!important}
 .formula-box mjx-container{margin:0!important;max-width:100%;overflow-x:auto;padding:4px 0}
 @media(max-width:700px){.formula-box{min-height:76px;font-size:1.15rem!important;padding:14px 8px!important}}
+
+/* Explicação multivariada */
+.explanation-teaser{margin:8px 0 12px;padding:13px 14px;border:1px solid #2b6482;background:#081b29;color:#a9c4d4;line-height:1.5}
+.explanation-teaser div{font-size:11px}.explanation-teaser strong{display:block;margin-top:7px;font-size:18px;color:#e1f4ff}.explanation-teaser small{display:block;margin-top:5px;font-size:10px;color:#7795a8}.explanation-teaser.is-unavailable{border-color:#594c2a}.explanation-teaser.is-unavailable b{display:block;color:#f2c94c;font-size:11px}.explanation-teaser.is-unavailable small{color:#a89468}
