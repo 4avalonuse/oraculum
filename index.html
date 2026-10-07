@@ -28,7 +28,15 @@
       </div>
     </div>
   </div>
-  <button id="diagnostic-copy" class="diagnostic-copy" type="button" title="Copiar pacote completo para auditoria">COPIAR DIAGNÓSTICO</button>\n  <div id="status" class="status">CARREGANDO</div>
+  <button id="test-battery" class="diagnostic-copy" type="button" title="Executar e validar os datasets controlados">BATERIA DE TESTES</button>
+  <div id="test-battery-panel" class="test-battery-panel" role="dialog" aria-label="Bateria de testes">
+    <div class="test-battery-head">
+      <div><strong>BATERIA DE TESTES</strong><span id="test-battery-summary">Aguardando execução</span></div>
+      <button id="test-battery-close" class="test-battery-close" type="button" aria-label="Fechar">×</button>
+    </div>
+    <div id="test-battery-results" class="test-battery-results"></div>
+    <button id="test-battery-copy" class="test-battery-copy" type="button">COPIAR RESULTADO</button>
+  </div>\n  <div id="status" class="status">CARREGANDO</div>
 </header>
 <section class="oraculum">
   <section class="chart-card">
