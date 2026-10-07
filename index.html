@@ -45,8 +45,11 @@
       </div>
       <div class="analysis-block">
         <div class="analysis-section-label">ATIVOS</div>
+        <div class="investigation-controls">
+          <label class="reference-control"><span>ATIVO DE REFERÊNCIA</span><select id="analysis-reference" aria-label="Escolher ativo de referência"><option value="BTC-USD">BTC</option><option value="SOL-USD">SOL</option><option value="RENDER-USD">RENDER</option><option value="JUP-USD">JUP</option><option value="ONDO-USD">ONDO</option></select><small>É o ativo-base dos cálculos de correlação, beta, R² e lead/lag.</small></label>
+        </div>
+        <div class="analysis-section-label">ATIVOS PARA COMPARAR</div>
         <div class="asset-picks">
-          <label class="asset-pick primary"><input id="primary-analysis" type="checkbox" checked disabled><span>ATIVO DO GRÁFICO</span><small>REFERÊNCIA</small></label>
           <label class="asset-pick"><input class="analysis-asset" value="SOL-USD" type="checkbox"><span>SOL</span><small>COMPARAR</small></label>
           <label class="asset-pick"><input class="analysis-asset" value="RENDER-USD" type="checkbox"><span>RENDER</span><small>COMPARAR</small></label>
           <label class="asset-pick"><input class="analysis-asset" value="JUP-USD" type="checkbox"><span>JUP</span><small>COMPARAR</small></label>
@@ -75,7 +78,7 @@
       </div>
       <div id="analysis-context" class="analysis-context is-hidden"></div><div id="comparison-panel" class="comparison-panel">
         <div class="comparison-head">
-          <div><strong>COMPARAÇÃO</strong><small>Base 100 · escala logarítmica · referência = ativo do gráfico</small></div>
+          <div><strong>COMPARAÇÃO</strong><small>Base 100 · escala logarítmica · referência = ativo escolhido na investigação</small></div>
           <span id="comparison-period">—</span>
         </div>
         <div id="comparison-chart" class="comparison-chart" aria-label="Comparação normalizada das séries selecionadas"></div>
