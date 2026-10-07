@@ -1,5 +1,5 @@
 const P={left:10,right:58,top:10,bottom:24};
-export function attachChartInteraction({canvas,viewport,draw,onViewportChanged=()=>{}}){
+export function attachChartInteraction({canvas,viewport,draw,onViewportChanged=()=>{},setCrosshair=()=>{}}){
   const pointers=new Map();let drag=null,pinch=null;
   const point=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
   function down(e){if(e.pointerType==="mouse"&&e.button!==0)return;e.preventDefault();pointers.set(e.pointerId,point(e));try{canvas.setPointerCapture(e.pointerId)}catch{};if(pointers.size===1){drag={...point(e)};pinch=null;canvas.style.cursor="grabbing";setCrosshair?.(point(e))}else if(pointers.size===2){setCrosshair?.(null);const [a,b]=[...pointers.values()];pinch={distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},spanX:Math.abs(b.x-a.x),spanY:Math.abs(b.y-a.y)};drag=null}}
