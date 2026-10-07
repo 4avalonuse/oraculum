@@ -32,9 +32,13 @@ export function attachAssetPicker({load,getActiveSymbol,setActiveSymbol,getActiv
     }).join('');
 
     categoryList.querySelectorAll('[data-category]').forEach(button=>{
-      button.addEventListener('click',()=>{
+      button.addEventListener('click',(event)=>{
+        event.preventDefault();
+        event.stopPropagation();
         activeAssetCategory=button.dataset.category;
         render();
+        pickerMenu?.classList.add('open');
+        pickerToggle?.setAttribute('aria-expanded','true');
       });
     });
 
