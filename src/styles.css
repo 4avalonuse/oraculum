@@ -289,3 +289,8 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .analysis-info-panel header strong{font-size:17px!important}
 .analysis-info-body h3{font-size:11px!important}
 @media(max-width:700px){.metric-help{flex-basis:34px!important;width:34px!important;height:34px!important;font-size:18px!important}.metric-label span{font-size:13px!important}.analysis-info-body p{font-size:13px!important}.formula-box{font-size:16px!important}}
+
+/* Fórmulas matemáticas */
+.formula-box{display:flex;align-items:center;justify-content:center;min-height:82px;padding:18px 14px!important;text-align:center;overflow:auto;background:#050d16!important;color:#f2f8fc!important;font-size:1.35rem!important}
+.formula-box mjx-container{margin:0!important;max-width:100%;overflow-x:auto;padding:4px 0}
+@media(max-width:700px){.formula-box{min-height:76px;font-size:1.15rem!important;padding:14px 8px!important}}
