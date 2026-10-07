@@ -42,6 +42,6 @@ export function runExplanatoryModel(rows,series,options={}){
   const y=returnsBySeries[0].slice(-n),predictors=returnsBySeries.slice(1).map(v=>v.slice(-n)),x=y.map((_,i)=>[1,...predictors.map(v=>v[i])]),names=['Intercepto',...series.slice(1).map(s=>s.symbol)],fit=ols(y,x,names);
   if(!fit)return {available:false,reason:'Não foi possível estimar o modelo: colinearidade perfeita ou variação insuficiente.'};
   const inv=inverse(multiply(transpose(x),x)),lag=options.hacLag==null?Math.floor(4*Math.pow(n/100,2/9)):Math.max(0,Number(options.hacLag)),hac=inv?hacCovariance(x,fit.residuals,inv,lag):null;
-  const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:2*(1-(.5+.5*Math.sign(t)*(1-Math.exp(-Math.abs(t)*Math.abs(t)/2))))}});
+  const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:2*(1-tCDF(Math.abs(t),Math.max(1000,n)))}});
   return {available:true,target:target.symbol,predictors:series.slice(1).map(s=>s.symbol),observations:fit.n,returnMode:mode,r2:fit.r2,adjustedR2:fit.adjustedR2,f:fit.f,fP:fit.fP,df:fit.df,coefficients:fit.coefficients,hacCoefficients,fitted:fit.fitted,residuals:fit.residuals,sse:fit.sse,sst:fit.sst,rmse:fit.rmse,hacLag:lag,vif:vifValues(predictors)};
 }
