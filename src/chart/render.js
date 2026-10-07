@@ -51,7 +51,7 @@ export function createChart(host,candles,viewport){
       ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(180,210,230,.7)';ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(cx,p.top);ctx.lineTo(cx,p.top+ph);ctx.moveTo(p.left,yAt);ctx.lineTo(p.left+pw,yAt);ctx.stroke();ctx.restore();
       const dateText=new Date(nearest.timestamp).toLocaleDateString('pt-BR');
-      const priceText=price(nearest.close);
+      const priceText=price(priceAt);
       ctx.save();ctx.font='bold 11px system-ui';
       const priceW=ctx.measureText(priceText).width+14,dateW=ctx.measureText(dateText).width+14;
       ctx.fillStyle='#102538';ctx.strokeStyle='#2b6386';ctx.lineWidth=1;
