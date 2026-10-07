@@ -28,7 +28,7 @@ function hacCovariance(x,e,inv,lag){
   const n=e.length,k=x[0].length,S=Array.from({length:k},()=>Array(k).fill(0)),L=Math.max(0,Math.min(lag,n-1));
   for(let t=0;t<n;t++)for(let i=0;i<k;i++)for(let j=0;j<k;j++)S[i][j]+=e[t]*e[t]*x[t][i]*x[t][j];
   for(let l=1;l<=L;l++){const w=1-l/(L+1);for(let t=l;t<n;t++)for(let i=0;i<k;i++)for(let j=0;j<k;j++){const z=e[t]*e[t-l]*w;S[i][j]+=z*(x[t][i]*x[t-l][j]+x[t-l][i]*x[t][j])}}
-  const out=multiply(multiply(inv,S),inv);return out.map((r,i)=>r.map((v,j)=>v/n));
+  const out=multiply(multiply(inv,S),inv);return out;
 }
 function vifValues(predictors){
   const k=predictors.length;if(k<2)return [];
