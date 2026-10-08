@@ -20,8 +20,8 @@ function createRequest(apiBase) {
 
     if (!response.ok) {
       throw new Error(
-        payload?.error ||
         payload?.message ||
+        payload?.error ||
         `Data API HTTP ${response.status}`
       );
     }
