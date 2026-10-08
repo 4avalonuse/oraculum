@@ -107,20 +107,35 @@ function createClient(apiBase = API_BASE) {
       return Math.max(a, b) / Math.min(a, b);
     };
 
+    const first = candles[0];
+    const second = candles[1];
+    const third = candles[2];
+    const last = candles.at(-1);
+    const beforeLast = candles.at(-2);
+    const beforeBeforeLast = candles.at(-3);
+    const value = (candle, long, short) => Number(candle?.[long] ?? candle?.[short]);
     const edgeScaleAnomaly =
       candles.length >= 3 &&
       (
         (
-          scaleRatio(Number(candles[0]?.close ?? candles[0]?.c), Number(candles[1]?.close ?? candles[1]?.c)) >= 2 &&
-          scaleRatio(Number(candles[1]?.close ?? candles[1]?.c), Number(candles[2]?.close ?? candles[2]?.c)) <= 1.10
+          scaleRatio(value(first, "close", "c"), value(second, "close", "c")) >= 2 &&
+          scaleRatio(value(second, "close", "c"), value(third, "close", "c")) <= 1.10
         ) ||
         (
-          scaleRatio(Number(candles.at(-1)?.close ?? candles.at(-1)?.c), Number(candles.at(-2)?.close ?? candles.at(-2)?.c)) >= 2 &&
-          scaleRatio(Number(candles.at(-2)?.close ?? candles.at(-2)?.c), Number(candles.at(-3)?.close ?? candles.at(-3)?.c)) <= 1.10
+          scaleRatio(value(last, "close", "c"), value(beforeLast, "close", "c")) >= 2 &&
+          scaleRatio(value(beforeLast, "close", "c"), value(beforeBeforeLast, "close", "c")) <= 1.10
         )
       );
+    const edgeWickAnomaly =
+      candles.length >= 3 &&
+      (
+        value(first, "high", "h") > Math.max(value(second, "high", "h"), value(third, "high", "h")) * 3 ||
+        (value(first, "low", "l") > 0 && value(first, "low", "l") < Math.min(value(second, "low", "l"), value(third, "low", "l")) / 3) ||
+        value(last, "high", "h") > Math.max(value(beforeLast, "high", "h"), value(beforeBeforeLast, "high", "h")) * 3 ||
+        (value(last, "low", "l") > 0 && value(last, "low", "l") < Math.min(value(beforeLast, "low", "l"), value(beforeBeforeLast, "low", "l")) / 3)
+      );
 
-    return collapsed / candles.length >= 0.95 || edgeScaleAnomaly;
+    return collapsed / candles.length >= 0.95 || edgeScaleAnomaly || edgeWickAnomaly;
   }
 
   async function loadOrPopulate(options) {
