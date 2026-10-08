@@ -19,6 +19,48 @@ function timestamp(value) {
   return t;
 }
 
+function repairIsolatedScaleAnomalies(candles) {
+  if (candles.length < 3) return candles;
+
+  const closes = candles.map(c => c.close);
+  const outliers = new Set();
+  const ratio = (a, b) => {
+    if (!(a > 0) || !(b > 0)) return Infinity;
+    return Math.max(a, b) / Math.min(a, b);
+  };
+
+  // Detect a single candle whose price scale is wildly different from the
+  // surrounding series. This protects the chart from provider/cache
+  // contamination such as 255 -> 4253 -> 255 without changing normal
+  // market moves. Negative/zero commodity prices are left untouched.
+  for (let i = 0; i < closes.length; i += 1) {
+    const prev = closes[i - 1];
+    const next = closes[i + 1];
+    const prev2 = closes[i - 2];
+    const next2 = closes[i + 2];
+
+    if (i === 0 && ratio(closes[i], next) >= 8 && ratio(next, next2) < 2) {
+      outliers.add(i);
+    } else if (
+      i === closes.length - 1 &&
+      ratio(prev, closes[i]) >= 8 &&
+      ratio(prev2, prev) < 2
+    ) {
+      outliers.add(i);
+    } else if (
+      prev != null && next != null &&
+      ratio(prev, closes[i]) >= 8 &&
+      ratio(closes[i], next) >= 8 &&
+      ratio(prev, next) < 2
+    ) {
+      outliers.add(i);
+    }
+  }
+
+  if (!outliers.size) return candles;
+  return candles.filter((_, index) => !outliers.has(index));
+}
+
 export function normalizeCandles(rows) {
   if (!Array.isArray(rows)) throw new TypeError('Candles precisam ser uma lista');
   if (!rows.length) throw new Error('Nenhum candle recebido');
@@ -59,5 +101,5 @@ export function normalizeCandles(rows) {
     }
   }
 
-  return candles;
+  return repairIsolatedScaleAnomalies(candles);
 }
