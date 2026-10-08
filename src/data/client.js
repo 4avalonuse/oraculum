@@ -78,10 +78,31 @@ function createClient(apiBase = API_BASE) {
     return unpack(payload, dataset);
   }
 
+  function needsOhlcvRepair(loaded) {
+    const candles = loaded?.candles;
+    if (!Array.isArray(candles) || candles.length < 10) return false;
+
+    // A legacy series dataset can masquerade as OHLCV by repeating its
+    // single value across open/high/low/close. Never let that reach the chart.
+    const collapsed = candles.reduce((count, candle) => {
+      return count + (
+        candle.open === candle.high &&
+        candle.high === candle.low &&
+        candle.low === candle.close
+          ? 1
+          : 0
+      );
+    }, 0);
+
+    return collapsed / candles.length >= 0.95;
+  }
+
   async function loadOrPopulate(options) {
     const loaded = await loadCandles(options);
-    if (loaded.candles.length) return loaded;
-    return refreshCandles(options);
+    if (!loaded.candles.length || needsOhlcvRepair(loaded)) {
+      return refreshCandles(options);
+    }
+    return loaded;
   }
 
   async function refreshCandles(options) {
