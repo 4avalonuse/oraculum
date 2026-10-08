@@ -12,10 +12,50 @@ export function sharpe(r,p){const s=std(r);return s?mean(r)/s*Math.sqrt(p):NaN}
 export function sortino(r,p){const downside=r.filter(x=>x<0),s=std(downside);return s?mean(r)/s*Math.sqrt(p):NaN}
 export function quantile(v,q){if(!v.length)return NaN;const x=[...v].sort((a,b)=>a-b),i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
 export function leadLag(a,b,maxLag=5){const out=[];for(let lag=-maxLag;lag<=maxLag;lag++){const x=[],y=[];for(let i=0;i<a.length;i++){const j=i+lag;if(j>=0&&j<b.length){x.push(a[i]);y.push(b[j])}}out.push({lag,corr:corr(x,y)})}return out}
-export function alignSeries(series){
-  const maps=series.map(s=>new Map(s.candles.map(x=>[Number(x.timestamp),x])));
-  const base=series[0].candles;
-  return base.map(c=>{const row={timestamp:Number(c.timestamp)};for(let i=0;i<series.length;i++){const hit=maps[i].get(Number(c.timestamp));if(!hit||!Number.isFinite(hit.close))return null;row[series[i].key]=hit.close}return row}).filter(Boolean)
+function periodKey(timestamp,interval='1d'){
+  const d=new Date(Number(timestamp));
+  if(!Number.isFinite(d.getTime())) return null;
+  if(interval==='1h'){
+    return String(Math.floor(Number(timestamp)/3600000));
+  }
+  if(interval==='1w'){
+    const day=(d.getUTCDay()+6)%7;
+    const monday=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-day));
+    return monday.toISOString().slice(0,10);
+  }
+  if(interval==='1M'){
+    return String(d.getUTCFullYear()).padStart(4,'0')+'-'+String(d.getUTCMonth()+1).padStart(2,'0');
+  }
+  return d.toISOString().slice(0,10);
+}
+
+export function alignSeries(series,interval='1d'){
+  if(!series?.length)return [];
+  // Cross-market alignment is calendar-aware. BTC trades continuously, while
+  // stocks/factors can be absent on weekends and exchange holidays. We align
+  // observations by the requested period bucket rather than requiring identical
+  // raw timestamps, then keep only periods observed by every series.
+  const maps=series.map(s=>{
+    const map=new Map();
+    for(const candle of s.candles||[]){
+      const key=periodKey(candle.timestamp,interval);
+      const close=Number(candle.close);
+      if(key&&Number.isFinite(close)&&close>0) map.set(key,{timestamp:Number(candle.timestamp),close});
+    }
+    return map;
+  });
+  const base=series[0].candles||[];
+  const seen=new Set();
+  return base.map(c=>{
+    const key=periodKey(c.timestamp,interval);
+    if(!key||seen.has(key))return null;
+    const hits=maps.map(map=>map.get(key));
+    if(hits.some(hit=>!hit))return null;
+    seen.add(key);
+    const row={timestamp:hits[0].timestamp};
+    for(let i=0;i<series.length;i++)row[series[i].key]=hits[i].close;
+    return row;
+  }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp);
 }
 import {describe,jarqueBera} from './descriptive.js';
 import {riskMetrics,calmar} from './risk.js';
