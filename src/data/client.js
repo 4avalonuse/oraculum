@@ -102,7 +102,25 @@ function createClient(apiBase = API_BASE) {
       );
     }, 0);
 
-    return collapsed / candles.length >= 0.95;
+    const scaleRatio = (a, b) => {
+      if (!(a > 0) || !(b > 0)) return Infinity;
+      return Math.max(a, b) / Math.min(a, b);
+    };
+
+    const edgeScaleAnomaly =
+      candles.length >= 3 &&
+      (
+        (
+          scaleRatio(Number(candles[0]?.close ?? candles[0]?.c), Number(candles[1]?.close ?? candles[1]?.c)) >= 2 &&
+          scaleRatio(Number(candles[1]?.close ?? candles[1]?.c), Number(candles[2]?.close ?? candles[2]?.c)) <= 1.10
+        ) ||
+        (
+          scaleRatio(Number(candles.at(-1)?.close ?? candles.at(-1)?.c), Number(candles.at(-2)?.close ?? candles.at(-2)?.c)) >= 2 &&
+          scaleRatio(Number(candles.at(-2)?.close ?? candles.at(-2)?.c), Number(candles.at(-3)?.close ?? candles.at(-3)?.c)) <= 1.10
+        )
+      );
+
+    return collapsed / candles.length >= 0.95 || edgeScaleAnomaly;
   }
 
   async function loadOrPopulate(options) {
