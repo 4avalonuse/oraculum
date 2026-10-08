@@ -85,10 +85,18 @@ function createClient(apiBase = API_BASE) {
     // A legacy series dataset can masquerade as OHLCV by repeating its
     // single value across open/high/low/close. Never let that reach the chart.
     const collapsed = candles.reduce((count, candle) => {
+      const open = Number(candle?.open ?? candle?.o);
+      const high = Number(candle?.high ?? candle?.h);
+      const low = Number(candle?.low ?? candle?.l);
+      const close = Number(candle?.close ?? candle?.c);
       return count + (
-        candle.open === candle.high &&
-        candle.high === candle.low &&
-        candle.low === candle.close
+        Number.isFinite(open) &&
+        Number.isFinite(high) &&
+        Number.isFinite(low) &&
+        Number.isFinite(close) &&
+        open === high &&
+        high === low &&
+        low === close
           ? 1
           : 0
       );
