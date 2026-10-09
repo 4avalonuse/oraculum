@@ -62,7 +62,7 @@ test('alignment keeps only shared UTC calendar buckets and handles duplicates',(
   assert.deepEqual(rows.map(r=>[r.A,r.B]),[[12,20],[13,22]]);
 });
 
-test('cross-asset returns use each asset native prior bucket, not prior shared date',()=>{
+test('cross-asset returns use the same shared observation horizon',()=>{
   const day=86400000,t=Date.UTC(2024,0,5);
   const crypto={key:'BTC',symbol:'BTC',category:'crypto',candles:[
     {timestamp:t,close:100},{timestamp:t+day,close:110},{timestamp:t+2*day,close:121},{timestamp:t+3*day,close:133.1}
@@ -73,9 +73,8 @@ test('cross-asset returns use each asset native prior bucket, not prior shared d
   const rows=alignSeries([crypto,stock],'1d');
   assert.equal(rows.length,2);
   near(rows[1].BTC,133.1);
-  near(rows[1].__previousCloses.BTC,121);
   const result=analyzeSeries(rows,[{key:'BTC',symbol:'BTC',category:'crypto'},{key:'STOCK',symbol:'STOCK',category:'stock'}],'1d');
-  near(result.series.BTC.returns[1],Math.log(133.1/121));
+  near(result.series.BTC.returns[1],Math.log(133.1/100));
   near(result.series.STOCK.returns[1],Math.log(55/50));
 });
 test('analysis pipeline recovers known beta on aligned return observations',()=>{
