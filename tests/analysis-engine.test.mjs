@@ -156,8 +156,8 @@ test('OLS inference matches an independent numerical reference fixture',()=>{
   near(model.coefficients[0].beta,0.000329705154,1e-10);
   near(model.coefficients[1].beta,1.45923299,1e-7);
   near(model.r2,0.99838773212,1e-10);
-  near(model.f,1161664.10286,2e-2);
-  near(model.fP,1.8900434e-53,1e-53);
+  near(model.f,13623.3751081,1e-4);
+  near(model.fP,3.22051731e-32,1e-39);
   near(model.coefficients[1].se,0.01250208,1e-7);
   near(model.coefficients[1].ciLow,1.43330526,1e-7);
   near(model.coefficients[1].ciHigh,1.48516072,1e-7);
