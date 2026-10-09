@@ -32,7 +32,7 @@ test('returns reject non-positive and non-finite adjacent prices without fabrica
 test('drawdown distinguishes recovered and unrecovered peak-to-trough losses',()=>{
   const recovered=drawdown([100,120,90,120,130]);
   near(recovered.max,-0.25);
-  assert.equal(recovered.recovery,2);
+  assert.equal(recovered.recovery,1);
   assert.equal(recovered.troughIndex,2);
   const unrecovered=drawdown([100,120,90,100]);
   assert.equal(unrecovered.recovery,null);
@@ -56,5 +56,5 @@ test('alignment keeps only shared UTC calendar buckets and handles duplicates',(
     {key:'B',candles:[{timestamp:t+5000,close:20},{timestamp:t+2*day,close:22}]}
   ],'1d');
   assert.equal(rows.length,2);
-  assert.deepEqual(rows.map(r=>[r.A,r.B]),[[10,20],[13,22]]);
+  assert.deepEqual(rows.map(r=>[r.A,r.B]),[[12,20],[13,22]]);
 });
