@@ -11,9 +11,27 @@ export function cov(a,b){const p=paired(a,b);if(p.length<2)return NaN;const ma=m
 export function corr(a,b){const p=paired(a,b);if(p.length<2)return NaN;const x=p.map(v=>v[0]),y=p.map(v=>v[1]),sx=std(x),sy=std(y);if(!(sx>0&&sy>0))return NaN;const value=cov(x,y)/(sx*sy);return Number.isFinite(value)?Math.max(-1,Math.min(1,value)):NaN}
 export function returns(values,mode='log'){const out=[];if(!Array.isArray(values))return out;for(let i=1;i<values.length;i++){const a=Number(values[i-1]),b=Number(values[i]);if(Number.isFinite(a)&&Number.isFinite(b)&&a>0&&b>0)out.push(mode==='simple'?b/a-1:Math.log(b/a))}return out}
 export function alignedReturns(rows,key,mode='log'){if(!Array.isArray(rows))return [];if(!rows.some(row=>row.__previousCloses))return returns(rows.map(row=>row[key]),mode);return rows.map((row,i)=>{if(i===0)return NaN;const previous=row.__previousCloses?.[key],current=Number(row[key]);if(!(previous>0&&current>0&&Number.isFinite(previous)&&Number.isFinite(current)))return NaN;return mode==='simple'?current/previous-1:Math.log(current/previous)})}
-/* recovery = number of observations from the maximum-drawdown trough until a
- * subsequent new high. null means the series did not recover within the sample. */
-export function drawdown(values){const v=finite(values).filter(x=>x>0);if(!v.length)return {max:NaN,recovery:null,peakIndex:null,troughIndex:null};let peak=v[0],peakIndex=0,max=0,troughIndex=0,recovery=0,underwater=false;for(let i=0;i<v.length;i++){const value=v[i];if(value>=peak){if(underwater){recovery=i-troughIndex;underwater=false}peak=value;peakIndex=i}else{const dd=value/peak-1;if(dd<max){max=dd;troughIndex=i;underwater=true;recovery=null}}}return {max,recovery:underwater?null:recovery,peakIndex,troughIndex}}
+/* recovery = observations from the deepest drawdown trough until price
+ * regains that drawdown's prior peak. Indices refer to the original input. */
+export function drawdown(values){
+  if(!Array.isArray(values)) return {max:NaN,recovery:null,peakIndex:null,troughIndex:null};
+  const valid=values.map((value,index)=>({value,index})).filter(x=>Number.isFinite(x.value)&&x.value>0);
+  if(!valid.length) return {max:NaN,recovery:null,peakIndex:null,troughIndex:null};
+  let peak=valid[0].value,peakIndex=valid[0].index,max=0,maxPeakIndex=peakIndex,troughIndex=peakIndex,recovery=0;
+  for(let i=1;i<valid.length;i++){
+    const {value,index}=valid[i];
+    if(value>=peak){peak=value;peakIndex=index}
+    const dd=value/peak-1;
+    if(dd<max){max=dd;maxPeakIndex=peakIndex;troughIndex=index;recovery=null}
+  }
+  if(max<0){
+    const troughPos=valid.findIndex(x=>x.index===troughIndex);
+    const peakValue=values[maxPeakIndex];
+    const recovered=valid.slice(troughPos+1).find(x=>x.value>=peakValue);
+    recovery=recovered?recovered.index-troughIndex:null;
+  }
+  return {max,recovery,peakIndex:maxPeakIndex,troughIndex};
+}
 export function regression(x,y){const p=paired(x,y);if(p.length<2)return {alpha:NaN,beta:NaN,r:NaN,r2:NaN,n:p.length};const a=p.map(v=>v[0]),b=p.map(v=>v[1]),variance=cov(a,a);if(!(variance>0))return {alpha:NaN,beta:NaN,r:corr(a,b),r2:NaN,n:p.length};const beta=cov(a,b)/variance,alpha=mean(b)-beta*mean(a),r=corr(a,b);return {alpha,beta,r,r2:Number.isFinite(r)?r*r:NaN,n:p.length}}
 export function annualPeriods(interval,calendar='continuous'){if(interval==='1w')return 52;if(interval==='1M')return 12;if(calendar==='trading')return interval==='1h'?1638:interval==='1d'?252:365;return interval==='1h'?8760:365}
 export function cagr(first,last,years){return first>0&&last>0&&years>0?(last/first)**(1/years)-1:NaN}
