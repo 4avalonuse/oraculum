@@ -25,7 +25,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(sample.length<10)return;
    const returnMode=document.querySelector('#analysis-return')?.value||'log';
    const rollingWindow=Number(document.querySelector('#analysis-window')?.value||30);
-   const calendar=state.series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';\n   const result=analyzeSeries(sample,state.series,getInterval()||'1d',{returnMode,rollingWindow,calendar});
+   const calendar=state.series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';
+   const result=analyzeSeries(sample,state.series,getInterval()||'1d',{returnMode,rollingWindow,calendar});
    result.explanatoryModel=runExplanatoryModel(sample,state.series,{returnMode});
    result.modelDiagnostics=diagnoseModel(result.explanatoryModel);
    result.rowsStart=sample[0].timestamp;result.rowsEnd=sample.at(-1).timestamp;
