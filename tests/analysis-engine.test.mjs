@@ -111,3 +111,19 @@ test('multivariate model uses native aligned returns and drops only incomplete r
   assert.equal(model.observations,rows.length-1);
   assert.ok(model.coefficients.every(c=>Number.isFinite(c.beta)));
 });
+
+test('drawdown indices refer to original observations when invalid values are skipped',()=>{
+  const r=drawdown([100,NaN,120,90,120]);
+  near(r.max,-0.25);
+  assert.equal(r.peakIndex,2);
+  assert.equal(r.troughIndex,3);
+  assert.equal(r.recovery,1);
+});
+test('constant samples have undefined skewness, kurtosis and Jarque-Bera',async()=>{
+  const {describe,jarqueBera}=await import('../src/analysis/descriptive.js');
+  const d=describe(Array(12).fill(5));
+  assert.ok(Number.isNaN(d.skewness));
+  assert.ok(Number.isNaN(d.excessKurtosis));
+  assert.ok(Number.isNaN(jarqueBera(Array(12).fill(5)).stat));
+  assert.ok(Number.isNaN(jarqueBera(Array(12).fill(5)).p));
+});
