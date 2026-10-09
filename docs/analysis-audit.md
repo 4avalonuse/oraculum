@@ -19,8 +19,8 @@ Esta camada é a base investigativa do Oraculum e deverá fornecer sinais, condi
 - Estatísticas bivariadas: covariância/correlação/regressão exigem vetores de mesmo tamanho e usam apenas pares finitos; regressão informa o tamanho efetivo da amostra.
 - Drawdown: `recovery` agora mede o número de observações entre o vale do drawdown máximo e a recuperação do pico anterior; retorna `null` se não houver recuperação até o fim da amostra.
 - Anualização: frequência diária de cripto/testes usa 365 períodos/ano; investigações que incluem classes de mercado com pregão usam 252 períodos/ano, e 1h usa 1.638 períodos/ano como convenção de sessão. É uma convenção inicial explícita; futuros e ativos com calendários próprios ainda precisam de parametrização específica.
-- Testes de referência: adicionados 8 testes automatizados para estatísticas amostrais, correlação indefinida, retornos inválidos, drawdown/recuperação, OLS, anualização por intervalo e alinhamento temporal. GitHub Actions confirmou **8/8 PASS** no commit `b982852910c0a691faaa7ee082cd7c21697d46b6`.
-- Alinhamento temporal: `alignSeries` já agrupa por bucket UTC do intervalo (hora/dia/semana/mês), e não exige igualdade do timestamp bruto. Ainda faltam testes amplos de feriados, fusos, frequências mistas e observações intraperíodo.
+- Testes de referência: adicionados 10 testes automatizados para estatísticas amostrais, correlação indefinida, retornos inválidos, drawdown/recuperação, OLS, anualização por intervalo e alinhamento temporal. GitHub Actions confirmou **10/10 PASS** no commit `a823ada755030de77e50729f5170ce3ef3c1562b`.
+- Alinhamento temporal: `alignSeries` agrupa por bucket UTC (hora/dia/semana/mês), sem exigir timestamp bruto idêntico. Os retornos agora usam o fechamento nativo anterior de cada série; assim, ao comparar BTC com ações, o retorno de segunda-feira do BTC não absorve artificialmente todo o fim de semana. A matriz de correlação também ignora observações não finitas de forma pareada. Ainda faltam testes amplos de feriados, fusos, frequências mistas e observações intraperíodo.
 
 ### Próximas validações necessárias
 
