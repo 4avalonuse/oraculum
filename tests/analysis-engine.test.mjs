@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mean,std,cov,corr,returns,drawdown,regression,annualPeriods,quantile,alignSeries,analyzeSeries} from '../src/analysis/engine.js';
 import {runExplanatoryModel} from '../src/analysis/explanatory-model.js';
+import {diagnoseModel} from '../src/analysis/model-diagnostics.js';
 
 const near=(actual,expected,tol=1e-10)=>assert.ok(Math.abs(actual-expected)<=tol,`expected ${actual} ≈ ${expected}`);
 
@@ -155,6 +156,8 @@ test('OLS inference matches an independent numerical reference fixture',()=>{
   near(model.coefficients[0].beta,0.000329705154,1e-10);
   near(model.coefficients[1].beta,1.45923299,1e-7);
   near(model.r2,0.99838773212,1e-10);
+  near(model.f,1161664.10286,2e-2);
+  near(model.fP,1.8900434e-53,1e-53);
   near(model.coefficients[1].se,0.01250208,1e-7);
   near(model.coefficients[1].ciLow,1.43330526,1e-7);
   near(model.coefficients[1].ciHigh,1.48516072,1e-7);
@@ -207,4 +210,16 @@ test('VIF flags strongly collinear predictors with a large value',()=>{
   const model=runExplanatoryModel(rows,[{key:'B',symbol:'B'},{key:'A',symbol:'A'},{key:'C',symbol:'C'}]);
   assert.equal(model.available,true,model.reason);
   assert.ok(model.vif.every(v=>v.vif>100));
+});
+
+test('residual diagnostics match a known alternating-residual fixture',()=>{
+  const residuals=Array.from({length:20},(_,i)=>i%2===0?1:-1);
+  const d=diagnoseModel({available:true,residuals});
+  assert.equal(d.available,true);
+  near(d.residualMean,0);
+  near(d.durbinWatson,3.8);
+  near(d.varianceRatio,1);
+  assert.ok(d.ljungBox.stat>0);
+  assert.ok(d.ljungBox.p<.05);
+  near(d.maxAbsResidual,1);
 });
