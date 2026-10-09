@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mean,std,cov,corr,returns,drawdown,regression,annualPeriods,quantile,alignSeries} from '../src/analysis/engine.js';
+import {mean,std,cov,corr,returns,drawdown,regression,annualPeriods,quantile,alignSeries,analyzeSeries} from '../src/analysis/engine.js';
 
 const near=(actual,expected,tol=1e-10)=>assert.ok(Math.abs(actual-expected)<=tol,`expected ${actual} ≈ ${expected}`);
 
@@ -59,4 +59,31 @@ test('alignment keeps only shared UTC calendar buckets and handles duplicates',(
   ],'1d');
   assert.equal(rows.length,2);
   assert.deepEqual(rows.map(r=>[r.A,r.B]),[[12,20],[13,22]]);
+});
+
+test('cross-asset returns use each asset native prior bucket, not prior shared date',()=>{
+  const day=86400000,t=Date.UTC(2024,0,5);
+  const crypto={key:'BTC',symbol:'BTC',category:'crypto',candles:[
+    {timestamp:t,close:100},{timestamp:t+day,close:110},{timestamp:t+2*day,close:121},{timestamp:t+3*day,close:133.1}
+  ]};
+  const stock={key:'STOCK',symbol:'STOCK',category:'stock',candles:[
+    {timestamp:t,close:50},{timestamp:t+3*day,close:55}
+  ]};
+  const rows=alignSeries([crypto,stock],'1d');
+  assert.equal(rows.length,2);
+  near(rows[1].BTC,133.1);
+  near(rows[1].__previousCloses.BTC,121);
+  const result=analyzeSeries(rows,[{key:'BTC',symbol:'BTC',category:'crypto'},{key:'STOCK',symbol:'STOCK',category:'stock'}],'1d');
+  near(result.series.BTC.returns[1],Math.log(133.1/121));
+  near(result.series.STOCK.returns[1],Math.log(55/50));
+});
+test('analysis pipeline recovers known beta on aligned return observations',()=>{
+  const day=86400000,t=Date.UTC(2024,0,1),x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015];
+  let a=100,b=50;
+  const rows=[{timestamp:t,A:a,B:b}];
+  for(let i=0;i<x.length;i++){a*=Math.exp(x[i]);b*=Math.exp(.001+2*x[i]);rows.push({timestamp:t+(i+1)*day,A:a,B:b})}
+  const result=analyzeSeries(rows,[{key:'A',symbol:'A',category:'crypto'},{key:'B',symbol:'B',category:'crypto'}],'1d');
+  near(result.relations[0].beta,2,1e-8);
+  near(result.relations[0].correlation,1,1e-8);
+  near(result.relations[0].r2,1,1e-8);
 });
