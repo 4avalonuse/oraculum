@@ -42,7 +42,7 @@ export function runExplanatoryModel(rows,series,options={}){
   if(n<Math.max(20,series.length*5))return {available:false,reason:'A amostra alinhada é pequena para um modelo multivariado confiável.',observations:n};
   const y=returnRows.map(row=>row[0]),predictors=series.slice(1).map((_,i)=>returnRows.map(row=>row[i+1])),x=y.map((_,i)=>[1,...predictors.map(v=>v[i])]),names=['Intercepto',...series.slice(1).map(s=>s.symbol)],fit=ols(y,x,names);
   if(!fit)return {available:false,reason:'Não foi possível estimar o modelo: colinearidade perfeita ou variação insuficiente.'};
-  const inv=inverse(multiply(transpose(x),x)),lag=options.hacLag==null?Math.floor(4*Math.pow(n/100,2/9)):Math.max(0,Number(options.hacLag)),hac=inv?hacCovariance(x,fit.residuals,inv,lag):null;
+  const inv=inverse(multiply(transpose(x),x)),requestedLag=options.hacLag==null?Math.floor(4*Math.pow(n/100,2/9)):Number(options.hacLag),lag=Number.isFinite(requestedLag)?Math.max(0,Math.min(n-1,Math.floor(requestedLag))):Math.floor(4*Math.pow(n/100,2/9)),hac=inv?hacCovariance(x,fit.residuals,inv,lag):null;
   const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:normalP(t)}});
   return {available:true,target:target.symbol,predictors:series.slice(1).map(s=>s.symbol),observations:fit.n,returnMode:mode,r2:fit.r2,adjustedR2:fit.adjustedR2,f:fit.f,fP:fit.fP,df:fit.df,coefficients:fit.coefficients,hacCoefficients,fitted:fit.fitted,residuals:fit.residuals,sse:fit.sse,sst:fit.sst,rmse:fit.rmse,hacLag:lag,vif:vifValues(predictors)};
 }
