@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mean,std,cov,corr,returns,drawdown,regression,annualPeriods,quantile,alignSeries,analyzeSeries} from '../src/analysis/engine.js';
+import {runExplanatoryModel} from '../src/analysis/explanatory-model.js';
 
 const near=(actual,expected,tol=1e-10)=>assert.ok(Math.abs(actual-expected)<=tol,`expected ${actual} ≈ ${expected}`);
 
@@ -86,4 +87,27 @@ test('analysis pipeline recovers known beta on aligned return observations',()=>
   near(result.relations[0].beta,2,1e-8);
   near(result.relations[0].correlation,1,1e-8);
   near(result.relations[0].r2,1,1e-8);
+});
+
+test('multivariate model uses native aligned returns and drops only incomplete rows',()=>{
+  const day=86400000,start=Date.UTC(2024,0,1),cryptoCandles=[],stockCandles=[];
+  let crypto=100,stock=50;
+  for(let i=0;i<45;i++){
+    const timestamp=start+i*day;
+    const r=[.008,-.012,.017,-.004,.011,-.019,.006][i%7];
+    crypto*=Math.exp(r);
+    cryptoCandles.push({timestamp,close:crypto});
+    const weekday=new Date(timestamp).getUTCDay();
+    if(weekday!==0&&weekday!==6){
+      const sr=[.004,-.007,.012,-.003,.009][i%5];
+      stock*=Math.exp(sr);
+      stockCandles.push({timestamp,close:stock});
+    }
+  }
+  const series=[{key:'BTC',symbol:'BTC',category:'crypto',candles:cryptoCandles},{key:'STOCK',symbol:'STOCK',category:'stock',candles:stockCandles}];
+  const rows=alignSeries(series,'1d');
+  const model=runExplanatoryModel(rows,series);
+  assert.equal(model.available,true,model.reason);
+  assert.equal(model.observations,rows.length-1);
+  assert.ok(model.coefficients.every(c=>Number.isFinite(c.beta)));
 });
