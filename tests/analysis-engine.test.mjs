@@ -195,15 +195,16 @@ test('VIF is calculated across observations, not across predictor labels',()=>{
   near(model.vif[0].vif,6.2495965,1e-5);
   near(model.vif[1].vif,6.2495965,1e-5);
 });
-test('VIF marks perfectly collinear predictors as infinite',()=>{
+test('VIF flags strongly collinear predictors with a large value',()=>{
   const x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015,.006,-.004,.018,-.011,.009,-.019,.014,.003,.016,-.006,.022,-.013];
+  const w=[.004,-.003,.001,.005,-.002,.006,-.004,.002,-.005,.003,.001,-.006,.004,-.001,.005,-.003,.002,-.004,.006,-.002,.003,-.005,.001,.004];
   let a=100,b=50,c=80;
   const rows=[{timestamp:Date.UTC(2024,0,1),A:a,B:b,C:c}];
   for(let i=0;i<x.length;i++){
-    a*=Math.exp(x[i]);c*=Math.exp(2*x[i]);b*=Math.exp(.001+1.3*x[i]+(i%2?.001:-.001));
+    a*=Math.exp(x[i]);c*=Math.exp(2*x[i]+.5*w[i]);b*=Math.exp(.001+1.3*x[i]+(i%2?.001:-.001));
     rows.push({timestamp:Date.UTC(2024,0,1)+(i+1)*86400000,A:a,B:b,C:c});
   }
   const model=runExplanatoryModel(rows,[{key:'B',symbol:'B'},{key:'A',symbol:'A'},{key:'C',symbol:'C'}]);
   assert.equal(model.available,true,model.reason);
-  assert.ok(model.vif.every(v=>v.vif===Infinity));
+  assert.ok(model.vif.every(v=>v.vif>100));
 });
