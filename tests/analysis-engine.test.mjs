@@ -52,7 +52,7 @@ test('annualization conventions are explicit by interval',()=>{
 test('alignment keeps only shared UTC calendar buckets and handles duplicates',()=>{
   const day=86400000, t=Date.UTC(2024,0,1);
   const rows=alignSeries([
-    {key:'A',candles:[{timestamp:t,close:10},{timestamp:t+day,close:11},{timestamp:t+day+1000,close:12},{timestamp:t+2*day,close:13}]},
+    {key:'A',candles:[{timestamp:t,close:10},{timestamp:t+day,close:11},{timestamp:t+1000,close:12},{timestamp:t+2*day,close:13}]},
     {key:'B',candles:[{timestamp:t+5000,close:20},{timestamp:t+2*day,close:22}]}
   ],'1d');
   assert.equal(rows.length,2);
