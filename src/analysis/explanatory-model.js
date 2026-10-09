@@ -19,7 +19,7 @@ function ols(y,x,names){
   const n=y.length,k=x[0].length;if(n<=k+2)return null;
   const xt=transpose(x),xtx=multiply(xt,x),inv=inverse(xtx);if(!inv)return null;
   const beta=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fitted=x.map(row=>row.reduce((s,v,i)=>s+v*beta[i],0)),residuals=y.map((v,i)=>v-fitted[i]);
-  const ybar=mean(y),sst=y.reduce((s,v)=>s+(v-ybar)**2,0),sse=residuals.reduce((s,v)=>s+v*v,0),r2=sst>0?1-sse/sst:0,df=n-k,sigma2=sse/Math.max(1,df);
+  const ybar=mean(y),sst=y.reduce((s,v)=>s+(v-ybar)**2,0),sse=residuals.reduce((s,v)=>s+v*v,0);if(!(sst>1e-24))return null;const r2=1-sse/sst,df=n-k,sigma2=sse/Math.max(1,df);
   const covb=inv.map(row=>row.map(v=>v*sigma2)),critical=tCritical(.05,df);
   const coefficients=beta.map((value,i)=>{const se=Math.sqrt(Math.max(0,covb[i][i])),t=se?value/se:NaN;return {name:names[i],beta:value,se,t,p:tP(t,df),ciLow:value-critical*se,ciHigh:value+critical*se}});
   const predictors=k-1,adjusted=1-(1-r2)*(n-1)/Math.max(1,n-k),f=predictors&&r2<1?(r2/predictors)/((1-r2)/Math.max(1,df)):NaN;
@@ -34,7 +34,7 @@ function hacCovariance(x,e,inv,lag){
 function vifValues(predictors){
   const k=predictors.length;if(k<2)return [];
   const out=[];
-  for(let j=0;j<k;j++){const y=predictors.map(r=>r[j]),others=predictors.map(r=>r.filter((_,i)=>i!==j)),x=others.map(r=>[1,...r]);const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fit=x.map(r=>r.reduce((s,v,i)=>s+v*b[i],0)),m=mean(y),sst=y.reduce((s,v)=>s+(v-m)**2,0),sse=y.reduce((s,v,i)=>s+(v-fit[i])**2,0),r2=sst?Math.max(0,Math.min(1,1-sse/sst)):0;out.push({index:j,vif:1/Math.max(1e-12,1-r2),r2})}return out;
+  for(let j=0;j<k;j++){const y=predictors.map(r=>r[j]),others=predictors.map(r=>r.filter((_,i)=>i!==j)),x=others.map(r=>[1,...r]);const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fit=x.map(r=>r.reduce((s,v,i)=>s+v*b[i],0)),m=mean(y),sst=y.reduce((s,v)=>s+(v-m)**2,0),sse=y.reduce((s,v,i)=>s+(v-fit[i])**2,0);if(!(sst>1e-24)){out.push({index:j,vif:NaN,r2:NaN});continue}const r2=Math.max(0,Math.min(1,1-sse/sst));out.push({index:j,vif:1/Math.max(1e-12,1-r2),r2})}return out;
 }
 export function runExplanatoryModel(rows,series,options={}){
   if(!Array.isArray(rows)||!Array.isArray(series)||series.length<2)return {available:false,reason:'Selecione pelo menos uma variável além da referência.'};
