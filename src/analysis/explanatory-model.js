@@ -32,9 +32,25 @@ function hacCovariance(x,e,inv,lag){
   const out=multiply(multiply(inv,S),inv),correction=n>k?n/(n-k):1;return out.map(row=>row.map(v=>v*correction));
 }
 function vifValues(predictors){
-  const k=predictors.length;if(k<2)return [];
+  const k=predictors.length;
+  if(k<2)return [];
+  const n=Math.min(...predictors.map(v=>v.length));
+  if(!Number.isFinite(n)||n<2)return predictors.map((_,index)=>({index,vif:NaN,r2:NaN}));
   const out=[];
-  for(let j=0;j<k;j++){const y=predictors.map(r=>r[j]),others=predictors.map(r=>r.filter((_,i)=>i!==j)),x=others.map(r=>[1,...r]);const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]),fit=x.map(r=>r.reduce((s,v,i)=>s+v*b[i],0)),m=mean(y),sst=y.reduce((s,v)=>s+(v-m)**2,0),sse=y.reduce((s,v,i)=>s+(v-fit[i])**2,0);if(!(sst>1e-24)){out.push({index:j,vif:NaN,r2:NaN});continue}const r2=Math.max(0,Math.min(1,1-sse/sst));out.push({index:j,vif:1/Math.max(1e-12,1-r2),r2})}return out;
+  for(let j=0;j<k;j++){
+    const y=predictors[j].slice(0,n);
+    const others=predictors.filter((_,i)=>i!==j);
+    const x=Array.from({length:n},(_,row)=>[1,...others.map(v=>v[row])]);
+    const xt=transpose(x),inv=inverse(multiply(xt,x));
+    if(!inv){out.push({index:j,vif:Infinity,r2:1});continue}
+    const b=multiply(multiply(inv,xt),y.map(v=>[v])).map(v=>v[0]);
+    const fit=x.map(row=>row.reduce((sum,v,i)=>sum+v*b[i],0));
+    const m=mean(y),sst=y.reduce((sum,v)=>sum+(v-m)**2,0),sse=y.reduce((sum,v,i)=>sum+(v-fit[i])**2,0);
+    if(!(sst>1e-24)){out.push({index:j,vif:NaN,r2:NaN});continue}
+    const r2=Math.max(0,Math.min(1,1-sse/sst));
+    out.push({index:j,vif:r2>=1-1e-12?Infinity:1/(1-r2),r2});
+  }
+  return out;
 }
 export function runExplanatoryModel(rows,series,options={}){
   if(!Array.isArray(rows)||!Array.isArray(series)||series.length<2)return {available:false,reason:'Selecione pelo menos uma variável além da referência.'};
