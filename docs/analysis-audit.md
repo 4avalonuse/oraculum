@@ -18,13 +18,14 @@ Esta camada é a base investigativa do Oraculum e deverá fornecer sinais, condi
 - Núcleo estatístico: amostras vazias/insuficientes retornam `NaN` em vez de um zero enganoso; correlação de séries constantes é indefinida (`NaN`).
 - Estatísticas bivariadas: covariância/correlação/regressão exigem vetores de mesmo tamanho e usam apenas pares finitos; regressão informa o tamanho efetivo da amostra.
 - Drawdown: `recovery` agora mede o número de observações entre o vale do drawdown máximo e a recuperação do pico anterior; retorna `null` se não houver recuperação até o fim da amostra.
+- Anualização: frequência diária de cripto/testes usa 365 períodos/ano; investigações que incluem classes de mercado com pregão usam 252 períodos/ano, e 1h usa 1.638 períodos/ano como convenção de sessão. É uma convenção inicial explícita; futuros e ativos com calendários próprios ainda precisam de parametrização específica.
 - Testes de referência: adicionados 8 testes automatizados para estatísticas amostrais, correlação indefinida, retornos inválidos, drawdown/recuperação, OLS, anualização por intervalo e alinhamento temporal. GitHub Actions confirmou **8/8 PASS** no commit `b982852910c0a691faaa7ee082cd7c21697d46b6`.
 - Alinhamento temporal: `alignSeries` já agrupa por bucket UTC do intervalo (hora/dia/semana/mês), e não exige igualdade do timestamp bruto. Ainda faltam testes amplos de feriados, fusos, frequências mistas e observações intraperíodo.
 
 ### Próximas validações necessárias
 
 1. Lead/Lag: documentar explicitamente o sinal da defasagem e manter o resultado como diagnóstico exploratório.
-2. Sharpe/Sortino: validar anualização por classe de ativo, alvo e futura inclusão de taxa livre de risco temporal. O padrão diário atual é 365 e precisa ser configurável para mercados com pregão.
+2. Sharpe/Sortino: validar a convenção de sessão aplicada, o alvo e futura inclusão de taxa livre de risco temporal. Para commodities/futuros, validar uma frequência horária própria em vez de assumir a convenção de ações.
 3. VaR/Expected Shortfall: validar a convenção histórica em amostras pequenas e níveis 95/99%.
 4. Deflação: `deflateValues` exige timestamps exatos entre preço e CPI; deverá existir alinhamento explícito antes de usar série real.
 5. OLS/inferência: comparar OLS, R², R² ajustado, t, IC e F com dados sintéticos de referência.
