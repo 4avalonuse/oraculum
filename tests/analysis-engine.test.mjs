@@ -126,3 +126,15 @@ test('constant samples have undefined skewness, kurtosis and Jarque-Bera',async(
   assert.ok(Number.isNaN(jarqueBera(Array(12).fill(5)).stat));
   assert.ok(Number.isNaN(jarqueBera(Array(12).fill(5)).p));
 });
+
+test('multivariate model refuses a constant dependent return series',()=>{
+  const day=86400000,start=Date.UTC(2024,0,1),rows=[];
+  let b=50;
+  for(let i=0;i<35;i++){
+    b*=Math.exp(i%2===0?.01:-.006);
+    rows.push({timestamp:start+i*day,A:100,B:b});
+  }
+  const model=runExplanatoryModel(rows,[{key:'A',symbol:'A'},{key:'B',symbol:'B'}]);
+  assert.equal(model.available,false);
+  assert.match(model.reason,/variação insuficiente/);
+});
