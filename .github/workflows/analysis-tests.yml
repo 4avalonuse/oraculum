@@ -2,7 +2,7 @@ name: Analysis core tests
 on:
   push:
     paths:
-      - 'src/analysis/engine.js'
+      - 'src/analysis/**/*.js'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/analysis-tests.yml'
