@@ -52,6 +52,7 @@ export function alignSeries(series,interval='1d'){
     }
     return map;
   });
+  const previousCloseMaps=maps.map(map=>{const entries=[...map.entries()].sort((a,b)=>a[1].timestamp-b[1].timestamp),previous=new Map();for(let i=1;i<entries.length;i++)previous.set(entries[i][0],entries[i-1][1].close);return previous;});
   const base=series[0].candles||[];
   const seen=new Set();
   return base.map(c=>{
@@ -60,8 +61,8 @@ export function alignSeries(series,interval='1d'){
     const hits=maps.map(map=>map.get(key));
     if(hits.some(hit=>!hit))return null;
     seen.add(key);
-    const row={timestamp:hits[0].timestamp};
-    for(let i=0;i<series.length;i++)row[series[i].key]=hits[i].close;
+    const row={timestamp:hits[0].timestamp,__previousCloses:{}};
+    for(let i=0;i<series.length;i++){row[series[i].key]=hits[i].close;row.__previousCloses[series[i].key]=previousCloseMaps[i].get(key)??NaN;}
     return row;
   }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp);
 }
@@ -71,11 +72,11 @@ import {riskMetrics,calmar} from './risk.js';
 export function analyzeSeries(rows,series,interval,options={}){
   const periods=annualPeriods(interval,options.calendar||'continuous'),mode=options.returnMode==='simple'?'simple':'log',rollingWindow=Math.max(5,Number(options.rollingWindow)||30),years=Math.max(1/periods,(rows.at(-1).timestamp-rows[0].timestamp)/(365.25*86400000)),out={interval,periods,years,observations:rows.length,returnMode:mode,rollingWindow,series:{},relations:[]};
   for(const s of series){
-    const values=rows.map(r=>r[s.key]),r=returns(values,mode),dd=drawdown(values),dist={win:r.filter(x=>x>0).length/Math.max(1,r.length),best:Math.max(...r),worst:Math.min(...r),q25:quantile(r,.25),q75:quantile(r,.75)},d=describe(r),risk=riskMetrics(r,periods,options);
+    const values=rows.map(r=>r[s.key]),r=rows.some(row=>row.__previousCloses)?rows.map((row,i)=>{if(i===0)return NaN;const previous=row.__previousCloses?.[s.key],current=values[i];if(!(previous>0&&current>0&&Number.isFinite(previous)&&Number.isFinite(current)))return NaN;return mode==='simple'?current/previous-1:Math.log(current/previous)}):returns(values,mode),validReturns=r.filter(Number.isFinite),dd=drawdown(values),dist={win:validReturns.filter(x=>x>0).length/Math.max(1,validReturns.length),best:validReturns.length?Math.max(...validReturns):NaN,worst:validReturns.length?Math.min(...validReturns):NaN,q25:quantile(validReturns,.25),q75:quantile(validReturns,.75)},d=describe(r),risk=riskMetrics(r,periods,options);
     out.series[s.key]={key:s.key,symbol:s.symbol,name:s.name,start:values[0],end:values.at(-1),total:values.at(-1)/values[0]-1,cagr:cagr(values[0],values.at(-1),years),vol:std(r)*Math.sqrt(periods),drawdown:dd.max,recovery:dd.recovery,sharpe:sharpe(r,periods),sortino:risk.sortino,downsideDeviation:risk.downsideDeviation,sharpe:risk.sharpe,var95:risk.var95,var99:risk.var99,es95:risk.es95,es99:risk.es99,calmar:calmar(cagr(values[0],values.at(-1),years),dd.max),mean:d.mean,median:d.median,variance:d.variance,std:d.std,se:d.se,q05:d.q05,q95:d.q95,skewness:d.skewness,excessKurtosis:d.excessKurtosis,jarqueBera:jarqueBera(r),winRate:dist.win,best:dist.best,worst:dist.worst,ath:Math.max(...values),atl:Math.min(...values),returns:r};
   }
   const primary=series[0],pr=out.series[primary.key].returns;
-  for(const s of series.slice(1)){const sr=out.series[s.key].returns,n=Math.min(pr.length,sr.length),a=pr.slice(-n),b=sr.slice(-n),reg=regression(a,b),lags=leadLag(a,b,5);out.relations.push({primary:primary.key,target:s.key,correlation:corr(a,b),covariance:cov(a,b),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(a,b,Math.min(rollingWindow,n))})}
+  for(const s of series.slice(1)){const sr=out.series[s.key].returns,a=pr,b=sr,reg=regression(a,b),lags=leadLag(a,b,5);out.relations.push({primary:primary.key,target:s.key,correlation:corr(a,b),covariance:cov(a,b),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(a,b,Math.min(rollingWindow,a.length))})}
   return out
 }
 export function rollingCorrelation(a,b,window=30){if(a.length<window)return NaN;const values=[];for(let i=window;i<=a.length;i++)values.push(corr(a.slice(i-window,i),b.slice(i-window,i)));return values.at(-1)}
