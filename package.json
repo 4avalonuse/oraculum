@@ -1,0 +1,8 @@
+{
+  "name": "oraculum",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:analysis": "node --test tests/analysis-engine.test.mjs"
+  }
+}
