@@ -1,17 +1,25 @@
-export function mean(v){return v.reduce((a,b)=>a+b,0)/Math.max(1,v.length)}
-export function median(v){const x=[...v].sort((a,b)=>a-b),m=Math.floor(x.length/2);return x.length?(x.length%2?x[m]:(x[m-1]+x[m])/2):NaN}
-export function std(v){if(v.length<2)return 0;const m=mean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1))}
-export function cov(a,b){if(a.length<2)return 0;const ma=mean(a),mb=mean(b);return a.reduce((s,x,i)=>s+(x-ma)*(b[i]-mb),0)/(a.length-1)}
-export function corr(a,b){const sa=std(a),sb=std(b);return sa&&sb?cov(a,b)/(sa*sb):0}
-export function returns(values,mode='log'){const out=[];for(let i=1;i<values.length;i++){const a=values[i-1],b=values[i];if(a>0&&b>0)out.push(mode==='simple'?b/a-1:Math.log(b/a))}return out}
-export function drawdown(values){let peak=values[0]||0,min=0,current=0;for(const value of values){if(value>=peak){peak=value;current=0}else{current++}min=Math.min(min,peak?value/peak-1:0)}return {max:min,recovery:current}}
-export function regression(x,y){const beta=cov(x,y)/(cov(x,x)||1),alpha=mean(y)-beta*mean(x),r=corr(x,y);return {alpha,beta,r,r2:r*r}}
+/* ORACULUM — núcleo estatístico.
+ * Convenções: estatísticas amostrais; entradas não finitas são excluídas
+ * por pares nas estatísticas bivariadas; resultados indefinidos retornam NaN.
+ */
+function finite(values){return Array.isArray(values)?values.filter(Number.isFinite):[]}
+export function mean(values){const v=finite(values);return v.length?v.reduce((a,b)=>a+b,0)/v.length:NaN}
+export function median(v){const x=finite(v).sort((a,b)=>a-b),m=Math.floor(x.length/2);return x.length?(x.length%2?x[m]:(x[m-1]+x[m])/2):NaN}
+export function std(values){const v=finite(values);if(v.length<2)return NaN;const m=mean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)**2,0)/(v.length-1))}
+function paired(a,b){if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length)return [];const out=[];for(let i=0;i<a.length;i++)if(Number.isFinite(a[i])&&Number.isFinite(b[i]))out.push([a[i],b[i]]);return out}
+export function cov(a,b){const p=paired(a,b);if(p.length<2)return NaN;const ma=mean(p.map(x=>x[0])),mb=mean(p.map(x=>x[1]));return p.reduce((s,[x,y])=>s+(x-ma)*(y-mb),0)/(p.length-1)}
+export function corr(a,b){const p=paired(a,b);if(p.length<2)return NaN;const x=p.map(v=>v[0]),y=p.map(v=>v[1]),sx=std(x),sy=std(y);if(!(sx>0&&sy>0))return NaN;const value=cov(x,y)/(sx*sy);return Number.isFinite(value)?Math.max(-1,Math.min(1,value)):NaN}
+export function returns(values,mode='log'){const out=[];if(!Array.isArray(values))return out;for(let i=1;i<values.length;i++){const a=Number(values[i-1]),b=Number(values[i]);if(Number.isFinite(a)&&Number.isFinite(b)&&a>0&&b>0)out.push(mode==='simple'?b/a-1:Math.log(b/a))}return out}
+/* recovery = number of observations from the maximum-drawdown trough until a
+ * subsequent new high. null means the series did not recover within the sample. */
+export function drawdown(values){const v=finite(values).filter(x=>x>0);if(!v.length)return {max:NaN,recovery:null,peakIndex:null,troughIndex:null};let peak=v[0],peakIndex=0,max=0,troughIndex=0,recovery=0,underwater=false;for(let i=0;i<v.length;i++){const value=v[i];if(value>=peak){if(underwater){recovery=i-troughIndex;underwater=false}peak=value;peakIndex=i}else{const dd=value/peak-1;if(dd<max){max=dd;troughIndex=i;underwater=true;recovery=null}}}return {max,recovery:underwater?null:recovery,peakIndex,troughIndex}}
+export function regression(x,y){const p=paired(x,y);if(p.length<2)return {alpha:NaN,beta:NaN,r:NaN,r2:NaN,n:p.length};const a=p.map(v=>v[0]),b=p.map(v=>v[1]),variance=cov(a,a);if(!(variance>0))return {alpha:NaN,beta:NaN,r:corr(a,b),r2:NaN,n:p.length};const beta=cov(a,b)/variance,alpha=mean(b)-beta*mean(a),r=corr(a,b);return {alpha,beta,r,r2:Number.isFinite(r)?r*r:NaN,n:p.length}}
 export function annualPeriods(interval){return interval==='1h'?8760:interval==='1w'?52:interval==='1M'?12:365}
 export function cagr(first,last,years){return first>0&&last>0&&years>0?(last/first)**(1/years)-1:NaN}
-export function sharpe(r,p){const s=std(r);return s?mean(r)/s*Math.sqrt(p):NaN}
-export function sortino(r,p){const downside=r.filter(x=>x<0),s=std(downside);return s?mean(r)/s*Math.sqrt(p):NaN}
-export function quantile(v,q){if(!v.length)return NaN;const x=[...v].sort((a,b)=>a-b),i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
-export function leadLag(a,b,maxLag=5){const out=[];for(let lag=-maxLag;lag<=maxLag;lag++){const x=[],y=[];for(let i=0;i<a.length;i++){const j=i+lag;if(j>=0&&j<b.length){x.push(a[i]);y.push(b[j])}}out.push({lag,corr:corr(x,y)})}return out}
+export function sharpe(r,p){const s=std(r);return s>0&&p>0?mean(r)/s*Math.sqrt(p):NaN}
+export function sortino(r,p){const x=finite(r),downside=x.filter(v=>v<0),s=std(downside);return s>0&&p>0?mean(x)/s*Math.sqrt(p):NaN}
+export function quantile(v,q){const x=finite(v).sort((a,b)=>a-b);if(!x.length||!Number.isFinite(q)||q<0||q>1)return NaN;const i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
+export function leadLag(a,b,maxLag=5){const out=[];if(!Number.isInteger(maxLag)||maxLag<0)return out;for(let lag=-maxLag;lag<=maxLag;lag++){const x=[],y=[];for(let i=0;i<a.length;i++){const j=i+lag;if(j>=0&&j<b.length){x.push(a[i]);y.push(b[j])}}out.push({lag,corr:corr(x,y)})}return out}
 function periodKey(timestamp,interval='1d'){
   const d=new Date(Number(timestamp));
   if(!Number.isFinite(d.getTime())) return null;
