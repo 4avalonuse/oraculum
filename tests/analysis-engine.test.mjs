@@ -47,7 +47,7 @@ test('annualization conventions are explicit by interval',()=>{
   assert.equal(annualPeriods('1h'),8760);
   assert.equal(annualPeriods('1d'),365);
   assert.equal(annualPeriods('1w'),52);
-  assert.equal(annualPeriods('1M'),12);
+  assert.equal(annualPeriods('1M'),12);\n  assert.equal(annualPeriods('1d','trading'),252);\n  assert.equal(annualPeriods('1h','trading'),1638);
 });
 test('alignment keeps only shared UTC calendar buckets and handles duplicates',()=>{
   const day=86400000, t=Date.UTC(2024,0,1);
