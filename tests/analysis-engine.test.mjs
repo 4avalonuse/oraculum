@@ -138,3 +138,43 @@ test('multivariate model refuses a constant dependent return series',()=>{
   assert.equal(model.available,false);
   assert.match(model.reason,/variação insuficiente/);
 });
+
+test('OLS inference matches an independent numerical reference fixture',()=>{
+  const x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015,.006,-.004,.018,-.011,.009,-.019,.014,.003,.016,-.006,.022,-.013];
+  const e=[.001,-.001,.002,-.002,.0015,-.0015,.0005,-.0005,.0012,-.0012,.0018,-.0018,.0007,-.0007,.0011,-.0011,.0016,-.0016,.0009,-.0009,.0013,-.0013,.0004,-.0004];
+  let a=100,b=50;
+  const rows=[{timestamp:Date.UTC(2024,0,1),A:a,B:b}];
+  for(let i=0;i<x.length;i++){
+    a*=Math.exp(x[i]);
+    b*=Math.exp(.0005+1.4*x[i]+e[i]);
+    rows.push({timestamp:Date.UTC(2024,0,1)+(i+1)*86400000,A:a,B:b});
+  }
+  const model=runExplanatoryModel(rows,[{key:'B',symbol:'B'},{key:'A',symbol:'A'}],{hacLag:0});
+  assert.equal(model.available,true,model.reason);
+  assert.equal(model.observations,24);
+  near(model.coefficients[0].beta,0.000329705154,1e-10);
+  near(model.coefficients[1].beta,1.45923299,1e-7);
+  near(model.r2,0.99838773212,1e-10);
+  near(model.coefficients[1].se,0.01250208,1e-7);
+  near(model.coefficients[1].ciLow,1.43330526,1e-7);
+  near(model.coefficients[1].ciHigh,1.48516072,1e-7);
+  near(model.hacCoefficients[0].hacSe,0.00020182,1e-7);
+  near(model.hacCoefficients[1].hacSe,0.01443358,1e-7);
+  assert.ok(model.coefficients[1].p<1e-20);
+  assert.ok(model.hacCoefficients[1].hacP<1e-20);
+  assert.equal(model.hacLag,0);
+});
+test('HAC lag is safely bounded when caller supplies invalid input',()=>{
+  const x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015,.006,-.004,.018,-.011,.009,-.019,.014,.003,.016,-.006,.022,-.013];
+  let a=100,b=50;
+  const rows=[{timestamp:Date.UTC(2024,0,1),A:a,B:b}];
+  for(let i=0;i<x.length;i++){
+    a*=Math.exp(x[i]);b*=Math.exp(.001+1.3*x[i]+(i%2?.001:-.001));
+    rows.push({timestamp:Date.UTC(2024,0,1)+(i+1)*86400000,A:a,B:b});
+  }
+  const model=runExplanatoryModel(rows,[{key:'B',symbol:'B'},{key:'A',symbol:'A'}],{hacLag:NaN});
+  assert.equal(model.available,true,model.reason);
+  assert.ok(Number.isInteger(model.hacLag));
+  assert.ok(model.hacLag>=0&&model.hacLag<model.observations);
+  assert.ok(model.hacCoefficients.every(c=>Number.isFinite(c.hacSe)));
+});
