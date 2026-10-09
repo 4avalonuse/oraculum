@@ -2,7 +2,7 @@
    Responsabilidade: OLS + inferência clássica + HAC(Newey-West) + VIF.
    Associação estatística; não interpreta o resultado como causalidade.
 */
-import {mean,returns} from './engine.js';
+import {mean,alignedReturns} from './engine.js';
 
 function transpose(a){return a[0].map((_,j)=>a.map(row=>row[j]))}
 function multiply(a,b){return a.map(row=>b[0].map((_,j)=>row.reduce((s,_,k)=>s+row[k]*b[k][j],0)))}
@@ -38,9 +38,9 @@ function vifValues(predictors){
 }
 export function runExplanatoryModel(rows,series,options={}){
   if(!Array.isArray(rows)||!Array.isArray(series)||series.length<2)return {available:false,reason:'Selecione pelo menos uma variável além da referência.'};
-  const mode=options.returnMode==='simple'?'simple':'log',target=series[0],returnsBySeries=series.map(s=>returns(rows.map(r=>r[s.key]),mode)),n=Math.min(...returnsBySeries.map(v=>v.length));
+  const mode=options.returnMode==='simple'?'simple':'log',target=series[0],returnsBySeries=series.map(s=>alignedReturns(rows,s.key,mode)),rowCount=Math.min(...returnsBySeries.map(v=>v.length)),returnRows=Array.from({length:rowCount},(_,i)=>returnsBySeries.map(v=>v[i])).filter(row=>row.every(Number.isFinite)),n=returnRows.length;
   if(n<Math.max(20,series.length*5))return {available:false,reason:'A amostra alinhada é pequena para um modelo multivariado confiável.',observations:n};
-  const y=returnsBySeries[0].slice(-n),predictors=returnsBySeries.slice(1).map(v=>v.slice(-n)),x=y.map((_,i)=>[1,...predictors.map(v=>v[i])]),names=['Intercepto',...series.slice(1).map(s=>s.symbol)],fit=ols(y,x,names);
+  const y=returnRows.map(row=>row[0]),predictors=series.slice(1).map((_,i)=>returnRows.map(row=>row[i+1])),x=y.map((_,i)=>[1,...predictors.map(v=>v[i])]),names=['Intercepto',...series.slice(1).map(s=>s.symbol)],fit=ols(y,x,names);
   if(!fit)return {available:false,reason:'Não foi possível estimar o modelo: colinearidade perfeita ou variação insuficiente.'};
   const inv=inverse(multiply(transpose(x),x)),lag=options.hacLag==null?Math.floor(4*Math.pow(n/100,2/9)):Math.max(0,Number(options.hacLag)),hac=inv?hacCovariance(x,fit.residuals,inv,lag):null;
   const hacCoefficients=fit.coefficients.map((c,i)=>{const se=hac?Math.sqrt(Math.max(0,hac[i][i])):NaN,t=se?c.beta/se:NaN;return {...c,hacSe:se,hacT:t,hacP:normalP(t)}});
