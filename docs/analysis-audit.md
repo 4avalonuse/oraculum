@@ -13,17 +13,23 @@ Esta camada é a base investigativa do Oraculum e deverá fornecer sinais, condi
 - Saída do modelo: o modal declarava IC 95%, HAC SE e HAC p, mas não preenchia essas colunas. Agora os resultados são exibidos.
 - Sortino: a explicação foi alinhada à implementação real, com downside deviation calculado por sqrt(mean(min(r-target,0)^2)) e alvo 0 na configuração atual.
 
-### Segunda bateria de testes necessária
+### Corrigidos e validados nesta rodada
 
-1. Retornos e alinhamento temporal: validar gaps, timestamps ausentes e frequências diferentes. O alinhamento atual usa timestamps exatos.
-2. Lead/Lag: documentar explicitamente o sinal da defasagem e manter o resultado como diagnóstico exploratório.
-3. Drawdown e recuperação: o MDD está correto, mas o campo recovery atualmente mede a distância do último pico até o fim da amostra, não o tempo de recuperação do drawdown máximo.
-4. Sharpe/Sortino: validar anualização, alvo e futura inclusão de taxa livre de risco temporal.
-5. VaR/Expected Shortfall: validar a convenção histórica em amostras pequenas e níveis 95/99%.
-6. Deflação: deflateValues exige timestamps exatos entre preço e CPI; deverá existir alinhamento explícito antes de usar série real.
-7. OLS/inferência: comparar OLS, R2, R2 ajustado, t, IC e F com dados sintéticos de referência.
-8. HAC: comparar contra implementação de referência em séries com heterocedasticidade/autocorrelação controladas.
-9. Diagnósticos: Durbin-Watson e Ljung-Box são complementares; razão de variâncias é descritiva e não substitui testes formais.
+- Núcleo estatístico: amostras vazias/insuficientes retornam `NaN` em vez de um zero enganoso; correlação de séries constantes é indefinida (`NaN`).
+- Estatísticas bivariadas: covariância/correlação/regressão exigem vetores de mesmo tamanho e usam apenas pares finitos; regressão informa o tamanho efetivo da amostra.
+- Drawdown: `recovery` agora mede o número de observações entre o vale do drawdown máximo e a recuperação do pico anterior; retorna `null` se não houver recuperação até o fim da amostra.
+- Testes de referência: adicionados 8 testes automatizados para estatísticas amostrais, correlação indefinida, retornos inválidos, drawdown/recuperação, OLS, anualização por intervalo e alinhamento temporal. GitHub Actions confirmou **8/8 PASS** no commit `b982852910c0a691faaa7ee082cd7c21697d46b6`.
+- Alinhamento temporal: `alignSeries` já agrupa por bucket UTC do intervalo (hora/dia/semana/mês), e não exige igualdade do timestamp bruto. Ainda faltam testes amplos de feriados, fusos, frequências mistas e observações intraperíodo.
+
+### Próximas validações necessárias
+
+1. Lead/Lag: documentar explicitamente o sinal da defasagem e manter o resultado como diagnóstico exploratório.
+2. Sharpe/Sortino: validar anualização por classe de ativo, alvo e futura inclusão de taxa livre de risco temporal. O padrão diário atual é 365 e precisa ser configurável para mercados com pregão.
+3. VaR/Expected Shortfall: validar a convenção histórica em amostras pequenas e níveis 95/99%.
+4. Deflação: `deflateValues` exige timestamps exatos entre preço e CPI; deverá existir alinhamento explícito antes de usar série real.
+5. OLS/inferência: comparar OLS, R², R² ajustado, t, IC e F com dados sintéticos de referência.
+6. HAC: comparar contra implementação de referência em séries com heterocedasticidade/autocorrelação controladas.
+7. Diagnósticos: Durbin-Watson e Ljung-Box são complementares; razão de variâncias é descritiva e não substitui testes formais.
 
 ## Critério de aceitação
 
