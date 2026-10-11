@@ -14,6 +14,7 @@ function metric(label,value,note='',help=''){return '<div class="analysis-metric
 function statBlock(title,items){return '<section class="analysis-stat-block"><h3>'+title+'</h3><div class="results-grid">'+items.join('')+'</div></section>'}
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
+ wireMetricHelp(document);
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],markers:{start:0,base:0,end:0}};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
