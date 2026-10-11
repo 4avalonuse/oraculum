@@ -363,3 +363,59 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
   .battery-row strong{font-size:12px}
   .battery-row small{font-size:10px}
 }
+
+
+/* Progressive analysis workspace — simple first, deeper layers on demand */
+.analysis-layered{display:grid;gap:10px;padding:12px!important}
+.analysis-step{min-width:0;padding:13px;border:1px solid #1a3a50;border-radius:7px;background:linear-gradient(145deg,#091a28,#07131f)}
+.step-heading,.step-heading>div,.step-subheading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.step-heading>div{justify-content:flex-start;align-items:flex-start}
+.step-number{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:1px solid #2787b8;border-radius:50%;color:#d8f2ff;background:#0b2a3e;font-size:14px;font-weight:800}
+.step-heading h2{margin:0;color:#e3f4ff;font-size:16px;line-height:1.35}
+.step-heading p{margin:4px 0 0;color:#8ba8bb;font-size:12px;line-height:1.5}
+.section-help,.inline-help{display:inline-grid;place-items:center;flex:0 0 30px;width:30px;height:30px;min-height:30px;padding:0;border:1px solid #347da2;border-radius:50%;background:#0a2536;color:#ccefff;font-size:16px;font-weight:800;cursor:pointer}
+.section-help:hover,.inline-help:hover{background:#123c55}
+.reference-control{display:flex;flex-direction:column;gap:6px;margin:14px 0 16px}
+.reference-control>span,.investigation-controls label>span{color:#8ab5ce;font-size:11px;font-weight:800;letter-spacing:.06em}
+.reference-control select{width:100%;min-height:46px;padding:8px 12px;border:1px solid #2b5873;border-radius:5px;background:#071521;color:#e4f5ff;font-size:15px}
+.reference-control small{color:#7f9daf;font-size:11px;line-height:1.5}
+.step-subheading{align-items:center;margin:8px 0}
+.step-subheading h3{margin:0;color:#c5deed;font-size:13px}
+.common-picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.analysis-disclosure{margin-top:10px;border:1px solid #18384d;border-radius:5px;background:#071521}
+.analysis-disclosure summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:10px 12px;cursor:pointer;list-style:none;color:#c9e4f4;font-size:12px;font-weight:700}
+.analysis-disclosure summary::-webkit-details-marker{display:none}
+.analysis-disclosure summary:after{content:'+';flex:0 0 24px;display:grid;place-items:center;width:24px;height:24px;border:1px solid #2a6585;border-radius:50%;color:#bce8ff;font-size:18px}
+.analysis-disclosure[open] summary:after{content:'−'}
+.analysis-disclosure summary small{display:block;margin-left:auto;color:#7393a8;font-size:10px;font-weight:400;text-align:right}
+.analysis-disclosure>.asset-picks,.analysis-disclosure>.investigation-controls{padding:4px 10px 12px}
+.analysis-disclosure .context-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;flex-wrap:initial}
+.analysis-disclosure .asset-pick{min-width:0}
+.period-control{grid-template-columns:minmax(0,1fr);margin:14px 0 4px}
+.period-control select{min-height:46px;font-size:14px}
+.advanced-controls{grid-template-columns:repeat(3,minmax(0,1fr));padding-top:12px!important}
+.advanced-controls label>span{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.inline-help{flex-basis:25px;width:25px;height:25px;min-height:25px;font-size:13px}
+.disclosure-note{margin:0;padding:0 12px 12px;color:#829fb2;font-size:11px;line-height:1.6}
+.analysis-actions{padding:12px 0 0!important;border-top:1px solid #17364a}
+.analysis-actions>div{display:flex;flex-direction:column;gap:4px}
+.analysis-actions strong{color:#dff3ff;font-size:14px}
+.analysis-actions span{color:#7f9daf;font-size:11px;line-height:1.4}
+#analyze-assets{min-height:46px;padding:10px 18px;border-radius:5px}
+.analysis-results>.analysis-section-label{margin-top:14px}
+@media(max-width:700px){
+ .analysis-layered{padding:9px!important;gap:9px}
+ .analysis-step{padding:11px}
+ .step-heading h2{font-size:15px}
+ .step-heading p{font-size:12px}
+ .common-picks{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .analysis-disclosure summary{align-items:flex-start;flex-wrap:wrap}
+ .analysis-disclosure summary small{flex:1 1 100%;margin-left:0;text-align:left}
+ .analysis-disclosure summary:after{position:absolute;right:18px}
+ .analysis-disclosure summary{position:relative;padding-right:48px}
+ .analysis-disclosure .context-picks{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .advanced-controls{grid-template-columns:1fr}
+ .analysis-actions{align-items:stretch!important;flex-direction:column}
+ .analysis-actions>div{margin-bottom:2px}
+ .analysis-actions #analyze-assets{width:100%}
+}
