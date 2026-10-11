@@ -6,12 +6,8 @@ import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {runExplanatoryModel} from './explanatory-model.js';
 import {diagnoseModel} from './model-diagnostics.js';
+import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 
-function fmt(v,d=2){if(!Number.isFinite(v))return '—';return new Intl.NumberFormat('pt-BR',{maximumFractionDigits:d}).format(v)}
-function pct(v,d=2){return Number.isFinite(v)?fmt(v*100,d)+'%':'—'}
-function date(v){return Number.isFinite(Number(v))?new Date(Number(v)).toLocaleDateString('pt-BR'):'—'}
-function metric(label,value,note='',help=''){return '<div class="analysis-metric"><div class="metric-label"><span>'+label+'</span><button class="metric-help" type="button" data-topic="'+label.replace(/"/g,'&quot;')+'" aria-label="Explicar '+label+'">?</button></div><strong>'+value+'</strong>'+(note?'<small>'+note+'</small>':'')+'</div>'}
-function statBlock(title,items){return '<section class="analysis-stat-block"><h3>'+title+'</h3><div class="results-grid">'+items.join('')+'</div></section>'}
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
