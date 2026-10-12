@@ -7,4 +7,17 @@ export function skewness(v){const n=v.length;if(n<3)return NaN;const m=mean(v),s
 export function kurtosis(v){const n=v.length;if(n<4)return NaN;const m=mean(v),s=std(v);if(!(s>0))return NaN;const sum=v.reduce((a,x)=>a+((x-m)/s)**4,0);return n*(n+1)/((n-1)*(n-2)*(n-3))*sum-3*(n-1)**2/((n-2)*(n-3))}
 export function standardError(v){return v.length>1?std(v)/Math.sqrt(v.length):NaN}
 export function describe(v){const x=v.filter(Number.isFinite),n=x.length;return {n,mean:mean(x),median:quantile(x,.5),variance:variance(x),std:std(x),se:standardError(x),min:x.length?Math.min(...x):NaN,max:x.length?Math.max(...x):NaN,q05:quantile(x,.05),q25:quantile(x,.25),q75:quantile(x,.75),q95:quantile(x,.95),skewness:skewness(x),excessKurtosis:kurtosis(x)}}
-export function jarqueBera(v){const d=describe(v),n=d.n;if(n<8||!Number.isFinite(d.skewness)||!Number.isFinite(d.excessKurtosis))return {stat:NaN,p:NaN};const stat=n/6*(d.skewness**2+d.excessKurtosis**2/4);return {stat,p:Math.exp(-stat/2)}}
+/* Classical Jarque–Bera uses moment (biased) skewness and excess kurtosis,
+ * not the adjusted finite-sample estimators returned by describe(). */
+export function jarqueBera(v){
+  const x=Array.isArray(v)?v.filter(Number.isFinite):[],n=x.length;
+  if(n<8)return {stat:NaN,p:NaN,skewness:NaN,excessKurtosis:NaN,method:'classical-moment'};
+  const m=mean(x),centered=x.map(value=>value-m);
+  const m2=centered.reduce((sum,value)=>sum+value**2,0)/n;
+  if(!(m2>0))return {stat:NaN,p:NaN,skewness:NaN,excessKurtosis:NaN,method:'classical-moment'};
+  const m3=centered.reduce((sum,value)=>sum+value**3,0)/n;
+  const m4=centered.reduce((sum,value)=>sum+value**4,0)/n;
+  const skew=m3/Math.pow(m2,1.5),excess=m4/(m2*m2)-3;
+  const stat=n/6*(skew**2+excess**2/4);
+  return {stat,p:Math.exp(-stat/2),skewness:skew,excessKurtosis:excess,method:'classical-moment'};
+}
