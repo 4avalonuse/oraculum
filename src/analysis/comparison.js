@@ -122,6 +122,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      );
    }
    const m=result.explanatoryModel,d=result.modelDiagnostics;
+   const validation=result.modelValidation;lines.push('','CONFERÊNCIA INDEPENDENTE: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | principal='+auditNumber(item.primary,12)+' | referência='+auditNumber(item.reference,12));
    lines.push('','4. MODELO MULTIVARIADO E RESÍDUOS');
    if(!m?.available)lines.push('Modelo não estimado: '+(m?.reason||'motivo não informado'));
    else{
