@@ -27,7 +27,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const calendar=state.series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';
    const result=analyzeSeries(sample,state.series,getInterval()||'1d',{returnMode,rollingWindow,calendar});
    result.explanatoryModel=runExplanatoryModel(sample,state.series,{returnMode});
-   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);
+   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);
    result.rowsStart=sample[0].timestamp;result.rowsEnd=sample.at(-1).timestamp;
    result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
    state.result=result;
@@ -122,7 +122,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      );
    }
    const m=result.explanatoryModel,d=result.modelDiagnostics;
-   const validation=result.modelValidation;lines.push('','CONFERÊNCIA INDEPENDENTE: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | principal='+auditNumber(item.primary,12)+' | referência='+auditNumber(item.reference,12));
+   const validation=result.modelValidation;lines.push('','CONFERÊNCIA NUMÉRICA ENTRE IMPLEMENTAÇÕES: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | cálculo A='+auditNumber(item.primary,12)+' | cálculo B='+auditNumber(item.reference,12));
    lines.push('','4. MODELO MULTIVARIADO E RESÍDUOS');
    if(!m?.available)lines.push('Modelo não estimado: '+(m?.reason||'motivo não informado'));
    else{
@@ -181,7 +181,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const validation=result.modelValidation||{status:'NOT_CHECKED',passed:0,total:0,checks:[]};
    const validationLabel=validation.status==='BOTH_PATHS_AGREE'?'AMBOS OS CAMINHOS CONCORDAM':validation.status==='ALERT'?'DIVERGÊNCIA — REVISÃO NECESSÁRIA':'AINDA NÃO VALIDADO';
    const validationColor=validation.status==='BOTH_PATHS_AGREE'?'#4ade80':validation.status==='ALERT'?'#fb7185':'#fbbf24';
-   html+='<div class="analysis-validation" role="status" style="margin:16px 0;padding:14px;border:1px solid '+validationColor+';border-radius:12px;background:rgba(15,23,42,.72);color:#e2e8f0"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><strong style="color:'+validationColor+'">'+validationLabel+'</strong><span>'+validation.passed+'/'+validation.total+' verificações independentes</span></div><p style="margin:8px 0 0;font-size:13px">'+(validation.message||'A conferência independente ainda não está disponível.')+'</p><details style="margin-top:8px"><summary style="cursor:pointer">Ver verificações</summary><ul style="margin:8px 0 0;padding-left:20px">'+(validation.checks||[]).map(item=>'<li>'+item.status+' · '+item.name+'</li>').join('')+'</ul><small>Concordância numérica não comprova validade econômica, causalidade ou adequação do modelo.</small></details></div>';
+   html+='<div class="analysis-validation" role="status" style="margin:16px 0;padding:14px;border:1px solid '+validationColor+';border-radius:12px;background:rgba(15,23,42,.72);color:#e2e8f0"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><strong style="color:'+validationColor+'">'+validationLabel+'</strong><span>'+validation.passed+'/'+validation.total+' verificações numéricas</span></div><p style="margin:8px 0 0;font-size:13px">'+(validation.message||'A conferência numérica ainda não está disponível.')+'</p><details style="margin-top:8px"><summary style="cursor:pointer">Ver verificações</summary><ul style="margin:8px 0 0;padding-left:20px">'+(validation.checks||[]).map(item=>'<li>'+item.status+' · '+item.name+'</li>').join('')+'</ul><small>Concordância entre implementações não equivale a benchmark externo independente. Validade econômica, causalidade e adequação do modelo não estão confirmadas.</small></details></div>';
    html+='<div class="analysis-section-label">AVANÇADO</div><div class="advanced-teaser"><span>Mediana, melhor/pior período, covariância, alpha, correlação móvel e diagnóstico de lead/lag.</span><button id="advanced-analysis">VER ESTATÍSTICAS AVANÇADAS ↗</button></div>';
    const em=result.explanatoryModel;
    if(em?.available){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA · '+primary.symbol+'</div><div class="explanation-teaser"><div><b>PERGUNTA:</b> as variáveis selecionadas ajudam a explicar os retornos do '+primary.symbol+'?</div><strong>R² '+pct(em.r2,2)+' · R² ajustado '+pct(em.adjustedR2,2)+'</strong><small>Modelo linear conjunto sobre retornos alinhados. Associação estatística, não causalidade.</small></div>'}
