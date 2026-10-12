@@ -26,11 +26,11 @@ function button(label,getText,kind='copy-part'){
   });
   return el;
 }
-export function wireSummaryCopy(container,{context=null}={}){
+export function wireSummaryCopy(container,{context=null,auditText=null}={}){
   if(!container)return;
   container.querySelectorAll('.copy-toolbar,.result-copy-button').forEach(el=>el.remove());
   const toolbar=document.createElement('div');toolbar.className='copy-toolbar';
-  const all=button('COPIAR TUDO',()=>[context?plainText(context):'',plainText(container)].filter(Boolean).join('\n\n'),'copy-all');
+  const all=button(auditText?'COPIAR PARA AUDITORIA':'COPIAR TUDO',()=>auditText?auditText():[context?plainText(context):'',plainText(container)].filter(Boolean).join('\n\n'),'copy-all');
   toolbar.append(all);container.prepend(toolbar);
   const headings=[...container.querySelectorAll('.analysis-section-label')];
   headings.forEach((heading,index)=>{
