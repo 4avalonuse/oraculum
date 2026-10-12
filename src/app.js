@@ -105,6 +105,12 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
     if(loaded?.candles?.length){
       await load(activeInterval);
     }
+  }catch(error){
+    console.error('[ORACULUM refresh]',error);
+    $('#status').textContent='ERRO';
+    $('#source').textContent=error?.message||'Falha ao atualizar dados';
+    $('#chart').classList.remove('is-loading');
+    $('#chart').classList.add('is-error');
   }finally{
     button.classList.remove('is-loading');
   }
