@@ -47,3 +47,23 @@ test('Jarque–Bera uses classical moment skewness/kurtosis rather than adjusted
   near(actual.excessKurtosis, excess);
   assert.equal(actual.method, 'classical-moment');
 });
+
+test('bivariate audit reconciles correlation, covariance, beta, alpha and R² with a separate reference calculation', () => {
+  const day = 86400000, start = Date.UTC(2024, 0, 1);
+  const x = [0.01, -0.02, 0.03, -0.01, 0.02, 0.015, -0.025, 0.005, 0.012, -0.008, 0.02, -0.015];
+  let a = 100, b = 50;
+  const rows = [{ timestamp: start, A: a, B: b }];
+  for (let i = 0; i < x.length; i++) {
+    a *= Math.exp(x[i]);
+    b *= Math.exp(0.001 + 1.7 * x[i] + (i % 3 - 1) * 0.0007);
+    rows.push({ timestamp: start + (i + 1) * day, A: a, B: b });
+  }
+  const result = analyzeSeries(rows, [
+    { key: 'A', symbol: 'A' }, { key: 'B', symbol: 'B' }
+  ], '1d');
+  const stamp = result.audit.relations[0];
+  assert.equal(stamp.status, 'CONSISTENT_INTERNAL');
+  assert.equal(stamp.independentlyValidated, false);
+  assert.equal(stamp.checks.length, 6);
+  assert.ok(stamp.checks.every(item => item.status === 'PASS'), JSON.stringify(stamp.checks));
+});
