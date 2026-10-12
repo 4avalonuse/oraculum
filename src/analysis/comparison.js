@@ -70,6 +70,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  function auditPct(value){return Number.isFinite(value)?auditNumber(value*100,6)+'%':'indefinido'}
  function auditDate(value){return Number.isFinite(Number(value))?new Date(Number(value)).toISOString().slice(0,10):'indefinida'}
  function buildAuditReport(result,series,rows,markers){
+   const sampleRows=Array.isArray(rows)?rows.slice(markers?.start??0,(markers?.end??(rows.length-1))+1):[];
    const mode=result.returnMode==='simple'?'simples':'logarítmico';
    const lines=[
      'ORACULUM — RELATÓRIO PARA AUDITORIA ESTATÍSTICA',
@@ -85,10 +86,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      'Comparações: '+(series.slice(1).map(s=>s.symbol).join(', ')||'nenhuma'),
      'Período comum: '+auditDate(result.rowsStart)+' a '+auditDate(result.rowsEnd),
      'Intervalo: '+(result.interval||'indefinido')+' | Tipo de retorno: '+mode,
-     'Observações de preço alinhadas: '+(rows?.length??result.observations??'indefinidas'),
+     'Observações de preço alinhadas na amostra estatística: '+(sampleRows.length||result.observations||'indefinidas'),
      'Retornos válidos por série: '+series.map(s=>s.symbol+'='+((result.series?.[s.key]?.returns||[]).filter(Number.isFinite).length)).join(' | '),
      'Janela móvel: '+(result.rollingWindow??'indefinida')+' | Períodos anualizados: '+(result.periods??'indefinido'),
-     'Marcadores da amostra: início '+auditDate(rows?.[markers?.start]?.timestamp)+' | base visual '+auditDate(rows?.[markers?.base]?.timestamp)+' | fim '+auditDate(rows?.[markers?.end]?.timestamp),
+     'Marcadores da amostra: início '+auditDate(sampleRows[0]?.timestamp)+' | base visual '+auditDate(rows?.[markers?.base]?.timestamp)+' | fim '+auditDate(sampleRows.at(-1)?.timestamp),
      'Nota: a base 100 afeta o gráfico comparativo, não deve alterar as estatísticas calculadas sobre a amostra selecionada.',
      '',
      '2. RESULTADOS POR SÉRIE'
@@ -141,11 +142,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      );
    }
    lines.push('','5. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
-   if(Array.isArray(rows)&&rows.length){
-     const indices=[...new Set([0,1,2,Math.floor((rows.length-1)/2)-1,Math.floor((rows.length-1)/2),Math.floor((rows.length-1)/2)+1,rows.length-3,rows.length-2,rows.length-1])].filter(i=>i>=0&&i<rows.length).sort((a,b)=>a-b);
+   if(sampleRows.length){
+     const indices=[...new Set([0,1,2,Math.floor((sampleRows.length-1)/2)-1,Math.floor((sampleRows.length-1)/2),Math.floor((sampleRows.length-1)/2)+1,sampleRows.length-3,sampleRows.length-2,sampleRows.length-1])].filter(i=>i>=0&&i<sampleRows.length).sort((a,b)=>a-b);
      lines.push('Amostra curta de preços alinhados; serve para inspeção pontual, não para recalcular sozinha toda a regressão.');
      lines.push('Data | '+series.map(s=>s.symbol).join(' | '));
-     for(const i of indices)lines.push(auditDate(rows[i].timestamp)+' | '+series.map(s=>auditNumber(rows[i][s.key],8)).join(' | '));
+     for(const i of indices)lines.push(auditDate(sampleRows[i].timestamp)+' | '+series.map(s=>auditNumber(sampleRows[i][s.key],8)).join(' | '));
    }else lines.push('Trechos de preços não disponíveis nesta exportação.');
    lines.push('','Se um cálculo não puder ser validado com este resumo, solicite a amostra adicional ou o trecho de código estritamente necessário.');
    return lines.join('\n');
