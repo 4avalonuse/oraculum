@@ -141,7 +141,21 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
        'Razão de variâncias entre metades: '+auditNumber(d.varianceRatio,8)
      );
    }
-   lines.push('','5. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
+   lines.push('','5. CARIMBOS DE CÁLCULO E CONSISTÊNCIA');
+   lines.push('Versão matemática: '+(result.audit?.mathVersion||'indefinida')+' | Escopo: consistência interna; não equivale a validação independente.');
+   for(const s of series){
+     const stamped=result.audit?.series?.[s.key];
+     if(!stamped)continue;
+     lines.push('',s.symbol+' · '+stamped.validReturns+' retornos válidos / '+stamped.observations+' linhas de preço');
+     for(const [name,stamp] of Object.entries(stamped.calculations||{})){
+       lines.push(name+' | '+stamp.id+' | estado='+stamp.status+' | n='+stamp.observations);
+       lines.push('  Fórmula: '+stamp.formula);
+       if(stamp.checks?.length)for(const check of stamp.checks)lines.push('  Verificação '+check.name+': '+check.status+' | observado='+auditNumber(check.actual,12)+' | esperado='+auditNumber(check.expected,12));
+       if(stamp.assumptions?.length)lines.push('  Pressupostos: '+stamp.assumptions.join('; '));
+     }
+   }
+   for(const stamp of result.audit?.relations||[])lines.push('',stamp.id+' | '+stamp.status+' | n='+stamp.observations+' | '+stamp.formula);
+   lines.push('','6. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
    if(sampleRows.length){
      const indices=[...new Set([0,1,2,Math.floor((sampleRows.length-1)/2)-1,Math.floor((sampleRows.length-1)/2),Math.floor((sampleRows.length-1)/2)+1,sampleRows.length-3,sampleRows.length-2,sampleRows.length-1])].filter(i=>i>=0&&i<sampleRows.length).sort((a,b)=>a-b);
      lines.push('Amostra curta de preços alinhados; serve para inspeção pontual, não para recalcular sozinha toda a regressão.');
