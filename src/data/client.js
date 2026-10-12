@@ -139,11 +139,18 @@ function createClient(apiBase = API_BASE) {
   }
 
   async function loadOrPopulate(options) {
+    // Opening the chart or analysis must never trigger provider ingestion.
+    // D1 reads can fail when a daily quota is exhausted; automatic refreshes
+    // would add writes and could repeat the outage on every page open.
+    // Keep this compatibility method strictly read-only. Fresh ingestion is
+    // available only through the explicit refresh button.
     const loaded = await loadCandles(options);
-    if (!loaded.candles.length || needsOhlcvRepair(loaded)) {
-      return refreshCandles(options);
-    }
-    return loaded;
+    return {
+      ...loaded,
+      qualityWarning: needsOhlcvRepair(loaded)
+        ? 'A série pode precisar de revisão; use Atualizar para solicitar uma nova ingestão.'
+        : null
+    };
   }
 
   async function refreshCandles(options) {
