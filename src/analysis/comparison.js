@@ -142,6 +142,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
        'Durbin–Watson: '+auditNumber(d.durbinWatson,8)+' | Ljung–Box: estatística '+auditNumber(d.ljungBox?.stat,8)+', gl '+(d.ljungBox?.df??'indefinidos')+', p '+auditNumber(d.ljungBox?.p,10),
        'Razão de variâncias entre metades: '+auditNumber(d.varianceRatio,8)
      );
+     if(d?.heteroskedasticity?.available){
+       lines.push('','Diagnósticos de heterocedasticidade / variância condicional:');
+       for(const test of d.heteroskedasticity.tests||[])lines.push(test.method+' | '+(test.available?'LM='+auditNumber(test.statistic,8)+' | gl='+test.df+' | p='+auditNumber(test.pValue,10)+' | '+test.interpretation:'INCONCLUSIVO | '+test.reason));
+       for(const note of d.heteroskedasticity.notes||[])lines.push('Nota metodológica: '+note);
+     }
    }
    lines.push('','5. CARIMBOS DE CÁLCULO E CONSISTÊNCIA');
    lines.push('Versão matemática: '+(result.audit?.mathVersion||'indefinida')+' | Escopo: consistência interna; não equivale a validação independente.');
@@ -186,6 +191,15 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const em=result.explanatoryModel;
    if(em?.available){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA · '+primary.symbol+'</div><div class="explanation-teaser"><div><b>PERGUNTA:</b> as variáveis selecionadas ajudam a explicar os retornos do '+primary.symbol+'?</div><strong>R² '+pct(em.r2,2)+' · R² ajustado '+pct(em.adjustedR2,2)+'</strong><small>Modelo linear conjunto sobre retornos alinhados. Associação estatística, não causalidade.</small></div>'}
    else if(series.length>1){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA</div><div class="explanation-teaser is-unavailable"><b>MODELO NÃO ESTIMADO</b><small>'+em.reason+'</small></div>'}
+   const diag=result.modelDiagnostics?.heteroskedasticity;
+   if(diag?.available){
+     const testCards=(diag.tests||[]).map(t=>{
+       const color=!t.available?'#fbbf24':t.pValue<0.05?'#fb7185':'#4ade80';
+       const status=!t.available?'INCONCLUSIVO':t.pValue<0.05?'SINAL DETECTADO':'SEM SINAL FORTE';
+       return '<div style="border:1px solid '+color+';border-radius:10px;padding:10px;min-width:0"><b>'+t.method+'</b><div style="color:'+color+';font-size:12px;margin:5px 0">'+status+'</div><div>LM: '+(Number.isFinite(t.statistic)?fmt(t.statistic,3):'—')+'</div><div>gl: '+(t.df??'—')+' · p: '+(Number.isFinite(t.pValue)?fmt(t.pValue,5):'—')+'</div><small>'+(t.available?'Hipótese nula: '+t.nullHypothesis:t.reason)+'</small></div>';
+     }).join('');
+     html+='<div class="analysis-section-label">DIAGNÓSTICO DOS RESÍDUOS · VARIÂNCIA</div><p class="analysis-layer-note">p &lt; 0,05 é evidência contra a hipótese nula específica. Um p maior não comprova variância constante.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">'+testCards+'</div><details style="margin:8px 0"><summary style="cursor:pointer">Método e limitações</summary><ul>'+diag.notes.map(note=>'<li>'+note+'</li>').join('')+'</ul></details>';
+   }
    $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context'),auditText:()=>buildAuditReport(state.result,state.series,state.rows,state.markers)});$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:state.selected||[],assets,fmt,date}));document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
  };
 
