@@ -154,7 +154,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
        if(stamp.assumptions?.length)lines.push('  Pressupostos: '+stamp.assumptions.join('; '));
      }
    }
-   for(const stamp of result.audit?.relations||[])lines.push('',stamp.id+' | '+stamp.status+' | n='+stamp.observations+' | '+stamp.formula);
+   for(const stamp of result.audit?.relations||[]){
+     lines.push('',stamp.id+' | '+stamp.status+' | n='+stamp.observations+' | '+stamp.formula);
+     for(const check of stamp.checks||[])lines.push('  Verificação '+check.name+': '+check.status+' | observado='+auditNumber(check.actual,12)+' | referência='+auditNumber(check.expected,12));
+   }
    lines.push('','6. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
    if(sampleRows.length){
      const indices=[...new Set([0,1,2,Math.floor((sampleRows.length-1)/2)-1,Math.floor((sampleRows.length-1)/2),Math.floor((sampleRows.length-1)/2)+1,sampleRows.length-3,sampleRows.length-2,sampleRows.length-1])].filter(i=>i>=0&&i<sampleRows.length).sort((a,b)=>a-b);
