@@ -6,6 +6,7 @@ import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {runExplanatoryModel} from './explanatory-model.js';
 import {diagnoseModel} from './model-diagnostics.js';
+import {validateModelTwoWays} from './model-validation.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
 
@@ -26,7 +27,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const calendar=state.series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';
    const result=analyzeSeries(sample,state.series,getInterval()||'1d',{returnMode,rollingWindow,calendar});
    result.explanatoryModel=runExplanatoryModel(sample,state.series,{returnMode});
-   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);
+   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);
    result.rowsStart=sample[0].timestamp;result.rowsEnd=sample.at(-1).timestamp;
    result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
    state.result=result;
