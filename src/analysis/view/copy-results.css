@@ -1,0 +1,25 @@
+/* ORACULUM — controles de cópia dos resultados */
+.copy-toolbar{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.result-copy-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:7px 10px;border:1px solid #17608b;border-radius:6px;background:#09243a;color:#bce7ff;font-size:11px;font-weight:650;letter-spacing:.035em;white-space:nowrap}
+.result-copy-button:hover{border-color:#27a9ff;background:#0b2d47}
+.result-copy-button:disabled{opacity:.7;cursor:wait}
+.result-copy-button.copy-success{border-color:#278e72;color:#b8f6df;background:#09291f}
+.copy-section-group{display:contents}
+.analysis-results>.analysis-section-label{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.analysis-results>.analysis-section-label .result-copy-button{font-size:10px;min-height:30px;padding:5px 8px}
+.analysis-modal-panel header .modal-copy-toolbar{margin:0 8px 0 auto}
+.analysis-modal-panel header .modal-copy-toolbar .result-copy-button{min-height:36px}
+.analysis-modal-body details.analysis-layer-detail>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.analysis-modal-body details.analysis-layer-detail>summary>small{flex:1 1 180px}
+.analysis-modal-body .copy-part-detail{margin-left:auto}
+.analysis-modal-body h3{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.analysis-modal-body .copy-part-intro{font-size:10px;min-height:30px;padding:5px 8px}
+@media(max-width:700px){
+  .copy-toolbar{justify-content:stretch}
+  .copy-toolbar>.result-copy-button{flex:1}
+  .analysis-results>.analysis-section-label .result-copy-button{width:auto;max-width:100%}
+  .analysis-modal-panel header{gap:6px;padding:10px}
+  .analysis-modal-panel header .modal-copy-toolbar{margin-left:auto}
+  .analysis-modal-panel header .modal-copy-toolbar .result-copy-button{font-size:10px;padding:7px 8px}
+  .analysis-modal-body .copy-part-detail{margin-left:0}
+}
