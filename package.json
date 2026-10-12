@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:analysis": "node --test tests/analysis-engine.test.mjs"
+    "test:analysis": "node --test tests/*.test.mjs"
   }
 }
