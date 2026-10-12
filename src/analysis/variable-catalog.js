@@ -62,9 +62,19 @@ export const VARIABLE_CATALOG = Object.freeze([
   variable('residual_ljung_box_p','p-valor Ljung–Box','diagnostic','probability','Teste conjunto de autocorrelação dos resíduos até o número de defasagens escolhido.','aproximação qui-quadrado','model-diagnostics.diagnoseModel',['sufficient ordered residuals'],['Escolha de defasagens e estimação prévia afetam o teste.']),
   variable('price_real_cpi_deflated','Preço deflacionado por CPI','macro','currency_in_base_period','Preço nominal convertido em poder de compra do período-base do CPI selecionado.','P_nominal × CPI_base / CPI_t','engine.deflateValues',['matched CPI observation','positive CPI values'],['Só é calculado quando há observação de CPI no timestamp; base depende da série disponível.']),
   variable('return_real_cpi_adjusted','Retorno real por CPI','macro','ratio','Retorno entre preços ajustados por índices de preços inicial e final.','(Pₜ/CPIₜ) / (P₀/CPI₀) − 1','engine.realReturn',['positive prices and CPI at both endpoints'])
-]);
-
-export const VARIABLE_BY_ID = Object.freeze(
+  variable('analysis_observations','Observações da análise','sample','count','Quantidade de linhas de preço compartilhadas após alinhamento temporal.','n linhas alinhadas','engine.analyzeSeries',['at least one aligned row']),
+  variable('annualization_periods','Períodos por ano','configuration','count','Convenção de quantos intervalos equivalem a um ano para anualização.','m(interval, calendar)','engine.annualPeriods',['selected interval','calendar convention'],['É uma convenção explícita; deve acompanhar qualquer métrica anualizada.']),
+  variable('analysis_years','Horizonte em anos','sample','years','Duração entre primeira e última observação convertida em anos de 365,25 dias.','(t_fim − t_início) / 365,25 dias','engine.analyzeSeries',['valid first and last timestamps']),
+  variable('ols_f_statistic','Estatística F do modelo','econometrics','test_statistic','Estatística de teste da significância conjunta das variáveis preditoras.','(R² / p) / ((1 − R²) / gl)','explanatory-model.ols',['estimable OLS model','at least one predictor']),
+  variable('ols_f_p_value','p-valor do teste F','econometrics','probability','p-valor do teste conjunto para os coeficientes das preditoras.','cauda superior da distribuição F','explanatory-model.fP',['F statistic','numerator and denominator degrees of freedom'],['Não mede probabilidade de causalidade.']),
+  variable('ols_rmse','RMSE do modelo','econometrics','return_per_interval','Raiz do erro quadrático médio residual com graus de liberdade do modelo.','√(SSE / gl)','explanatory-model.ols',['estimable OLS model']),
+  variable('ols_hac_p_value','p-valor HAC','econometrics','probability','p-valor aproximado baseado em estatística normal com erro-padrão HAC.','teste normal bilateral','explanatory-model.runExplanatoryModel',['HAC standard error'],['A aproximação normal e a escolha do lag influenciam a inferência.']),
+  variable('ols_coefficient_ci95','Intervalo de confiança 95% do coeficiente','econometrics','coefficient_unit','Intervalo clássico do coeficiente OLS usando distribuição t e graus de liberdade residuais.','β ± t₀.₉₇₅,gl · SE','explanatory-model.ols',['coefficient standard error','degrees of freedom'],['Intervalo clássico; não é robusto a heterocedasticidade/autocorrelação.']),
+  variable('residual_mean','Média dos resíduos','diagnostic','return_per_interval','Média dos resíduos do modelo estimado.','Σeᵢ / n','model-diagnostics.diagnoseModel',['estimated residuals']),
+  variable('residual_std','Desvio-padrão residual','diagnostic','return_per_interval','Desvio-padrão amostral dos resíduos.','s(e)','model-diagnostics.diagnoseModel',['at least 2 residuals']),
+  variable('residual_variance_ratio','Razão de variâncias residuais','diagnostic','ratio','Razão entre a maior e a menor variância estimada nas duas metades da amostra residual.','max(s₁²,s₂²) / min(s₁²,s₂²)','model-diagnostics.diagnoseModel',['sufficient ordered residuals'],['Diagnóstico descritivo simples, não um teste formal de heterocedasticidade.']),
+  variable('residual_max_abs','Resíduo absoluto máximo','diagnostic','return_per_interval','Maior magnitude absoluta de resíduo observada.','max(|eᵢ|)','model-diagnostics.diagnoseModel',['estimated residuals']),
+]);\n\nexport const VARIABLE_BY_ID = Object.freeze(
   Object.fromEntries(VARIABLE_CATALOG.map(item => [item.id, item]))
 );
 
