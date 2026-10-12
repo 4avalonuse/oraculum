@@ -18,7 +18,7 @@ export function calculationStamp({
     sample,
     assumptions,
     checks,
-    status: failed.length ? 'ALERT' : 'CONSISTENT_INTERNAL',
+    status: failed.length ? 'ALERT' : checks.length ? 'CONSISTENT_INTERNAL' : 'NOT_CHECKED',
     validationScope: 'internal-consistency-only',
     independentlyValidated: false
   };
@@ -73,7 +73,7 @@ export function auditAnalysis(result, series) {
         formula: 'estatísticas descritivas sobre retornos finitos',
         inputs: ['returns'], observations: validReturns.length, sample,
         assumptions: ['Retornos não finitos são excluídos; primeira observação alinhada não produz retorno.'],
-        checks: [check('n retornos finitos', validReturns.length, s.returns.filter(Number.isFinite).length, 0)]
+        checks: []
       }),
       risk: calculationStamp({
         id: item.key + '.risk-metrics',
