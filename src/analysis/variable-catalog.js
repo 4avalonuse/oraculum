@@ -74,7 +74,9 @@ export const VARIABLE_CATALOG = Object.freeze([
   variable('residual_std','Desvio-padrão residual','diagnostic','return_per_interval','Desvio-padrão amostral dos resíduos.','s(e)','model-diagnostics.diagnoseModel',['at least 2 residuals']),
   variable('residual_variance_ratio','Razão de variâncias residuais','diagnostic','ratio','Razão entre a maior e a menor variância estimada nas duas metades da amostra residual.','max(s₁²,s₂²) / min(s₁²,s₂²)','model-diagnostics.diagnoseModel',['sufficient ordered residuals'],['Diagnóstico descritivo simples, não um teste formal de heterocedasticidade.']),
   variable('residual_max_abs','Resíduo absoluto máximo','diagnostic','return_per_interval','Maior magnitude absoluta de resíduo observada.','max(|eᵢ|)','model-diagnostics.diagnoseModel',['estimated residuals']),
-]);\n\nexport const VARIABLE_BY_ID = Object.freeze(
+]);
+
+export const VARIABLE_BY_ID = Object.freeze(
   Object.fromEntries(VARIABLE_CATALOG.map(item => [item.id, item]))
 );
 
