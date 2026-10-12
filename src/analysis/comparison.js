@@ -7,6 +7,7 @@ import {wireMetricHelp} from './metric-help.js';
 import {runExplanatoryModel} from './explanatory-model.js';
 import {diagnoseModel} from './model-diagnostics.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
+import {wireSummaryCopy} from './view/copy-results.js';
 
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
@@ -70,7 +71,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const em=result.explanatoryModel;
    if(em?.available){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA · '+primary.symbol+'</div><div class="explanation-teaser"><div><b>PERGUNTA:</b> as variáveis selecionadas ajudam a explicar os retornos do '+primary.symbol+'?</div><strong>R² '+pct(em.r2,2)+' · R² ajustado '+pct(em.adjustedR2,2)+'</strong><small>Modelo linear conjunto sobre retornos alinhados. Associação estatística, não causalidade.</small></div>'}
    else if(series.length>1){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA</div><div class="explanation-teaser is-unavailable"><b>MODELO NÃO ESTIMADO</b><small>'+em.reason+'</small></div>'}
-   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:state.selected||[],assets,fmt,date}));document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
+   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context')});$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:state.selected||[],assets,fmt,date}));document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
  };
 
  async function run(){
