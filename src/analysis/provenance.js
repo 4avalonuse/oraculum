@@ -29,13 +29,37 @@ const closeEnough = (a, b, tolerance = 1e-9) =>
   Math.abs(a - b) <= tolerance * Math.max(1, Math.abs(a), Math.abs(b));
 
 function check(name, actual, expected, tolerance) {
-  const pass = closeEnough(actual, expected, tolerance);
+  const comparable = Number.isFinite(actual) && Number.isFinite(expected);
+  const pass = comparable && closeEnough(actual, expected, tolerance);
   return {
-    name, status: pass ? 'PASS' : 'FAIL',
+    name, status: !comparable ? 'NOT_COMPARABLE' : pass ? 'PASS' : 'FAIL',
     actual: Number.isFinite(actual) ? actual : null,
     expected: Number.isFinite(expected) ? expected : null,
     tolerance
   };
+}
+
+function referencePairStats(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return null;
+  const pairs = [];
+  for (let i = 0; i < a.length; i++) {
+    if (Number.isFinite(a[i]) && Number.isFinite(b[i])) pairs.push([a[i], b[i]]);
+  }
+  if (pairs.length < 2) return { n: pairs.length, covariance: NaN, varianceX: NaN, correlation: NaN, beta: NaN, alpha: NaN, r2: NaN };
+  const mx = pairs.reduce((sum, p) => sum + p[0], 0) / pairs.length;
+  const my = pairs.reduce((sum, p) => sum + p[1], 0) / pairs.length;
+  let xx = 0, yy = 0, xy = 0;
+  for (const [x, y] of pairs) {
+    xx += (x - mx) ** 2;
+    yy += (y - my) ** 2;
+    xy += (x - mx) * (y - my);
+  }
+  const varianceX = xx / (pairs.length - 1);
+  const covariance = xy / (pairs.length - 1);
+  const correlation = xx > 0 && yy > 0 ? xy / Math.sqrt(xx * yy) : NaN;
+  const beta = varianceX > 0 ? covariance / varianceX : NaN;
+  const alpha = Number.isFinite(beta) ? my - beta * mx : NaN;
+  return { n: pairs.length, covariance, varianceX, correlation, beta, alpha, r2: Number.isFinite(correlation) ? correlation ** 2 : NaN };
 }
 
 export function auditAnalysis(result, series) {
@@ -89,15 +113,27 @@ export function auditAnalysis(result, series) {
       calculations
     };
   }
-  const relationAudit = (result.relations || []).map(r => calculationStamp({
-    id: r.primary + '.vs.' + r.target + '.bivariate',
-    formula: 'cov(X,Y), corr(X,Y), beta = cov(X,Y)/var(X), alpha = média(Y) − beta × média(X)',
-    inputs: [r.primary + '.returns', r.target + '.returns'],
-    observations: r.n ?? null,
-    sample: { start: result.rowsStart ?? null, end: result.rowsEnd ?? null },
-    assumptions: ['Associação observacional; não estabelece causalidade.', 'A direção de beta depende de qual série é X e qual é Y.'],
-    checks: []
-  }));
+  const relationAudit = (result.relations || []).map(r => {
+    const x = result.series?.[r.primary]?.returns || [];
+    const y = result.series?.[r.target]?.returns || [];
+    const ref = referencePairStats(x, y);
+    return calculationStamp({
+      id: r.primary + '.vs.' + r.target + '.bivariate',
+      formula: 'cov(X,Y), corr(X,Y), beta = cov(X,Y)/var(X), alpha = média(Y) − beta × média(X)',
+      inputs: [r.primary + '.returns', r.target + '.returns'],
+      observations: ref?.n ?? r.n ?? null,
+      sample: { start: result.rowsStart ?? null, end: result.rowsEnd ?? null },
+      assumptions: ['Associação observacional; não estabelece causalidade.', 'A direção de beta depende de qual série é X e qual é Y.'],
+      checks: ref ? [
+        check('correlação vs referência independente', r.correlation, ref.correlation, 1e-8),
+        check('covariância vs referência independente', r.covariance, ref.covariance, 1e-8),
+        check('beta vs referência independente', r.beta, ref.beta, 1e-8),
+        check('alpha vs referência independente', r.alpha, ref.alpha, 1e-8),
+        check('R² vs correlação² independente', r.r2, ref.r2, 1e-8),
+        check('contagem de pares válidos', r.n, ref.n, 0)
+      ] : []
+    });
+  });
   return {
     mathVersion: ANALYSIS_MATH_VERSION,
     status: 'INTERNAL_CHECKS_ONLY',
