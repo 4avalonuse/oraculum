@@ -18,7 +18,7 @@ async function writeClipboard(value){
 }
 function button(label,getText,kind='copy-part'){
   const el=document.createElement('button');el.type='button';el.className='result-copy-button '+kind;el.textContent=label;
-  el.addEventListener('click',async()=>{
+  el.addEventListener('click',async(event)=>{event.preventDefault();event.stopPropagation();
     const original=label;el.disabled=true;el.textContent='COPIANDO…';
     try{await writeClipboard(getText());el.textContent='COPIADO ✓';el.classList.add('copy-success');}
     catch(error){el.textContent='TENTAR NOVAMENTE';el.title=error.message;}
