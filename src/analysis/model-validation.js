@@ -9,7 +9,7 @@ export function validateModelTwoWays(model){
  const close=(a,b,t=1e-7)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=t*Math.max(1,Math.abs(a),Math.abs(b));
  if(n<=k+2||x.length!==n||x.some(r=>r.length!==k||r.some(v=>!Number.isFinite(v)))||y.some(v=>!Number.isFinite(v)))return {status:'NOT_CHECKED',passed:0,total:0,checks:[]};
  const xt=trans(x),bread=inv(mul(xt,x));if(!bread)return {status:'ALERT',passed:0,total:1,checks:[{name:'matriz invertível',status:'FAIL'}]};
- const beta=mv(bread,mv(xt,y.map(v=>[v])).map(r=>r[0]));
+ const beta=mv(bread,mv(xt,y));
  const fitted=mv(x,beta),e=y.map((v,i)=>v-fitted[i]),sse=e.reduce((s,v)=>s+v*v,0),ym=mean(y),sst=y.reduce((s,v)=>(s+(v-ym)**2),0),r2=1-sse/sst;
  const checks=[],add=(name,a,b,t=1e-7)=>checks.push({name,status:close(a,b,t)?'PASS':'FAIL',primary:Number.isFinite(a)?a:null,reference:Number.isFinite(b)?b:null});
  const diff=(a,b)=>a.length===b.length?Math.max(0,...a.map((v,i)=>Math.abs(v-b[i]))):Infinity;
