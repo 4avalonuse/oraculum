@@ -24,5 +24,5 @@ export function validateModelTwoWays(model){
  const hac=mul(mul(bread,meat),bread).map(r=>r.map(v=>v*n/(n-k))),se=hac.map((r,i)=>Math.sqrt(Math.max(0,r[i]))),actual=(model.hacCoefficients||[]).map(c=>c.hacSe);
  add('HAC erros-padrão Newey–West',diff(actual,se),0,2e-6);
  const passed=checks.filter(c=>c.status==='PASS').length,failed=checks.some(c=>c.status==='FAIL');
- return {status:failed?'ALERT':'BOTH_PATHS_AGREE',passed,total:checks.length,checks,message:failed?'Divergência entre os caminhos de cálculo.':'Os dois caminhos numéricos concordam dentro das tolerâncias.',validationScope:'independent-numerical-reproduction',independentlyValidated:!failed,economicValidity:'NOT_ASSESSED'};
+ return {status:failed?'ALERT':'BOTH_PATHS_AGREE',passed,total:checks.length,checks,message:failed?'Divergência entre os caminhos de cálculo.':'Os dois caminhos numéricos concordam dentro das tolerâncias.',validationScope:'cross-implementation-numerical-reproduction',crossChecked:!failed,independentlyValidated:false,externalReferenceValidation:'PENDING',economicValidity:'NOT_ASSESSED'};
 }
