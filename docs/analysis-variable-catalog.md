@@ -33,6 +33,6 @@ O catálogo é descritivo: não calcula valores, não salva amostras e ainda nã
 
 1. Confirmar a bateria de testes no CI após os novos testes de catálogo e risco.
 2. Adicionar testes de integração para a saída de `analyzeSeries` (incluindo Sharpe, Sortino, VaR e ES com a primeira linha `NaN`).
-3. Extrair contratos de amostra/alinhamento do `engine.js` sem mudar resultados.
+3. **Alinhamento temporal extraído:** `src/analysis/data/alignment.js` agora contém o agrupamento por período e a interseção temporal; `engine.js` reexporta `alignSeries` para manter compatibilidade. Foram adicionados testes de equivalência entre os dois caminhos. A execução da bateria ainda precisa ser confirmada.
 4. Conectar o catálogo à ajuda contextual e à tabela de resultados usando IDs, sem reescrever as fórmulas no front-end.
 5. Definir o envelope versionado de resultados antes de qualquer persistência no backend.
