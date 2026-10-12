@@ -60,6 +60,97 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    $('#analysis-context').classList.remove('is-hidden');
  };
 
+
+ function auditNumber(value,digits=8){
+   if(value===null||value===undefined||!Number.isFinite(Number(value)))return 'indefinido';
+   const n=Number(value);
+   if(n!==0&&Math.abs(n)<1e-7)return n.toExponential(3);
+   return n.toLocaleString('pt-BR',{maximumFractionDigits:digits});
+ }
+ function auditPct(value){return Number.isFinite(value)?auditNumber(value*100,6)+'%':'indefinido'}
+ function auditDate(value){return Number.isFinite(Number(value))?new Date(Number(value)).toISOString().slice(0,10):'indefinida'}
+ function buildAuditReport(result,series,rows,markers){
+   const mode=result.returnMode==='simple'?'simples':'logarítmico';
+   const lines=[
+     'ORACULUM — RELATÓRIO PARA AUDITORIA ESTATÍSTICA',
+     '',
+     'INSTRUÇÕES PARA A AUDITORIA',
+     'Verifique a coerência matemática dos resultados e das fórmulas; não presuma que o código está correto só porque produziu números.',
+     'Separe: (1) confirmado, (2) suspeito, (3) impossível de concluir com este resumo. Explique o motivo e indique o arquivo/fórmula a conferir.',
+     'Confira especialmente retornos, CAGR, volatilidade anualizada, drawdown, VaR/ES, covariância, beta/alpha, OLS, erros-padrão HAC, p-valores e diagnósticos dos resíduos.',
+     'Não afirme causalidade. Se faltar informação para validar um resultado, peça apenas o trecho exato de dados ou código necessário; não invente valores esperados.',
+     '',
+     '1. CONFIGURAÇÃO E AMOSTRA',
+     'Referência: '+(series[0]?.symbol||'indefinida'),
+     'Comparações: '+(series.slice(1).map(s=>s.symbol).join(', ')||'nenhuma'),
+     'Período comum: '+auditDate(result.rowsStart)+' a '+auditDate(result.rowsEnd),
+     'Intervalo: '+(result.interval||'indefinido')+' | Tipo de retorno: '+mode,
+     'Observações de preço alinhadas: '+(rows?.length??result.observations??'indefinidas'),
+     'Retornos válidos por série: '+series.map(s=>s.symbol+'='+((result.series?.[s.key]?.returns||[]).filter(Number.isFinite).length)).join(' | '),
+     'Janela móvel: '+(result.rollingWindow??'indefinida')+' | Períodos anualizados: '+(result.periods??'indefinido'),
+     'Marcadores da amostra: início '+auditDate(rows?.[markers?.start]?.timestamp)+' | base visual '+auditDate(rows?.[markers?.base]?.timestamp)+' | fim '+auditDate(rows?.[markers?.end]?.timestamp),
+     'Nota: a base 100 afeta o gráfico comparativo, não deve alterar as estatísticas calculadas sobre a amostra selecionada.',
+     '',
+     '2. RESULTADOS POR SÉRIE'
+   ];
+   for(const s of series){
+     const x=result.series?.[s.key];if(!x)continue;
+     lines.push(
+       '',s.symbol,
+       'Preços inicial/final: '+auditNumber(x.start)+' / '+auditNumber(x.end),
+       'Retorno acumulado: '+auditPct(x.total)+' | CAGR: '+auditPct(x.cagr)+' | Volatilidade anualizada: '+auditPct(x.vol),
+       'Drawdown máximo: '+auditPct(x.drawdown)+' | Sharpe: '+auditNumber(x.sharpe,6)+' | Sortino: '+auditNumber(x.sortino,6)+' | Win rate: '+auditPct(x.winRate),
+       'Retorno médio: '+auditPct(x.mean)+' | Mediana: '+auditPct(x.median)+' | Desvio-padrão por intervalo: '+auditPct(x.std),
+       'Variância: '+auditNumber(x.variance,12)+' | Erro-padrão da média: '+auditPct(x.se),
+       'Melhor/pior retorno: '+auditPct(x.best)+' / '+auditPct(x.worst),
+       'Assimetria: '+auditNumber(x.skewness,6)+' | Curtose excedente: '+auditNumber(x.excessKurtosis,6),
+       'VaR 95%/99%: '+auditPct(x.var95)+' / '+auditPct(x.var99)+' | ES 95%/99%: '+auditPct(x.es95)+' / '+auditPct(x.es99),
+       'Calmar: '+auditNumber(x.calmar,6)+' | ATL/ATH: '+auditNumber(x.atl)+' / '+auditNumber(x.ath),
+       'Jarque–Bera: estatística '+auditNumber(x.jarqueBera?.stat,8)+' | p '+auditNumber(x.jarqueBera?.p,8)
+     );
+   }
+   lines.push('','3. RELAÇÕES BIVARIADAS');
+   for(const r of result.relations||[]){
+     lines.push(
+       '',r.primary+' × '+r.target,
+       'Correlação: '+auditNumber(r.correlation,8)+' | Covariância: '+auditNumber(r.covariance,12),
+       'Beta: '+auditNumber(r.beta,8)+' | Alpha: '+auditNumber(r.alpha,10)+' | R²: '+auditPct(r.r2),
+       'Correlação móvel final: '+auditNumber(r.rolling,8),
+       'Lead/Lag escolhido: '+(r.leadLag?.lag??'indefinido')+' intervalos | correlação correspondente: '+auditNumber(r.leadLag?.corr,8)
+     );
+   }
+   const m=result.explanatoryModel,d=result.modelDiagnostics;
+   lines.push('','4. MODELO MULTIVARIADO E RESÍDUOS');
+   if(!m?.available)lines.push('Modelo não estimado: '+(m?.reason||'motivo não informado'));
+   else{
+     lines.push(
+       'Alvo: '+m.target+' | Preditores: '+(m.predictors||[]).join(', '),
+       'Observações: '+m.observations+' | R²: '+auditPct(m.r2)+' | R² ajustado: '+auditPct(m.adjustedR2),
+       'F: '+auditNumber(m.f,8)+' | p do F: '+auditNumber(m.fP,10)+' | graus de liberdade residuais: '+(m.df??'indefinidos'),
+       'RMSE: '+auditNumber(m.rmse,12)+' | SSE: '+auditNumber(m.sse,12)+' | SST: '+auditNumber(m.sst,12)+' | HAC lag: '+(m.hacLag??'indefinido')
+     );
+     lines.push('Coeficientes OLS (β | erro-padrão | t | p | IC95%):');
+     for(const c of m.coefficients||[])lines.push(c.name+': '+auditNumber(c.beta,10)+' | '+auditNumber(c.se,10)+' | '+auditNumber(c.t,8)+' | '+auditNumber(c.p,10)+' | ['+auditNumber(c.ciLow,10)+', '+auditNumber(c.ciHigh,10)+']');
+     lines.push('Coeficientes HAC/Newey–West (β | HAC SE | HAC t | HAC p):');
+     for(const c of m.hacCoefficients||[])lines.push(c.name+': '+auditNumber(c.beta,10)+' | '+auditNumber(c.hacSe,10)+' | '+auditNumber(c.hacT,8)+' | '+auditNumber(c.hacP,10));
+     lines.push('VIF: '+(m.vif||[]).map((v,i)=>(m.predictors?.[i]||('preditor '+(i+1)))+'='+auditNumber(v.vif,8)).join(' | '));
+     if(d?.available)lines.push(
+       'Resíduos: média '+auditNumber(d.residualMean,12)+' | desvio-padrão '+auditNumber(d.residualStd,12)+' | máximo absoluto '+auditNumber(d.maxAbsResidual,12),
+       'Durbin–Watson: '+auditNumber(d.durbinWatson,8)+' | Ljung–Box: estatística '+auditNumber(d.ljungBox?.stat,8)+', gl '+(d.ljungBox?.df??'indefinidos')+', p '+auditNumber(d.ljungBox?.p,10),
+       'Razão de variâncias entre metades: '+auditNumber(d.varianceRatio,8)
+     );
+   }
+   lines.push('','5. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
+   if(Array.isArray(rows)&&rows.length){
+     const indices=[...new Set([0,1,2,Math.floor((rows.length-1)/2)-1,Math.floor((rows.length-1)/2),Math.floor((rows.length-1)/2)+1,rows.length-3,rows.length-2,rows.length-1])].filter(i=>i>=0&&i<rows.length).sort((a,b)=>a-b);
+     lines.push('Amostra curta de preços alinhados; serve para inspeção pontual, não para recalcular sozinha toda a regressão.');
+     lines.push('Data | '+series.map(s=>s.symbol).join(' | '));
+     for(const i of indices)lines.push(auditDate(rows[i].timestamp)+' | '+series.map(s=>auditNumber(rows[i][s.key],8)).join(' | '));
+   }else lines.push('Trechos de preços não disponíveis nesta exportação.');
+   lines.push('','Se um cálculo não puder ser validado com este resumo, solicite a amostra adicional ou o trecho de código estritamente necessário.');
+   return lines.join('\n');
+ }
+
  const render=(result,series)=>{
    state.result=result;state.selected=series.map(x=>x.key);$('#comparison-panel').classList.remove('is-hidden');$('#analysis-status').textContent='CONCLUÍDA';
    $('#comparison-period').textContent=date(result.rowsStart)+' → '+date(result.rowsEnd)+' · '+result.observations+' observações';
@@ -71,7 +162,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const em=result.explanatoryModel;
    if(em?.available){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA · '+primary.symbol+'</div><div class="explanation-teaser"><div><b>PERGUNTA:</b> as variáveis selecionadas ajudam a explicar os retornos do '+primary.symbol+'?</div><strong>R² '+pct(em.r2,2)+' · R² ajustado '+pct(em.adjustedR2,2)+'</strong><small>Modelo linear conjunto sobre retornos alinhados. Associação estatística, não causalidade.</small></div>'}
    else if(series.length>1){html+='<div class="analysis-section-label">EXPLICAÇÃO MULTIVARIADA</div><div class="explanation-teaser is-unavailable"><b>MODELO NÃO ESTIMADO</b><small>'+em.reason+'</small></div>'}
-   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context')});$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:state.selected||[],assets,fmt,date}));document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
+   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context'),auditText:()=>buildAuditReport(state.result,state.series,state.rows,state.markers)});$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:state.selected||[],assets,fmt,date}));document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
  };
 
  async function run(){
