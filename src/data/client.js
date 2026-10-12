@@ -4,29 +4,42 @@ function createRequest(apiBase) {
   const base = String(apiBase).replace(/\/$/, '');
 
   return async function request(path, options = {}) {
-    const response = await fetch(base + path, {
-      ...options,
-      headers: { Accept: "application/json", ...(options.headers || {}) },
-      cache: "no-store"
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
-    const text = await response.text();
-    let payload = null;
     try {
-      payload = text ? JSON.parse(text) : null;
-    } catch {
-      throw new Error("Data API retornou JSON inválido");
-    }
+      const response = await fetch(base + path, {
+        ...options,
+        signal: controller.signal,
+        headers: { Accept: "application/json", ...(options.headers || {}) },
+        cache: "no-store"
+      });
 
-    if (!response.ok) {
-      throw new Error(
-        payload?.message ||
-        payload?.error ||
-        `Data API HTTP ${response.status}`
-      );
-    }
+      const text = await response.text();
+      let payload = null;
+      try {
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        throw new Error("Data API retornou JSON inválido");
+      }
 
-    return payload;
+      if (!response.ok) {
+        throw new Error(
+          payload?.message ||
+          payload?.error ||
+          `Data API HTTP ${response.status}`
+        );
+      }
+
+      return payload;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("A API não respondeu em 20 segundos. Verifique a conexão e tente Atualizar novamente.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
   };
 }
 
