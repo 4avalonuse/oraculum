@@ -8,5 +8,5 @@ function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(gammal
 function tCDF(t,df){if(!Number.isFinite(t)||df<=0)return NaN;if(t===0)return .5;const x=df/(df+t*t),p=.5*ibeta(x,df/2,.5);return t>0?1-p:p}
 export function studentTPValue(t,df){if(!Number.isFinite(t)||!(df>0))return NaN;const x=df/(df+t*t);return Math.min(1,Math.max(0,ibeta(x,df/2,.5)))}
 export function normalTwoSidedP(z){if(!Number.isFinite(z))return NaN;const x=Math.abs(z),p=0.2316419,b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429,t=1/(1+p*x),phi=Math.exp(-x*x/2)/Math.sqrt(2*Math.PI),tail=phi*(b1*t+b2*t*t+b3*t**3+b4*t**4+b5*t**5);return Math.min(1,2*tail)}
-export function studentTCritical(alpha,df){let lo=0,hi=20;for(let i=0;i<70;i++){const mid=(lo+hi)/2;if(tCDF(mid,df)<1-alpha/2)lo=mid;else hi=mid}return (lo+hi)/2}
+export function studentTCritical(alpha,df){if(!(alpha>0&&alpha<1&&df>0))return NaN;let lo=0,hi=20;for(let i=0;i<70;i++){const mid=(lo+hi)/2;if(tCDF(mid,df)<1-alpha/2)lo=mid;else hi=mid}return (lo+hi)/2}
 export function fUpperTailP(f,d1,d2){if(!(f>=0&&d1>0&&d2>0))return NaN;if(f===Infinity)return 0;const x=d2/(d1*f+d2);return Math.min(1,Math.max(0,ibeta(x,d2/2,d1/2)))}
