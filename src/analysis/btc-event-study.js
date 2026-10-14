@@ -8,8 +8,8 @@ function closeOf(row){return Number(row?.close??row?.c)}
 function timeOf(row){return Number(row?.timestamp??row?.t??row?.ts)}
 function validRows(candles){
   return (Array.isArray(candles)?candles:[])
-    .map(row=>({timestamp:timeOf(row),close:closeOf(row)}))
-    .filter(row=>Number.isFinite(row.timestamp)&&Number.isFinite(row.close)&&row.close>0)
+    .map(row=>({barTimestamp:timeOf(row),timestamp:timeOf(row)+HOUR,close:closeOf(row)}))
+    .filter(row=>Number.isFinite(row.timestamp)&&Number.isFinite(row.barTimestamp)&&Number.isFinite(row.close)&&row.close>0)
     .sort((a,b)=>a.timestamp-b.timestamp)
     .filter((row,i,all)=>i===0||row.timestamp>all[i-1].timestamp);
 }
@@ -23,7 +23,7 @@ function nearest(rows,target,toleranceMs){
 }
 function nearestBefore(rows,target,toleranceMs){
   let best=null;
-  for(const row of rows)if(row.timestamp<target)best=row;
+  for(const row of rows)if(row.timestamp<=target)best=row;
   if(!best||target-best.timestamp>toleranceMs)return null;
   return {...best,offsetMinutes:Math.round((best.timestamp-target)/60000)};
 }
@@ -34,8 +34,7 @@ export function analyzeBtcEventWindow(candles,eventTimestamp,options={}){
   if(rows.length<2)return {available:false,reason:'A série horária ainda não tem observações suficientes.',observations:rows.length};
   const event=Number(eventTimestamp);
   const pre4=nearestBefore(rows,event-4*HOUR,toleranceMs);
-  // Strictly exclude a bar starting exactly at T−1h: hourly OHLCV timestamps
-  // often label the bar open, so its close may not yet have been observable.
+  // Baseline uses the last completed hourly close at or before T−1h.
   const anchor=nearestBefore(rows,event-HOUR,toleranceMs);
   const post1=nearest(rows,event+HOUR,toleranceMs);
   const post4=nearest(rows,event+4*HOUR,toleranceMs);
