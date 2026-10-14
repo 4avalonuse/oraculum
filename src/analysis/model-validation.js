@@ -1,5 +1,5 @@
 export function validateModelTwoWays(model){
- if(!model?.available||!model.auditDesign?.x||!model.auditDesign?.y)return {status:'NOT_CHECKED',passed:0,total:0,checks:[]};
+ if(!model?.available||!model.auditDesign?.x||!model.auditDesign?.y)return {status:'NOT_CHECKED',passed:0,total:0,checks:[],reason:model?.reason||'Modelo indisponível ou desenho de auditoria ausente.',validationScope:'cross-implementation-numerical-reproduction',independentlyValidated:false,economicValidity:'NOT_ASSESSED'};
  const x=model.auditDesign.x,y=model.auditDesign.y,n=y.length,k=x[0]?.length||0;
  const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
  const trans=a=>a[0].map((_,j)=>a.map(r=>r[j]));
@@ -7,7 +7,7 @@ export function validateModelTwoWays(model){
  const mv=(a,v)=>a.map(r=>r.reduce((s,z,j)=>s+z*v[j],0));
  const inv=m=>{const n=m.length,a=m.map((r,i)=>r.concat(Array.from({length:n},(_,j)=>i===j?1:0)));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(a[r][c])>Math.abs(a[p][c]))p=r;if(Math.abs(a[p][c])<1e-14)return null;[a[c],a[p]]=[a[p],a[c]];const d=a[c][c];for(let j=0;j<2*n;j++)a[c][j]/=d;for(let r=0;r<n;r++)if(r!==c){const f=a[r][c];for(let j=0;j<2*n;j++)a[r][j]-=f*a[c][j]}}return a.map(r=>r.slice(n))};
  const close=(a,b,t=1e-7)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=t*Math.max(1,Math.abs(a),Math.abs(b));
- if(n<=k+2||x.length!==n||x.some(r=>r.length!==k||r.some(v=>!Number.isFinite(v)))||y.some(v=>!Number.isFinite(v)))return {status:'NOT_CHECKED',passed:0,total:0,checks:[]};
+ if(n<=k+2||x.length!==n||x.some(r=>r.length!==k||r.some(v=>!Number.isFinite(v)))||y.some(v=>!Number.isFinite(v)))return {status:'NOT_CHECKED',passed:0,total:0,checks:[],reason:'Amostra insuficiente ou desenho X/Y contém valores ausentes/não finitos.',validationScope:'cross-implementation-numerical-reproduction',independentlyValidated:false,economicValidity:'NOT_ASSESSED'};
  const xt=trans(x),bread=inv(mul(xt,x));if(!bread)return {status:'ALERT',passed:0,total:1,checks:[{name:'matriz invertível',status:'FAIL'}]};
  const beta=mv(bread,mv(xt,y));
  const fitted=mv(x,beta),e=y.map((v,i)=>v-fitted[i]),sse=e.reduce((s,v)=>s+v*v,0),ym=mean(y),sst=y.reduce((s,v)=>(s+(v-ym)**2),0),r2=1-sse/sst;
