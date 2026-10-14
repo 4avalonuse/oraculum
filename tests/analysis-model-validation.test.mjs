@@ -51,3 +51,16 @@ test('OLS and Newey–West inference match independent statsmodels reference val
  close(model.r2,0.9703374816199366);
  close(model.f,2895.063258724595,2e-6);
 });
+
+
+test('model audit design preserves exact source timestamps and elapsed intervals for retained residual rows',()=>{
+ const rows=[];let a=100,b=50;const times=Array.from({length:46},(_,i)=>i+Math.floor(i/3));const start=Date.UTC(2024,0,1),day=86400000;
+ rows.push({timestamp:start,A:a,B:b,__sourceTimestamps:{A:start,B:start+6*3600000}});
+ for(let i=1;i<times.length;i++){a*=Math.exp(.01*Math.sin(i*.7)+.002);b*=Math.exp(.008*Math.cos(i*.31)+.001);const ts=start+times[i]*day;rows.push({timestamp:ts,A:a,B:b,__sourceTimestamps:{A:ts,B:ts+6*3600000}})}
+ const model=runExplanatoryModel(rows,[{key:'A',symbol:'A'},{key:'B',symbol:'B'}],{hacLag:2});
+ assert.equal(model.available,true,model.reason);
+ assert.equal(model.auditDesign.timestamps.length,model.residuals.length);
+ assert.equal(model.auditDesign.elapsedDaysBySeries.A.length,model.residuals.length);
+ assert.ok(model.auditDesign.elapsedDaysBySeries.A.some(v=>v>1));
+ assert.ok(model.auditDesign.sourceTimestampsBySeries.B.every((v,i)=>v-model.auditDesign.sourceTimestampsBySeries.A[i]===6*3600000));
+});
