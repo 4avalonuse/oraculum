@@ -129,7 +129,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      );
    }
    const m=result.explanatoryModel,d=result.modelDiagnostics;
-   const validation=result.modelValidation;lines.push('','CONFERÊNCIA NUMÉRICA ENTRE IMPLEMENTAÇÕES: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | cálculo A='+auditNumber(item.primary,12)+' | cálculo B='+auditNumber(item.reference,12));
+   const validation=result.modelValidation;lines.push('','CONFERÊNCIA NUMÉRICA ENTRE IMPLEMENTAÇÕES: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');if(validation?.reason)lines.push('Motivo da não verificação: '+validation.reason);for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | cálculo A='+auditNumber(item.primary,12)+' | cálculo B='+auditNumber(item.reference,12));
    lines.push('','4. MODELO MULTIVARIADO E RESÍDUOS');
    if(!m?.available)lines.push('Modelo não estimado: '+(m?.reason||'motivo não informado'));
    else{
@@ -148,7 +148,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      lines.push('VIF: '+(m.vif||[]).map((v,i)=>(m.predictors?.[i]||('preditor '+(i+1)))+'='+auditNumber(v.vif,8)).join(' | '));
      if(d?.available)lines.push(
        'Resíduos: média '+auditNumber(d.residualMean,12)+' | desvio-padrão '+auditNumber(d.residualStd,12)+' | máximo absoluto '+auditNumber(d.maxAbsResidual,12),
-       'Durbin–Watson: '+auditNumber(d.durbinWatson,8)+' | Ljung–Box: estatística '+auditNumber(d.ljungBox?.stat,8)+', gl '+(d.ljungBox?.df??'indefinidos')+', p '+auditNumber(d.ljungBox?.p,10),
+       'Durbin–Watson: '+auditNumber(d.durbinWatson,8)+' (numerador '+auditNumber(d.durbinWatsonNumerator,10)+' / denominador '+auditNumber(d.durbinWatsonDenominator,10)+') | correlação residual lag 1: '+auditNumber(d.residualLag1Correlation,8),
+       'Ljung–Box: Q='+auditNumber(d.ljungBox?.stat,8)+', gl='+ (d.ljungBox?.df??'indefinidos')+', p='+auditNumber(d.ljungBox?.p,10)+' | n resíduos='+ (d.ljungBox?.residualCount??'indefinido'),
+       'Espaçamento temporal: '+(d.temporalSpacing?.status||'TIMING_UNKNOWN')+' | intervalos n='+ (d.temporalSpacing?.intervalCount??0)+' | min/mediana/máx (dias)='+auditNumber(d.temporalSpacing?.minDays,4)+' / '+auditNumber(d.temporalSpacing?.medianDays,4)+' / '+auditNumber(d.temporalSpacing?.maxDays,4)+' | inferência formal elegível='+String(Boolean(d.temporalSpacing?.formalInferenceEligible)),
+       ...(d.temporalSpacing?.warning?[d.temporalSpacing.warning]:[]),
        'Razão de variâncias entre metades: '+auditNumber(d.varianceRatio,8)
      );
      if(d?.heteroskedasticity?.available){
