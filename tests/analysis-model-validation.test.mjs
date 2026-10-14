@@ -16,3 +16,38 @@ test('independent model validation agrees on a deterministic sample',()=>{
  const result=validateModelTwoWays(model);assert.equal(result.status,'BOTH_PATHS_AGREE',JSON.stringify(result.checks));assert.equal(result.passed,result.total);assert.equal(result.economicValidity,'NOT_ASSESSED');
 });
 test('missing model is not marked confirmed',()=>assert.equal(validateModelTwoWays({available:false}).status,'NOT_CHECKED'));
+
+
+// Independent fixed reference values computed with Python statsmodels OLS and
+// cov_type="HAC", maxlags=5, use_correction=True, kernel="bartlett".
+// These constants are intentionally not calculated by Oraculum's estimator.
+test('OLS and Newey–West inference match independent statsmodels reference values',()=>{
+ const rows=[];let a=100,b=50,c=80;const start=Date.UTC(2024,0,1),day=86400000;rows.push({timestamp:start,A:a,B:b,C:c});
+ for(let i=0;i<180;i++){const ra=.0004+.012*Math.sin(i*.37)+.004*Math.cos(i*.13),rb=.0002+1.35*ra+.003*Math.sin(i*.71),rc=-.0001+.25*ra+.009*Math.cos(i*.29);a*=Math.exp(ra);b*=Math.exp(rb);c*=Math.exp(rc);rows.push({timestamp:start+(i+1)*day,A:a,B:b,C:c})}
+ const model=runExplanatoryModel(rows,[{key:'A',symbol:'A'},{key:'B',symbol:'B'},{key:'C',symbol:'C'}],{returnMode:'log',hacLag:5});
+ assert.equal(model.available,true);
+ const close=(actual,expected,tol=2e-7)=>assert.ok(Number.isFinite(actual)&&Math.abs(actual-expected)<=tol*Math.max(Math.abs(expected),1e-10)+1e-12,'actual='+actual+'; expected='+expected);
+ close(model.coefficients[0].beta,-0.00014700697908324892);
+ close(model.coefficients[1].beta,0.7159194557117554);
+ close(model.coefficients[2].beta,0.01576856170414032);
+ close(model.coefficients[0].se,0.00011653941477952037);
+ close(model.coefficients[1].se,0.010284118060476508);
+ close(model.coefficients[2].se,0.018290682911411314);
+ close(model.coefficients[0].t,-1.2614357070641704);
+ close(model.coefficients[1].t,69.61408372616287);
+ close(model.coefficients[2].t,0.8621089644664127);
+ close(model.coefficients[0].p,0.2088118470266409,2e-6);
+ close(model.coefficients[2].p,0.38979405591675315,2e-6);
+ close(model.coefficients[0].ciLow,-0.0003769925264494207);
+ close(model.coefficients[0].ciHigh,0.00008297856828292288);
+ close(model.coefficients[1].ciLow,0.6956241888632672);
+ close(model.coefficients[1].ciHigh,0.7362147225602437);
+ close(model.hacCoefficients[0].hacSe,0.00012296099976202707);
+ close(model.hacCoefficients[1].hacSe,0.013820957201039635);
+ close(model.hacCoefficients[2].hacSe,0.0244580396838111);
+ close(model.hacCoefficients[0].hacT,-1.1955577733408096);
+ close(model.hacCoefficients[0].hacP,0.23186917820491282,2e-6);
+ close(model.hacCoefficients[2].hacP,0.519109332613193,2e-6);
+ close(model.r2,0.9703374816199366);
+ close(model.f,2895.063258724595,2e-6);
+});
