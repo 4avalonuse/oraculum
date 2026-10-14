@@ -7,8 +7,8 @@ A camada de análise passa a distinguir **ativos de mercado** de **variáveis de
 | Chave | Série | Categoria | Fonte | Frequência |
 |---|---|---|---|---|
 | CPI_US | CPI EUA | Macro | BLS via FRED | Mensal |
-| GOLD | Ouro (GC=F) | Commodity | Yahoo Finance | Diária |
-| OIL_WTI | Petróleo WTI (CL=F) | Commodity | Yahoo Finance | Diária |
+| GOLD | Ouro spot (XAU/USD) | Commodity | XAUS spot API | Diária (série de preço; gráfico em linha) |
+| OIL_WTI | Petróleo WTI spot (DCOILWTICO) | Commodity | EIA via FRED | Diária (série de preço; gráfico em linha) |
 | SP500 | S&P 500 (^GSPC) | Índice | Yahoo Finance | Diária |
 | DXY | DXY (DX-Y.NYB) | Câmbio | Yahoo Finance | Diária |
 
@@ -34,6 +34,8 @@ O Oraculum deve guardar no resultado:
 
 A transformação já possui primitives em `src/analysis/engine.js`.
 
-## Próxima integração
+## Commodities spot implementadas
 
-O catálogo de datasets do Data API deve receber os contextos acima. Depois disso, a interface poderá habilitar os controles hoje marcados como `EM BREVE`, sem criar outro backend.
+- Ouro: XAUS fornece histórico diário XAU/USD e cotação spot recente. A ingestão inicial fica limitada a 18 meses para conter escritas no D1.
+- Petróleo: `DCOILWTICO`, preço spot diário WTI em Cushing publicado pela EIA e distribuído via FRED. A série tem apenas um valor diário; por isso o gráfico é uma linha, não candles OHLC inventados. A ingestão inicial também fica limitada a 18 meses.
+- As séries spot aceitam frequência diária. Não são combinadas com os datasets antigos de futuros, que permanecem separados no banco sem serem usados por esses ativos da interface.
