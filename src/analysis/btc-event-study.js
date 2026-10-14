@@ -50,7 +50,8 @@ export function analyzeBtcEventWindow(candles,eventTimestamp,options={}){
     post:{h1:measure(post1),h4:measure(post4),h24:measure(post24)},
     toleranceMinutes:Math.round(toleranceMs/60000),
     notes:[
-      'Referência = candle observado mais próximo de T−1h, dentro da tolerância informada.',
+      'Referência = último fechamento horário observado até T−1h, dentro da tolerância informada.',
+      'Os timestamps recebidos são tratados como abertura da vela horária; o fechamento só é observável uma hora depois.',
       'O retorno pré-evento é T−1h contra T−4h; os retornos pós-evento usam T−1h como base.',
       'Janelas ausentes são exibidas como indisponíveis; nenhum preço é interpolado.',
       'Uma reação temporal é associação, não prova de causalidade. Eventos simultâneos podem explicar parte do movimento.'
