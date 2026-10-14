@@ -6,7 +6,7 @@ import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {runExplanatoryModel} from './explanatory-model.js';
 import {diagnoseModel} from './model-diagnostics.js';
-import {validateModelTwoWays} from './model-validation.js';
+import {validateModelTwoWays,validateResidualDiagnostics} from './model-validation.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
 
@@ -27,7 +27,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const calendar=state.series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';
    const result=analyzeSeries(sample,state.series,getInterval()||'1d',{returnMode,rollingWindow,calendar});
    result.explanatoryModel=runExplanatoryModel(sample,state.series,{returnMode});
-   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);
+   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);
    result.rowsStart=sample[0].timestamp;result.rowsEnd=sample.at(-1).timestamp;
    result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
    state.result=result;
@@ -130,6 +130,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    }
    const m=result.explanatoryModel,d=result.modelDiagnostics;
    const validation=result.modelValidation;lines.push('','CONFERÊNCIA NUMÉRICA ENTRE IMPLEMENTAÇÕES: '+(validation?.status||'NOT_CHECKED')+' · '+(validation?.passed??0)+'/'+(validation?.total??0)+' verificações');if(validation?.reason)lines.push('Motivo da não verificação: '+validation.reason);for(const item of validation?.checks||[])lines.push(item.status+' · '+item.name+' | cálculo A='+auditNumber(item.primary,12)+' | cálculo B='+auditNumber(item.reference,12));
+   const rv=result.residualValidation;lines.push('','RECOMPUTAÇÃO INDEPENDENTE DOS DIAGNÓSTICOS RESIDUAIS: '+(rv?.status||'NOT_CHECKED')+' · '+(rv?.passed??0)+'/'+(rv?.total??0)+' verificações');if(rv?.reason)lines.push('Motivo: '+rv.reason);for(const item of rv?.checks||[])lines.push(item.status+' · '+item.name+' | observado='+auditNumber(item.primary,12)+' | referência independente='+auditNumber(item.reference,12));if(Number.isFinite(rv?.firstLagContributionToLjungBox))lines.push('Contribuição mínima da defasagem 1 ao Q de Ljung–Box: '+auditNumber(rv.firstLagContributionToLjungBox,10));if(rv?.warning)lines.push('Limitação: '+rv.warning);
    lines.push('','4. MODELO MULTIVARIADO E RESÍDUOS');
    if(!m?.available)lines.push('Modelo não estimado: '+(m?.reason||'motivo não informado'));
    else{
@@ -220,7 +221,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#comparison-panel').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
    try{const requestedInterval=getInterval()||'1d',hasDailySeries=symbols.some(key=>assets[key]?.supportedIntervals),interval=hasDailySeries?'1d':requestedInterval,period=document.querySelector('#analysis-period')?.value||'full',returnMode=document.querySelector('#analysis-return')?.value||'log',rollingWindow=Number(document.querySelector('#analysis-window')?.value||30),depth=document.querySelector('#analysis-depth')?.value||'key',series=[];for(const key of symbols){const meta=assets[key],sameLoadedAsset=key===activeSymbol&&interval===requestedInterval,loaded=sameLoadedAsset?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||key,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');series.push({key,symbol:meta.symbol,name:meta.name,category:meta.category,candles})}let rows=alignSeries(series,interval);if(rows.length<10)throw new Error('Poucos timestamps comuns para esta análise.');if(period!=='full'){const days=Number(period),cutoff=rows.at(-1).timestamp-days*86400000;rows=rows.filter(r=>r.timestamp>=cutoff);if(rows.length<10)throw new Error('O período escolhido não possui observações suficientes para esta análise.')}state.rows=rows;state.series=series;state.markers={start:0,base:0,end:rows.length-1};const calendar=series.some(s=>s.category&&!['crypto','test'].includes(s.category))?'trading':'continuous';const result=analyzeSeries(rows,series,interval,{returnMode,rollingWindow,calendar});
    result.explanatoryModel=runExplanatoryModel(rows,series,{returnMode});
-   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.periodDays=period;result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;render(result,series);if(depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});else if(depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date})}catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}}
+   result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);result.periodDays=period;result.rowsStart=rows[0].timestamp;result.rowsEnd=rows.at(-1).timestamp;render(result,series);if(depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});else if(depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date})}catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}}
  const button=$('#analyze-assets');button?.addEventListener('click',run);$('#full-analysis')?.addEventListener('click',()=>openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date}));
  const onResize=()=>{if(state.rows?.length){const selected=state.selected.map(k=>({...assets[k],key:k})).filter(Boolean);renderChart(state.rows,selected);renderMarkerTimeline()}};window.addEventListener('resize',onResize);return{run,destroy(){window.removeEventListener('resize',onResize)}};
 }
