@@ -74,9 +74,18 @@ test('cross-asset returns use the same shared observation horizon',()=>{
   const rows=alignSeries([crypto,stock],'1d');
   assert.equal(rows.length,2);
   near(rows[1].BTC,133.1);
-  const result=analyzeSeries(rows,[{key:'BTC',symbol:'BTC',category:'crypto'},{key:'STOCK',symbol:'STOCK',category:'stock'}],'1d');
-  near(result.series.BTC.returns[1],Math.log(133.1/100));
+  const result=analyzeSeries(rows,[crypto,stock],'1d');
+  // Individual metrics preserve BTC's native weekend observations.
+  assert.equal(result.series.BTC.nativeObservations,4);
+  assert.equal(result.series.BTC.returns.filter(Number.isFinite).length,3);
+  assert.equal(result.series.STOCK.nativeObservations,2);
+  assert.equal(result.series.STOCK.returns.filter(Number.isFinite).length,1);
+  near(result.series.BTC.returns[1],Math.log(110/100));
   near(result.series.STOCK.returns[1],Math.log(55/50));
+  // Cross-asset relation uses synchronized Friday-to-Monday endpoints.
+  near(result.series.BTC.alignedReturns[1],Math.log(133.1/100));
+  near(result.series.STOCK.alignedReturns[1],Math.log(55/50));
+  assert.equal(result.relations[0].observationHorizon,'shared calendar buckets; close-to-close');
 });
 test('analysis pipeline recovers known beta on aligned return observations',()=>{
   const day=86400000,t=Date.UTC(2024,0,1),x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015];
@@ -222,4 +231,28 @@ test('residual diagnostics match a known alternating-residual fixture',()=>{
   assert.ok(d.ljungBox.stat>0);
   assert.ok(d.ljungBox.p<.05);
   near(d.maxAbsResidual,1);
+});
+
+
+test('native crypto statistics do not change when a weekday-only asset is selected',()=>{
+  const day=86400000,start=Date.UTC(2024,0,5),cryptoCandles=[],stockCandles=[];
+  let btc=100,stock=50;
+  for(let i=0;i<15;i++){
+    const timestamp=start+i*day;
+    btc*=Math.exp([.01,-.02,.03,-.01,.015][i%5]);
+    cryptoCandles.push({timestamp,close:btc});
+    const weekday=new Date(timestamp).getUTCDay();
+    if(weekday!==0&&weekday!==6){stock*=Math.exp([.004,-.006,.008][i%3]);stockCandles.push({timestamp,close:stock});}
+  }
+  const crypto={key:'BTC',symbol:'BTC',category:'crypto',candles:cryptoCandles};
+  const stockAsset={key:'GOLD',symbol:'GOLD',category:'commodity',candles:stockCandles};
+  const rows=alignSeries([crypto,stockAsset],'1d');
+  const mixed=analyzeSeries(rows,[crypto,stockAsset],'1d');
+  const cryptoOnlyRows=cryptoCandles.map(c=>({timestamp:c.timestamp,BTC:c.close,__periodKey:new Date(c.timestamp).toISOString().slice(0,10)}));
+  const only=analyzeSeries(cryptoOnlyRows,[crypto],'1d');
+  near(mixed.series.BTC.total,only.series.BTC.total,1e-12);
+  near(mixed.series.BTC.vol,only.series.BTC.vol,1e-12);
+  assert.ok(mixed.series.BTC.nativeObservations>mixed.alignedObservations);
+  assert.equal(mixed.series.GOLD.annualizationCalendar,'trading');
+  assert.equal(mixed.series.BTC.annualizationCalendar,'continuous');
 });
