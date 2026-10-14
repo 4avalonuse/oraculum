@@ -40,23 +40,54 @@ export function sharpe(r,p){const s=std(r);return s>0&&p>0?mean(r)/s*Math.sqrt(p
 export function sortino(r,p){const x=finite(r),s=downsideDeviation(x,0);return s>0&&p>0?mean(x)/s*Math.sqrt(p):NaN}
 export function quantile(v,q){const x=finite(v).sort((a,b)=>a-b);if(!x.length||!Number.isFinite(q)||q<0||q>1)return NaN;const i=(x.length-1)*q,f=Math.floor(i),c=Math.ceil(i);return x[f]+(x[c]-x[f])*(i-f)}
 export function leadLag(a,b,maxLag=5){const out=[];if(!Number.isInteger(maxLag)||maxLag<0)return out;for(let lag=-maxLag;lag<=maxLag;lag++){const x=[],y=[];for(let i=0;i<a.length;i++){const j=i+lag;if(j>=0&&j<b.length){x.push(a[i]);y.push(b[j])}}out.push({lag,corr:corr(x,y)})}return out}
-import {alignSeries} from './data/alignment.js';
+import {alignSeries,periodKey} from './data/alignment.js';
 export {alignSeries} from './data/alignment.js';
 
 import {describe,jarqueBera} from './descriptive.js';
 import {riskMetrics,calmar,downsideDeviation} from './risk.js';
 import {auditAnalysis} from './provenance.js';
 
-export function analyzeSeries(rows,series,interval,options={}){
-  const periods=annualPeriods(interval,options.calendar||'continuous'),mode=options.returnMode==='simple'?'simple':'log',rollingWindow=Math.max(5,Number(options.rollingWindow)||30),years=Math.max(1/periods,(rows.at(-1).timestamp-rows[0].timestamp)/(365.25*86400000)),out={interval,periods,years,observations:rows.length,returnMode:mode,rollingWindow,rowsStart:rows[0]?.timestamp??null,rowsEnd:rows.at(-1)?.timestamp??null,series:{},relations:[]};
-  for(const s of series){
-    const values=rows.map(r=>r[s.key]),r=alignedReturns(rows,s.key,mode),validReturns=r.filter(Number.isFinite),dd=drawdown(values),dist={win:validReturns.filter(x=>x>0).length/Math.max(1,validReturns.length),best:validReturns.length?Math.max(...validReturns):NaN,worst:validReturns.length?Math.min(...validReturns):NaN,q25:quantile(validReturns,.25),q75:quantile(validReturns,.75)},d=describe(r),risk=riskMetrics(r,periods,options);
-    out.series[s.key]={key:s.key,symbol:s.symbol,name:s.name,start:values[0],end:values.at(-1),total:values.at(-1)/values[0]-1,cagr:cagr(values[0],values.at(-1),years),vol:std(r)*Math.sqrt(periods),drawdown:dd.max,recovery:dd.recovery,sortino:risk.sortino,downsideDeviation:risk.downsideDeviation,sharpe:risk.sharpe,var95:risk.var95,var99:risk.var99,es95:risk.es95,es99:risk.es99,calmar:calmar(cagr(values[0],values.at(-1),years),dd.max),mean:d.mean,median:d.median,variance:d.variance,std:d.std,se:d.se,q05:d.q05,q95:d.q95,skewness:d.skewness,excessKurtosis:d.excessKurtosis,jarqueBera:jarqueBera(r),winRate:dist.win,best:dist.best,worst:dist.worst,ath:Math.max(...values),atl:Math.min(...values),returns:r};
+function bucketOrdinal(key,interval){
+  if(!key)return NaN;
+  if(interval==='1h')return Number(key);
+  if(interval==='1M')return Date.parse(key+'-01T00:00:00Z');
+  return Date.parse(key+'T00:00:00Z');
+}
+function nativeBucketRows(s,interval,firstKey,lastKey,fallbackRows){
+  if(!Array.isArray(s.candles)||!s.candles.length)return fallbackRows.map(row=>({timestamp:row.timestamp,[s.key]:row[s.key]}));
+  const lo=bucketOrdinal(firstKey,interval),hi=bucketOrdinal(lastKey,interval),byKey=new Map();
+  for(const candle of s.candles){
+    const timestamp=Number(candle.timestamp),key=periodKey(timestamp,interval),order=bucketOrdinal(key,interval);
+    if(!key||!Number.isFinite(timestamp)||order<lo||order>hi)continue;
+    const previous=byKey.get(key);
+    if(!previous||timestamp>previous.timestamp)byKey.set(key,{timestamp,[s.key]:Number(candle.close),__periodKey:key});
   }
-  const primary=series[0],pr=out.series[primary.key].returns;
-  for(const s of series.slice(1)){const sr=out.series[s.key].returns,a=pr,b=sr,reg=regression(a,b),lags=leadLag(a,b,5);out.relations.push({primary:primary.key,target:s.key,correlation:corr(a,b),covariance:cov(a,b),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(a,b,Math.min(rollingWindow,a.length)),n:reg.n})}
+  return [...byKey.values()].sort((a,b)=>a.timestamp-b.timestamp);
+}
+export function analyzeSeries(rows,series,interval,options={}){
+  const mode=options.returnMode==='simple'?'simple':'log',rollingWindow=Math.max(5,Number(options.rollingWindow)||30);
+  const firstKey=rows[0]?.__periodKey||periodKey(rows[0]?.timestamp,interval),lastKey=rows.at(-1)?.__periodKey||periodKey(rows.at(-1)?.timestamp,interval);
+  const sharedYears=Math.max(1/365.25,(rows.at(-1).timestamp-rows[0].timestamp)/(365.25*86400000));
+  const out={interval,periods:null,years:sharedYears,observations:rows.length,alignedObservations:rows.length,returnMode:mode,rollingWindow,rowsStart:rows[0]?.timestamp??null,rowsEnd:rows.at(-1)?.timestamp??null,series:{},relations:[],temporal:{method:'native-series statistics; cross-asset relations on shared calendar buckets',sharedRows:rows.length,firstBucket:firstKey,lastBucket:lastKey,elapsedDays:(rows.at(-1).timestamp-rows[0].timestamp)/86400000,gaps:rows.slice(1).map((row,i)=>({from:rows[i].timestamp,to:row.timestamp,days:(row.timestamp-rows[i].timestamp)/86400000})).filter(g=>g.days>1.5).length}};
+  for(const s of series){
+    const nativeRows=nativeBucketRows(s,interval,firstKey,lastKey,rows),rawValues=nativeRows.map(r=>Number(r[s.key])),validPrices=rawValues.filter(v=>Number.isFinite(v)&&v>0);
+    const values=rawValues,r=alignedReturns(nativeRows,s.key,mode),validReturns=r.filter(Number.isFinite);
+    const category=s.category,calendar=category?(['crypto','test'].includes(category)?'continuous':'trading'):(options.calendar||'continuous');
+    const periods=annualPeriods(interval,calendar),firstPrice=values.find(v=>Number.isFinite(v)&&v>0),lastPrice=[...values].reverse().find(v=>Number.isFinite(v)&&v>0);
+    const firstRow=nativeRows.find(row=>Number.isFinite(row[s.key])&&row[s.key]>0),lastRow=[...nativeRows].reverse().find(row=>Number.isFinite(row[s.key])&&row[s.key]>0);
+    const years=firstRow&&lastRow?Math.max(1/periods,(lastRow.timestamp-firstRow.timestamp)/(365.25*86400000)):NaN;
+    const dd=drawdown(values),dist={win:validReturns.filter(x=>x>0).length/Math.max(1,validReturns.length),best:validReturns.length?Math.max(...validReturns):NaN,worst:validReturns.length?Math.min(...validReturns):NaN,q25:quantile(validReturns,.25),q75:quantile(validReturns,.75)},d=describe(r),risk=riskMetrics(r,periods,options);
+    out.series[s.key]={key:s.key,symbol:s.symbol,name:s.name,start:firstPrice,end:lastPrice,cagr:cagr(firstPrice,lastPrice,years),total:firstPrice>0&&lastPrice>0?lastPrice/firstPrice-1:NaN,vol:std(r)*Math.sqrt(periods),drawdown:dd.max,recovery:dd.recovery,sortino:risk.sortino,downsideDeviation:risk.downsideDeviation,sharpe:risk.sharpe,var95:risk.var95,var99:risk.var99,es95:risk.es95,es99:risk.es99,calmar:calmar(cagr(firstPrice,lastPrice,years),dd.max),mean:d.mean,median:d.median,variance:d.variance,std:d.std,se:d.se,q05:d.q05,q95:d.q95,skewness:d.skewness,excessKurtosis:d.excessKurtosis,jarqueBera:jarqueBera(r),winRate:dist.win,best:dist.best,worst:dist.worst,ath:validPrices.length?Math.max(...validPrices):NaN,atl:validPrices.length?Math.min(...validPrices):NaN,returns:r,nativeObservations:nativeRows.length,validReturns:validReturns.length,annualizationPeriods:periods,annualizationCalendar:calendar,years,rowsStart:firstRow?.timestamp??null,rowsEnd:lastRow?.timestamp??null,returnHorizon:'native consecutive observed buckets'};
+  }
+  const primary=series[0];
+  const primaryReturns=alignedReturns(rows,primary.key,mode);
+  for(const s of series.slice(1)){
+    const targetReturns=alignedReturns(rows,s.key,mode),reg=regression(primaryReturns,targetReturns),lags=leadLag(primaryReturns,targetReturns,5);
+    out.relations.push({primary:primary.key,target:s.key,correlation:corr(primaryReturns,targetReturns),covariance:cov(primaryReturns,targetReturns),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(primaryReturns,targetReturns,Math.min(rollingWindow,primaryReturns.length)),n:reg.n,observationHorizon:'shared calendar buckets; close-to-close',observations:rows.length});
+  }
+  out.periods=series.length?out.series[series[0].key]?.annualizationPeriods:null;
   out.audit=auditAnalysis(out,series);
-  return out
+  return out;
 }
 export function rollingCorrelation(a,b,window=30){if(a.length<window)return NaN;const values=[];for(let i=window;i<=a.length;i++)values.push(corr(a.slice(i-window,i),b.slice(i-window,i)));return values.at(-1)}
 
