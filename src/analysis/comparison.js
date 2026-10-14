@@ -70,6 +70,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  }
  function auditPct(value){return Number.isFinite(value)?auditNumber(value*100,6)+'%':'indefinido'}
  function auditDate(value){return Number.isFinite(Number(value))?new Date(Number(value)).toISOString().slice(0,10):'indefinida'}
+ function auditTimestamp(value){return Number.isFinite(Number(value))?new Date(Number(value)).toISOString():'indefinido'}
  function buildAuditReport(result,series,rows,markers){
    const sampleRows=Array.isArray(rows)?rows.slice(markers?.start??0,(markers?.end??(rows.length-1))+1):[];
    const mode=result.returnMode==='simple'?'simples':'logarítmico';
@@ -177,8 +178,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(sampleRows.length){
      const indices=[...new Set([0,1,2,Math.floor((sampleRows.length-1)/2)-1,Math.floor((sampleRows.length-1)/2),Math.floor((sampleRows.length-1)/2)+1,sampleRows.length-3,sampleRows.length-2,sampleRows.length-1])].filter(i=>i>=0&&i<sampleRows.length).sort((a,b)=>a-b);
      lines.push('Amostra curta de preços alinhados; serve para inspeção pontual, não para recalcular sozinha toda a regressão.');
-     lines.push('Data | '+series.map(s=>s.symbol).join(' | '));
-     for(const i of indices)lines.push(auditDate(sampleRows[i].timestamp)+' | '+series.map(s=>auditNumber(sampleRows[i][s.key],8)).join(' | '));
+     lines.push('Data do bucket | '+series.map(s=>s.symbol+' preço @ timestamp-fonte UTC').join(' | '));
+     for(const i of indices)lines.push(auditDate(sampleRows[i].timestamp)+' | '+series.map(s=>auditNumber(sampleRows[i][s.key],8)+' @ '+auditTimestamp(sampleRows[i].__sourceTimestamps?.[s.key])).join(' | '));
    }else lines.push('Trechos de preços não disponíveis nesta exportação.');
    lines.push('','Se um cálculo não puder ser validado com este resumo, solicite a amostra adicional ou o trecho de código estritamente necessário.');
    return lines.join('\n');
