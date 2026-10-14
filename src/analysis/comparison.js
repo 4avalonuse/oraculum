@@ -57,7 +57,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
 
  const renderContext=(result,series)=>{
    const primary=series[0],targets=series.slice(1).map(s=>s.symbol).join(' + ')||'nenhum alvo selecionado';
-   $('#analysis-context').innerHTML='<div class="context-row"><div><span>REFERÊNCIA</span><strong>'+primary.symbol+'</strong></div><div><span>COMPARANDO COM</span><strong>'+targets+'</strong></div><div><span>PERÍODO</span><strong>'+date(result.rowsStart)+' → '+date(result.rowsEnd)+'</strong></div><div><span>INTERVALO</span><strong>'+result.interval+'</strong></div><div><span>OBSERVAÇÕES</span><strong>'+result.observations+'</strong></div></div><div class="context-method"><div><b>DESENHO DA INVESTIGAÇÃO</b><span>Dados alinhados por timestamp · retornos conforme a configuração · janela móvel conforme especificação · resultados condicionados à amostra INÍCIO → FIM.</span></div><button id="show-data-table" type="button">VER DADOS UTILIZADOS ↗</button><button id="show-method" type="button">MÉTODO ?</button></div><div class="context-note"><b>Como ler:</b> a referência foi escolhida na configuração da investigação. Todas as séries foram alinhadas pelos mesmos timestamps antes dos cálculos. O índice é calculado como <b>100 × P(t) / P(base)</b>. A escala vertical é logarítmica; o eixo horizontal respeita o tempo real dos timestamps. <b>INÍCIO e FIM definem a amostra estatística.</b> BASE 100 define apenas a âncora visual da comparação.</div>';
+   $('#analysis-context').innerHTML='<div class="context-row"><div><span>REFERÊNCIA</span><strong>'+primary.symbol+'</strong></div><div><span>COMPARANDO COM</span><strong>'+targets+'</strong></div><div><span>PERÍODO</span><strong>'+date(result.rowsStart)+' → '+date(result.rowsEnd)+'</strong></div><div><span>INTERVALO</span><strong>'+result.interval+'</strong></div><div><span>OBSERVAÇÕES</span><strong>'+result.observations+'</strong></div></div><div class="context-method"><div><b>DESENHO DA INVESTIGAÇÃO</b><span>Estatísticas individuais usam cada série nativa; correlações, beta e regressão usam somente buckets de calendário comuns. A amostra INÍCIO → FIM limita ambos os caminhos.</span></div><button id="show-data-table" type="button">VER DADOS UTILIZADOS ↗</button><button id="show-method" type="button">MÉTODO ?</button></div><div class="context-note"><b>Como ler:</b> a referência foi escolhida na configuração da investigação. As estatísticas de cada ativo usam seus próprios candles dentro do período selecionado. Relações entre ativos usam apenas datas/buckets comuns, com retornos close-to-close sincronizados. O índice é calculado como <b>100 × P(t) / P(base)</b>. A escala vertical é logarítmica; o eixo horizontal respeita o tempo real dos timestamps. <b>INÍCIO e FIM definem a amostra estatística.</b> BASE 100 define apenas a âncora visual da comparação.</div>';
    $('#analysis-context').classList.remove('is-hidden');
  };
 
@@ -86,8 +86,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      'Referência: '+(series[0]?.symbol||'indefinida'),
      'Comparações: '+(series.slice(1).map(s=>s.symbol).join(', ')||'nenhuma'),
      'Período comum: '+auditDate(result.rowsStart)+' a '+auditDate(result.rowsEnd),
-     'Intervalo: '+(result.interval||'indefinido')+' | Tipo de retorno: '+mode,
-     'Observações de preço alinhadas na amostra estatística: '+(sampleRows.length||result.observations||'indefinidas'),
+     'Intervalo solicitado: '+(result.interval||'indefinido')+' | Tipo de retorno: '+mode,
+     'Desenho temporal: estatísticas individuais em observações nativas; relações e modelo multivariado em buckets comuns. Retornos comuns são close-to-close e podem abranger mais de 1 dia de calendário.',
+     'Buckets comuns: '+(result.temporal?.sharedRows??result.observations)+' | lacunas acima de 1,5 dia entre timestamps comuns: '+(result.temporal?.gaps??'não calculado'),
+     'Observações de preço na amostra comum: '+(sampleRows.length||result.observations||'indefinidas'),
      'Retornos válidos por série: '+series.map(s=>s.symbol+'='+((result.series?.[s.key]?.returns||[]).filter(Number.isFinite).length)).join(' | '),
      'Janela móvel: '+(result.rollingWindow??'indefinida')+' | Períodos anualizados: '+(result.periods??'indefinido'),
      'Marcadores da amostra: início '+auditDate(sampleRows[0]?.timestamp)+' | base visual '+auditDate(rows?.[markers?.base]?.timestamp)+' | fim '+auditDate(sampleRows.at(-1)?.timestamp),
@@ -100,6 +102,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      lines.push(
        '',s.symbol,
        'Preços inicial/final: '+auditNumber(x.start)+' / '+auditNumber(x.end),
+       'Amostra nativa: '+(x.nativeObservations??'—')+' preços / '+(x.validReturns??'—')+' retornos válidos | anualização: '+(x.annualizationCalendar||'não informada')+' ('+(x.annualizationPeriods??'—')+' períodos/ano)',
        'Retorno acumulado: '+auditPct(x.total)+' | CAGR: '+auditPct(x.cagr)+' | Volatilidade anualizada: '+auditPct(x.vol),
        'Drawdown máximo: '+auditPct(x.drawdown)+' | Sharpe: '+auditNumber(x.sharpe,6)+' | Sortino: '+auditNumber(x.sortino,6)+' | Win rate: '+auditPct(x.winRate),
        'Retorno médio: '+auditPct(x.mean)+' | Mediana: '+auditPct(x.median)+' | Desvio-padrão por intervalo: '+auditPct(x.std),
