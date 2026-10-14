@@ -7,7 +7,7 @@ test('event window uses observed T-1h baseline and computes pre/post returns',()
   const result=analyzeBtcEventWindow(candles,5*H,{toleranceMs:90*60*1000});
   assert.equal(result.available,true);
   assert.equal(result.baseline.timestamp,3*H);
-  assert.equal(result.baseline.price,96);
+  assert.equal(result.baseline.close,96);
   assert.ok(Math.abs(result.pre.returnPct-((96/90-1)*100))<1e-10);
   assert.ok(Math.abs(result.post.h1.returnPct-((102/96-1)*100))<1e-10);
   assert.ok(Math.abs(result.post.h4.returnPct-((108/96-1)*100))<1e-10);
