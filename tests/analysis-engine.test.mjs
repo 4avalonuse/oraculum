@@ -61,6 +61,11 @@ test('alignment keeps only shared UTC calendar buckets and handles duplicates',(
   ],'1d');
   assert.equal(rows.length,2);
   assert.deepEqual(rows.map(r=>[r.A,r.B]),[[12,20],[13,22]]);
+  assert.equal(rows[0].__sourceTimestamps.A,t+1000);
+  assert.equal(rows[0].__sourceTimestamps.B,t+5000);
+  assert.equal(rows[0].__timestampOffsetsMs.B,4000);
+  assert.equal(rows[1].__sourceElapsedDays.A,1);
+  assert.equal(rows[1].__sourceElapsedDays.B,2);
 });
 
 test('cross-asset returns use the same shared observation horizon',()=>{
@@ -86,6 +91,9 @@ test('cross-asset returns use the same shared observation horizon',()=>{
   near(result.series.BTC.alignedReturns[1],Math.log(133.1/100));
   near(result.series.STOCK.alignedReturns[1],Math.log(55/50));
   assert.equal(result.relations[0].observationHorizon,'shared calendar buckets; close-to-close');
+  assert.equal(result.relations[0].temporalAlignment.hasTimestampMetadata,true);
+  assert.equal(result.relations[0].temporalAlignment.timestampOffsetMaxHours,0);
+  assert.match(result.relations[0].timingCaveat,/not imply simultaneous/i);
 });
 test('analysis pipeline recovers known beta on aligned return observations',()=>{
   const day=86400000,t=Date.UTC(2024,0,1),x=[.01,-.02,.03,-.01,.02,.015,-.025,.005,.012,-.008,.02,-.015];
