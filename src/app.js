@@ -29,13 +29,15 @@ function visibleBoundsFor(c){
 }
 
 async function load(interval='1d'){
+  const asset=getAsset(activeSymbol);
+  if(asset.supportedIntervals&&!asset.supportedIntervals.includes(interval)) interval=asset.supportedIntervals[0];
   const host=$('#chart');
   $('#status').textContent='CARREGANDO';
   host.classList.add('is-loading');
   host.classList.remove('is-error');
   try{
     const loaded=await dataClient.loadOrPopulate({
-      provider:getAsset(activeSymbol).provider,symbol:getAsset(activeSymbol).providerSymbol||activeSymbol,kind:'ohlcv',interval:intervals[interval]||interval,currency:'USD'
+      provider:asset.provider,symbol:asset.providerSymbol||activeSymbol,kind:asset.kind||'ohlcv',interval:intervals[interval]||interval,currency:'USD'
     });
     const candles=normalizeCandles(loaded.candles);
     active?.destroy();
@@ -47,9 +49,12 @@ async function load(interval='1d'){
     viewport.fitY(visible.y);
 
     const chart=createChart(host,candles,viewport);
+    if(asset.kind==='series') chart.setChartType('line');
+    const typeButton=$('#chart-type-toggle');
+    if(typeButton){typeButton.disabled=asset.kind==='series';typeButton.textContent=asset.kind==='series'?'LINE':'CANDLE';}
     const detachInteraction=attachChartInteraction({canvas:chart.canvas,viewport,draw:chart.draw,setCrosshair:chart.setCrosshair,onViewportChanged:()=>timeline.renderTimeline(candles,viewport)});
     const detachControls=attachChartControls({
-      fitButton:$('#fit-toggle'),typeButton:$('#chart-type-toggle'),scaleButton:$('#scale-toggle'),
+      fitButton:$('#fit-toggle'),typeButton:asset.kind==='series'?null:$('#chart-type-toggle'),scaleButton:$('#scale-toggle'),
       viewport,candles,draw:chart.draw,onTypeChange:chart.setChartType
     });
 
@@ -59,7 +64,7 @@ async function load(interval='1d'){
 
     $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
     timeline.refreshMenu?.();
-    $('#source').textContent=(loaded.meta?.provider||getAsset(activeSymbol).provider)+' · '+(intervals[interval]||interval);
+    $('#source').textContent=(loaded.meta?.sourceName||loaded.meta?.provider||asset.provider)+' · '+(asset.kind==='series'?'SPOT · diário':(intervals[interval]||interval));
     $('#count').textContent=candles.length+' candles';
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
@@ -76,7 +81,13 @@ async function load(interval='1d'){
 attachAssetPicker({
   load,
   getActiveSymbol:()=>activeSymbol,
-  setActiveSymbol:value=>{activeSymbol=value;},
+  setActiveSymbol:value=>{
+    activeSymbol=value;
+    activeInterval='1d';
+    const intervalToggle=$('#interval-toggle');
+    if(intervalToggle) intervalToggle.textContent='1D';
+    document.querySelectorAll('[data-interval]').forEach(button=>button.classList.toggle('active',button.dataset.interval==='1d'));
+  },
   getActiveInterval:()=>activeInterval
 });
 
@@ -100,10 +111,10 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
   button.classList.add('is-loading');
   try{
     const loaded=await dataClient.refreshCandles({
-      provider:getAsset(activeSymbol).provider,symbol:getAsset(activeSymbol).providerSymbol||activeSymbol,kind:'ohlcv',interval:intervals[activeInterval],currency:'USD'
+      provider:getAsset(activeSymbol).provider,symbol:getAsset(activeSymbol).providerSymbol||activeSymbol,kind:getAsset(activeSymbol).kind||'ohlcv',interval:intervals[getAsset(activeSymbol).supportedIntervals?.includes(activeInterval)?activeInterval:'1d'],currency:'USD'
     });
     if(loaded?.candles?.length){
-      await load(activeInterval);
+      await load(getAsset(activeSymbol).supportedIntervals?.includes(activeInterval)?activeInterval:'1d');
     }
   }catch(error){
     console.error('[ORACULUM refresh]',error);
