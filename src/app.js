@@ -9,6 +9,7 @@ import { attachTimeline } from './events/timeline.js';
 import { getAsset,DEFAULT_ASSET,ASSETS } from './data/assets.js';
 import { attachAssetPicker } from './ui/asset-picker.js';
 import { attachDiagnosticCopy } from './ui/diagnostic-copy.js';
+import { attachBtcEventStudy } from './analysis/btc-event-study-view.js';
 
 const API_BASE='https://oraculum-data-api.4avalonuse.workers.dev';
 const dataClient=createDataClient(API_BASE);
@@ -171,3 +172,5 @@ attachComparisonAnalysis({
   getActiveSymbol:()=>activeSymbol,
   assets:ASSETS
 });
+
+attachBtcEventStudy({dataClient,normalizeCandles});
