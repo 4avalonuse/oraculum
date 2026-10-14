@@ -9,8 +9,8 @@ export const ASSETS={
   'JUP-USD':{symbol:'JUP',providerSymbol:'JUP29210-USD',name:'Jupiter',provider:'yahoo',category:'crypto'},
   'ONDO-USD':{symbol:'ONDO',name:'Ondo',provider:'yahoo',category:'crypto'},
 
-  'GC=F':{symbol:'OURO',name:'Ouro',provider:'yahoo',category:'commodity',kind:'ohlcv'},
-  'CL=F':{symbol:'PETRÓLEO',name:'Petróleo WTI',provider:'yahoo',category:'commodity',kind:'ohlcv'},
+  'GOLD-SPOT':{symbol:'OURO SPOT',name:'Ouro spot',provider:'xaus',providerSymbol:'XAUUSD',category:'commodity',kind:'series',supportedIntervals:['1d']},
+  'WTI-SPOT':{symbol:'WTI SPOT',name:'Petróleo WTI spot',provider:'fred',providerSymbol:'DCOILWTICO',category:'commodity',kind:'series',supportedIntervals:['1d']},
 
   '^GSPC':{symbol:'S&P 500',name:'S&P 500',provider:'yahoo',category:'index',kind:'ohlcv'},
   'DX-Y.NYB':{symbol:'DXY',name:'Dólar Index',provider:'yahoo',category:'index',kind:'ohlcv'},
