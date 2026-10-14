@@ -47,6 +47,13 @@ import {describe,jarqueBera} from './descriptive.js';
 import {riskMetrics,calmar,downsideDeviation} from './risk.js';
 import {auditAnalysis} from './provenance.js';
 
+function temporalRelationSummary(rows,primaryKey,targetKey){
+  const offsets=rows.map(row=>Number(row.__timestampOffsetsMs?.[targetKey])-Number(row.__timestampOffsetsMs?.[primaryKey])).filter(Number.isFinite).map(v=>Math.abs(v)/3600000);
+  const xGaps=rows.map(row=>Number(row.__sourceElapsedDays?.[primaryKey])).filter(v=>Number.isFinite(v)&&v>0);
+  const yGaps=rows.map(row=>Number(row.__sourceElapsedDays?.[targetKey])).filter(v=>Number.isFinite(v)&&v>0);
+  const medianValue=values=>{const v=values.slice().sort((a,b)=>a-b);return v.length?v[Math.floor((v.length-1)/2)]:NaN};
+  return {timestampOffsetMedianHours:medianValue(offsets),timestampOffsetMaxHours:offsets.length?Math.max(...offsets):NaN,primaryElapsedDaysMedian:medianValue(xGaps),targetElapsedDaysMedian:medianValue(yGaps),timestampOffsetObservations:offsets.length,hasTimestampMetadata:offsets.length>0};
+}
 function bucketOrdinal(key,interval){
   if(!key)return NaN;
   if(interval==='1h')return Number(key);
@@ -83,7 +90,7 @@ export function analyzeSeries(rows,series,interval,options={}){
   const primaryReturns=alignedReturns(rows,primary.key,mode);
   for(const s of series.slice(1)){
     const targetReturns=alignedReturns(rows,s.key,mode),reg=regression(primaryReturns,targetReturns),lags=leadLag(primaryReturns,targetReturns,5);
-    out.relations.push({primary:primary.key,target:s.key,correlation:corr(primaryReturns,targetReturns),covariance:cov(primaryReturns,targetReturns),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(primaryReturns,targetReturns,Math.min(rollingWindow,primaryReturns.length)),n:reg.n,observationHorizon:'shared calendar buckets; close-to-close',observations:rows.length});
+    out.relations.push({primary:primary.key,target:s.key,correlation:corr(primaryReturns,targetReturns),covariance:cov(primaryReturns,targetReturns),beta:reg.beta,alpha:reg.alpha,r2:reg.r2,leadLag:lags.slice().sort((x,y)=>Math.abs(y.corr)-Math.abs(x.corr))[0],rolling:rollingCorrelation(primaryReturns,targetReturns,Math.min(rollingWindow,primaryReturns.length)),n:reg.n,observationHorizon:'shared calendar buckets; close-to-close',observations:rows.length,temporalAlignment:temporalRelationSummary(rows,primary.key,s.key),timingCaveat:'Same calendar bucket does not imply simultaneous market closes; inspect source timestamp offsets.'});
   }
   out.periods=series.length?out.series[series[0].key]?.annualizationPeriods:null;
   out.audit=auditAnalysis(out,series);
