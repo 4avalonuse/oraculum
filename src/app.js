@@ -42,9 +42,25 @@ async function load(interval='1d'){
   host.classList.add('is-loading');
   host.classList.remove('is-error');
   try{
-    const loaded=await dataClient.loadOrPopulate({
-      provider:asset.provider,symbol:asset.providerSymbol||activeSymbol,kind:asset.kind||'ohlcv',interval:intervals[interval]||interval,currency:'USD'
-    });
+    const requestOptions={
+      provider:asset.provider,
+      symbol:asset.providerSymbol||activeSymbol,
+      kind:asset.kind||'ohlcv',
+      interval:intervals[interval]||interval,
+      currency:'USD'
+    };
+    let loaded=await dataClient.loadOrPopulate(requestOptions);
+
+    // Spot datasets are read-only on normal page loads to protect D1 quotas.
+    // When the user explicitly selects a spot series that has never been
+    // populated, perform one initial ingestion so the chart can actually load.
+    if(asset.kind==='series'&&(!Array.isArray(loaded.candles)||loaded.candles.length===0)){
+      $('#status').textContent='CARREGANDO SÉRIE SPOT';
+      loaded=await dataClient.refreshCandles(requestOptions);
+    }
+    if(!Array.isArray(loaded.candles)||loaded.candles.length===0){
+      throw new Error('A série spot ainda não possui observações. Use Atualizar novamente em instantes.');
+    }
     const candles=normalizeCandles(loaded.candles);
     active?.destroy();
 
