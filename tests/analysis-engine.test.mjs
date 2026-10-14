@@ -64,8 +64,8 @@ test('alignment keeps only shared UTC calendar buckets and handles duplicates',(
   assert.equal(rows[0].__sourceTimestamps.A,t+1000);
   assert.equal(rows[0].__sourceTimestamps.B,t+5000);
   assert.equal(rows[0].__timestampOffsetsMs.B,4000);
-  assert.equal(rows[1].__sourceElapsedDays.A,1);
-  assert.equal(rows[1].__sourceElapsedDays.B,2);
+  near(rows[1].__sourceElapsedDays.A,(2*day-1000)/day,1e-12);
+  near(rows[1].__sourceElapsedDays.B,(2*day-5000)/day,1e-12);
 });
 
 test('cross-asset returns use the same shared observation horizon',()=>{
