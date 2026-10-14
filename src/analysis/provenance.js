@@ -96,7 +96,7 @@ export function auditAnalysis(result, series) {
         id: item.key + '.return-distribution',
         formula: 'estatísticas descritivas sobre retornos finitos',
         inputs: ['returns'], observations: validReturns.length, sample,
-        assumptions: ['Retornos não finitos são excluídos; primeira observação alinhada não produz retorno.'],
+        assumptions: ['Retornos não finitos são excluídos; a primeira observação nativa não produz retorno. Relações usam separadamente retornos da amostra comum.'],
         checks: []
       }),
       risk: calculationStamp({
