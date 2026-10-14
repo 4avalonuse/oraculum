@@ -70,7 +70,9 @@ async function load(interval='1d'){
 
     $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
     timeline.refreshMenu?.();
-    $('#source').textContent=(loaded.meta?.sourceName||loaded.meta?.provider||asset.provider)+' · '+(asset.kind==='series'?'SPOT · diário':(intervals[interval]||interval));
+    const lastObservation=candles.at(-1)?.timestamp;
+    const asOf=asset.kind==='series'&&Number.isFinite(lastObservation)?' · até '+new Date(lastObservation).toLocaleDateString('pt-BR'):'';
+    $('#source').textContent=(loaded.meta?.sourceName||loaded.meta?.provider||asset.provider)+' · '+(asset.kind==='series'?'SPOT · diário':(intervals[interval]||interval))+asOf;
     $('#count').textContent=candles.length+(asset.kind==='series'?' observações spot':' candles');
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
