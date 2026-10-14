@@ -29,7 +29,9 @@ test('Ljung–Box does not flag a sequence with zero sample autocorrelation at t
 });
 
 test('unavailable models are not presented as diagnosed', () => {
-  assert.deepEqual(diagnoseModel({ available: false }), { available: false });
+  const result = diagnoseModel({ available: false });
+  assert.equal(result.available, false);
+  assert.match(result.reason, /não estimado/i);
 });
 
 
