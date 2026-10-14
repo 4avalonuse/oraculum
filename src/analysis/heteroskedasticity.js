@@ -35,7 +35,7 @@ function auxiliaryR2(y,columns){
   const beta=multiply(multiply(inv,xt),y.map(v=>[v])).map(row=>row[0]);
   const fitted=x.map(row=>row.reduce((sum,v,j)=>sum+v*beta[j],0)),avg=mean(y);
   const sst=y.reduce((sum,v)=>sum+(v-avg)**2,0),sse=y.reduce((sum,v,i)=>sum+(v-fitted[i])**2,0);
-  if(!(sst>1e-24))return null;
+  if(!(sst>1e-24))return 0; // Resposta auxiliar constante: LM=0, sem evidência contra a hipótese nula.
   return Math.max(0,Math.min(1,1-sse/sst));
 }
 function unavailable(method,reason){return {method,available:false,reason,statistic:null,df:null,pValue:null,interpretation:'INCONCLUSIVE'}}
