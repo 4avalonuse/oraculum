@@ -424,3 +424,42 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 /* Camadas progressivas dos resultados estatísticos */
 .analysis-layer-note{margin:0 0 8px;color:#87a7ba;font-size:12px;line-height:1.55}.analysis-layer-detail{margin:9px 0;border:1px solid #1b4058;border-radius:6px;background:#071521;overflow:hidden}.analysis-layer-detail>summary{display:flex;flex-direction:column;gap:4px;position:relative;padding:13px 42px 13px 13px;min-height:48px;cursor:pointer;list-style:none;color:#d7edf9;font-size:12px;font-weight:800;letter-spacing:.04em}.analysis-layer-detail>summary::-webkit-details-marker{display:none}.analysis-layer-detail>summary:after{content:'+';position:absolute;right:12px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:24px;height:24px;border:1px solid #2a6585;border-radius:50%;color:#bce8ff;font-size:18px}.analysis-layer-detail[open]>summary:after{content:'−'}.analysis-layer-detail>summary small{font-size:11px;font-weight:400;letter-spacing:0;color:#7899ad;line-height:1.4}.analysis-detail-content{padding:0 11px 12px;overflow:auto}.analysis-detail-content>section{margin:8px 0}.analysis-detail-content .analysis-stat-block{margin:10px 0;padding:10px;border:1px solid #15374d;border-radius:5px;background:#081a27}.analysis-detail-content .analysis-stat-block h3{margin:0 0 9px;color:#8dc8e8;font-size:11px;letter-spacing:.06em}.analysis-detail-content table{min-width:540px}.analysis-layer-detail .correlation-matrix-wrap{max-width:100%}
 @media(max-width:700px){.analysis-layer-detail>summary{font-size:12px;padding:13px 42px 13px 11px}.analysis-layer-detail>summary small{font-size:11px}.analysis-detail-content{padding:0 8px 10px}.analysis-detail-content .analysis-stat-block{padding:8px}.analysis-layer-note{font-size:12px}}
+
+
+/* BTC event study — incremental, read-only investigation panel */
+.btc-event-study{margin-top:14px;border:1px solid #2a2a2a;background:#0d0d0d;padding:14px}
+.btc-event-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.btc-event-kicker{font-size:9px;letter-spacing:.12em;color:#6ea8dc}
+.btc-event-head h2{font-size:16px;margin:7px 0 5px;font-weight:600}
+.btc-event-head p,.btc-event-context,.btc-event-message,.btc-event-caveat{font-size:11px;line-height:1.5;color:#888;margin:0}
+.btc-event-status{font-size:9px;color:#777;white-space:nowrap}
+.btc-event-context{padding:10px;margin:12px 0;background:#101010;border-left:2px solid #d5a84b}
+.btc-event-context strong{color:#bbb}
+.btc-event-sources{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0}
+.btc-event-sources a{font-size:10px;color:#8cb9e1;text-decoration:none}
+.btc-event-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #222;padding-top:12px}
+.btc-event-actions>span{font-size:10px;color:#666;line-height:1.4}
+#run-btc-event-study,.btc-event-copy{font-size:10px;letter-spacing:.04em;white-space:nowrap}
+#run-btc-event-study:disabled{opacity:.5}
+.btc-event-results{margin-top:12px}
+.btc-event-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:8px}
+.btc-event-facts>div,.btc-event-metric{padding:10px;border:1px solid #202020;background:#101010;min-width:0}
+.btc-event-facts span,.btc-event-metric span{display:block;font-size:9px;color:#777}
+.btc-event-facts strong{display:block;font-size:12px;color:#ddd;margin:6px 0 3px}
+.btc-event-facts small{font-size:9px;color:#888}
+.btc-event-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.btc-event-metric strong{display:block;margin-top:8px;font-size:17px;font-weight:600;color:#bbb}
+.btc-event-metric strong.positive{color:#7fbf8f}.btc-event-metric strong.negative{color:#d27c9c}.btc-event-metric strong.neutral{color:#aaa}
+.btc-event-meta{display:flex;flex-direction:column;gap:5px;margin:10px 0;color:#777;font-size:9px;line-height:1.4}
+.btc-event-caveat{border-top:1px solid #202020;padding-top:10px}
+.btc-event-copy{margin-top:10px}
+@media(max-width:700px){
+ .btc-event-study{padding:11px}
+ .btc-event-head{display:block}.btc-event-status{display:block;margin-top:8px}
+ .btc-event-head h2{font-size:15px}
+ .btc-event-actions{align-items:stretch;flex-direction:column}
+ #run-btc-event-study{width:100%}
+ .btc-event-facts{grid-template-columns:1fr}
+ .btc-event-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .btc-event-metric strong{font-size:16px}
+}
