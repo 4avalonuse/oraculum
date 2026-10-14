@@ -23,7 +23,7 @@ function ols(y,x,names){
   const covb=inv.map(row=>row.map(v=>v*sigma2)),critical=tCritical(.05,df);
   const coefficients=beta.map((value,i)=>{const se=Math.sqrt(Math.max(0,covb[i][i])),t=se?value/se:NaN;return {name:names[i],beta:value,se,t,p:tP(t,df),ciLow:value-critical*se,ciHigh:value+critical*se}});
   const predictors=k-1,adjusted=1-(1-r2)*(n-1)/Math.max(1,n-k),f=predictors&&r2<1?(r2/predictors)/((1-r2)/Math.max(1,df)):NaN;
-  return {n,k,predictors,r2,adjustedR2:adjusted,f,fP:fP(f,predictors,df),df,coefficients,fitted,residuals,sse,sst,rmse:Math.sqrt(sse/Math.max(1,df))};
+  return {n,k,predictors,r2,adjustedR2:adjusted,f,fP:fP(f,predictors,df),df,coefficients,fitted,residuals,sse,sst,rmse:Math.sqrt(sse/n),residualStandardError:Math.sqrt(sse/Math.max(1,df))};
 }
 function hacCovariance(x,e,inv,lag){
   const n=e.length,k=x[0].length,S=Array.from({length:k},()=>Array(k).fill(0)),L=Math.max(0,Math.min(lag,n-1));
