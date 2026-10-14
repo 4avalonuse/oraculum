@@ -264,3 +264,16 @@ test('native crypto statistics do not change when a weekday-only asset is select
   assert.equal(mixed.series.GOLD.annualizationCalendar,'trading');
   assert.equal(mixed.series.BTC.annualizationCalendar,'continuous');
 });
+
+test('cross-market alignment exposes non-simultaneous source timestamps',()=>{
+  const day=86400000,t=Date.UTC(2024,0,8);
+  const btc={key:'BTC',symbol:'BTC',category:'crypto',candles:[{timestamp:t,close:100},{timestamp:t+day,close:102}]};
+  const gold={key:'GOLD',symbol:'GOLD',category:'commodity',candles:[{timestamp:t+6*3600000,close:2000},{timestamp:t+day+6*3600000,close:2010}]};
+  const rows=alignSeries([btc,gold],'1d');
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].__timestampOffsetsMs.GOLD,6*3600000);
+  const result=analyzeSeries(rows,[btc,gold],'1d');
+  near(result.relations[0].temporalAlignment.timestampOffsetMedianHours,6);
+  near(result.relations[0].temporalAlignment.timestampOffsetMaxHours,6);
+  assert.match(result.relations[0].timingCaveat,/Same calendar bucket does not imply simultaneous/);
+});
