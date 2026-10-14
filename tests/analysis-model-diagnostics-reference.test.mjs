@@ -31,3 +31,21 @@ test('Ljung–Box does not flag a sequence with zero sample autocorrelation at t
 test('unavailable models are not presented as diagnosed', () => {
   assert.deepEqual(diagnoseModel({ available: false }), { available: false });
 });
+
+
+test('irregular source intervals are flagged as descriptive-only, without suppressing numeric diagnostics', () => {
+  const result = diagnoseModel({ available: true, residuals: [0.1, -0.04, 0.08, -0.02, 0.03, -0.01], auditDesign: { elapsedDaysBySeries: { BTC: [1, 1, 2, 1, 3, 1] } } });
+  assert.equal(result.available, true);
+  assert.equal(result.residualCount, 6);
+  assert.equal(result.temporalSpacing.status, 'IRREGULAR_INTERVALS');
+  assert.equal(result.temporalSpacing.formalInferenceEligible, false);
+  assert.match(result.temporalSpacing.warning, /equally spaced/i);
+  assert.ok(Number.isFinite(result.durbinWatson));
+  assert.ok(Number.isFinite(result.ljungBox.stat));
+});
+
+test('regular intervals allow conventional timing diagnostics to be considered', () => {
+  const result = diagnoseModel({ available: true, residuals: [0.1, -0.04, 0.08, -0.02, 0.03, -0.01], auditDesign: { elapsedDaysBySeries: { BTC: [1, 1, 1, 1, 1, 1] } } });
+  assert.equal(result.temporalSpacing.status, 'REGULAR_INTERVALS');
+  assert.equal(result.temporalSpacing.formalInferenceEligible, true);
+});
