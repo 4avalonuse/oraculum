@@ -25,14 +25,14 @@ export function attachBtcEventStudy({dataClient,normalizeCandles}){
   const render=(analysis)=>{
     const e=CPI_EVENT, a=e.actual;
     const rows=[
-      ['Pré-evento · T−4h → T−1h',analysis.pre?.returnPct],
-      ['Pós-evento · T+1h',analysis.post?.h1?.returnPct],
-      ['Pós-evento · T+4h',analysis.post?.h4?.returnPct],
-      ['Pós-evento · T+24h',analysis.post?.h24?.returnPct]
+      ['Pré-evento · T−4h → T−1h',analysis.pre?.returnPct,analysis.pre?.end],
+      ['Pós-evento · alvo T+1h',analysis.post?.h1?.returnPct,analysis.post?.h1],
+      ['Pós-evento · alvo T+4h',analysis.post?.h4?.returnPct,analysis.post?.h4],
+      ['Pós-evento · alvo T+24h',analysis.post?.h24?.returnPct,analysis.post?.h24]
     ];
     results.innerHTML='<div class="btc-event-facts"><div><span>CPI cheio · anual</span><strong>'+a.headlineYoY+'% vs '+a.consensusHeadlineYoY+'% esperado</strong><small>Surpresa: +'+(a.headlineYoY-a.consensusHeadlineYoY).toFixed(1)+' p.p.</small></div><div><span>CPI núcleo · anual</span><strong>'+a.coreYoY+'% vs '+a.consensusCoreYoY+'% esperado</strong><small>Surpresa: +'+(a.coreYoY-a.consensusCoreYoY).toFixed(1)+' p.p.</small></div><div><span>CPI cheio · mensal</span><strong>'+a.headlineMoM+'% vs '+a.consensusHeadlineMoM+'% esperado</strong><small>Sem surpresa na leitura mensal, conforme consenso citado.</small></div></div>'
-      +'<div class="btc-event-metrics">'+rows.map(([label,value])=>'<div class="btc-event-metric"><span>'+label+'</span><strong class="'+(Number.isFinite(value)?(value>0?'positive':value<0?'negative':'neutral'):'')+'">'+formatEventStudyPct(value)+'</strong></div>').join('')+'</div>'
-      +'<div class="btc-event-meta"><span>Referência T−1h: '+fmtPrice(analysis.baseline?.close)+' · candle '+fmtTime(analysis.baseline?.timestamp)+'</span><span>Dados: '+analysis.observations+' candles horários · última observação '+fmtTime(analysis.coverage?.end)+'</span></div>'
+      +'<div class="btc-event-metrics">'+rows.map(([label,value,observed])=>'<div class="btc-event-metric"><span>'+label+'</span><strong class="'+(Number.isFinite(value)?(value>0?'positive':value<0?'negative':'neutral'):'')+'">'+formatEventStudyPct(value)+'</strong><small>'+ (observed?.timestamp?('Observado '+fmtTime(observed.timestamp)+' · desvio '+(observed.offsetMinutes>0?'+':'')+observed.offsetMinutes+' min'):'Sem candle observado na janela') +'</small></div>').join('')+'</div>'
+      +'<div class="btc-event-meta"><span>Alvo da referência T−1h: '+fmtPrice(analysis.baseline?.close)+' · candle '+fmtTime(analysis.baseline?.timestamp)+' · desvio '+analysis.baseline?.offsetMinutes+' min</span><span>Dados: '+analysis.observations+' candles horários · última observação '+fmtTime(analysis.coverage?.end)+'</span></div>'
       +'<p class="btc-event-caveat">Este é um estudo temporal exploratório, não uma estimativa causal. A janela de 24h só aparece quando os candles já existem; o Oraculum não atualiza nem ingere dados automaticamente nesta tela.</p>';
     report=[
       'ORACULUM — ESTUDO DE EVENTO BTC',
@@ -41,7 +41,7 @@ export function attachBtcEventStudy({dataClient,normalizeCandles}){
       'Cobertura dos candles: '+new Date(analysis.coverage.start).toISOString()+' a '+new Date(analysis.coverage.end).toISOString(),
       'Observações horárias: '+analysis.observations,
       'Referência T-1h: '+analysis.baseline.close+' em '+new Date(analysis.baseline.timestamp).toISOString(),
-      ...rows.map(([label,value])=>label+': '+formatEventStudyPct(value)),
+      ...rows.map(([label,value,observed])=>label+': '+formatEventStudyPct(value)+' | observado='+(observed?.timestamp?new Date(observed.timestamp).toISOString():'indisponível')+' | desvio_min='+(observed?.offsetMinutes??'indisponível')),
       'CPI anual: 3,7% observado vs 3,6% esperado; núcleo anual 2,6% vs 2,5%; CPI mensal 0,6% vs 0,6%.',
       ...analysis.notes,
       'Fontes: '+e.sources.map(s=>s.url).join(' | ')
