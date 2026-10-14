@@ -48,3 +48,17 @@ test('diagnostic wrapper keeps tests separate and reports inconclusive cases hon
   assert.ok(r.tests.every(x=>x.available===true || x.interpretation==='INCONCLUSIVE'));
   assert.ok(r.notes.some(x=>x.includes('não prova')));
 });
+
+test('constant squared residuals return no evidence rather than an unavailable test', () => {
+  const x = Array.from({length:30},(_,i)=>i);
+  const residuals = x.map((_,i)=>i%2===0?1:-1);
+  const bp = breuschPagan(residuals,[x]);
+  const white = whiteTest(residuals,[x]);
+  assert.equal(bp.available,true,JSON.stringify(bp));
+  assert.equal(white.available,true,JSON.stringify(white));
+  assert.equal(bp.statistic,0);
+  assert.equal(white.statistic,0);
+  assert.equal(bp.pValue,1);
+  assert.equal(white.pValue,1);
+  assert.equal(bp.interpretation,'NO_STRONG_EVIDENCE_AGAINST_NULL');
+});
