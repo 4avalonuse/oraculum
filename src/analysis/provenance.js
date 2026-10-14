@@ -68,8 +68,8 @@ export function auditAnalysis(result, series) {
     const s = result.series?.[item.key];
     if (!s) continue;
     const validReturns = (s.returns || []).filter(Number.isFinite);
-    const priceCount = result.observations;
-    const sample = { start: result.rowsStart ?? null, end: result.rowsEnd ?? null };
+    const priceCount = s.nativeObservations ?? result.observations;
+    const sample = { start: s.rowsStart ?? result.rowsStart ?? null, end: s.rowsEnd ?? result.rowsEnd ?? null, basis: s.returnHorizon ?? 'shared sample' };
     const calculations = {
       totalReturn: calculationStamp({
         id: item.key + '.total-return',
@@ -90,7 +90,7 @@ export function auditAnalysis(result, series) {
         formula: 'desvio-padrão amostral dos retornos × √períodos_por_ano',
         inputs: ['returns', 'periods'], observations: validReturns.length, sample,
         assumptions: ['Desvio-padrão amostral (n−1); anualização depende do calendário selecionado.'],
-        checks: [check('volatilidade anualizada', s.vol, s.std * Math.sqrt(result.periods), 1e-10)]
+        checks: [check('volatilidade anualizada', s.vol, s.std * Math.sqrt(s.annualizationPeriods ?? result.periods), 1e-10)]
       }),
       distribution: calculationStamp({
         id: item.key + '.return-distribution',
@@ -114,8 +114,8 @@ export function auditAnalysis(result, series) {
     };
   }
   const relationAudit = (result.relations || []).map(r => {
-    const x = result.series?.[r.primary]?.returns || [];
-    const y = result.series?.[r.target]?.returns || [];
+    const x = result.series?.[r.primary]?.alignedReturns || result.series?.[r.primary]?.returns || [];
+    const y = result.series?.[r.target]?.alignedReturns || result.series?.[r.target]?.returns || [];
     const ref = referencePairStats(x, y);
     return calculationStamp({
       id: r.primary + '.vs.' + r.target + '.bivariate',
@@ -141,6 +141,7 @@ export function auditAnalysis(result, series) {
     sample: { observations: result.observations, start: result.rowsStart ?? null, end: result.rowsEnd ?? null },
     returnMode: result.returnMode,
     periodsPerYear: result.periods,
+    temporalDesign: result.temporal ?? null,
     series: seriesAudit,
     relations: relationAudit
   };

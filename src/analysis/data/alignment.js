@@ -2,7 +2,7 @@
  * Mantém os dados em buckets de calendário comuns e evita que séries com
  * calendários diferentes (cripto/ações) comparem retornos em horizontes distintos.
  */
-function periodKey(timestamp,interval='1d'){
+export function periodKey(timestamp,interval='1d'){
   const d=new Date(Number(timestamp));
   if(!Number.isFinite(d.getTime())) return null;
   if(interval==='1h'){
@@ -43,8 +43,8 @@ export function alignSeries(series,interval='1d'){
     const hits=maps.map(map=>map.get(key));
     if(hits.some(hit=>!hit))return null;
     seen.add(key);
-    const row={timestamp:hits[0].timestamp,__previousCloses:{}};
-    for(let i=0;i<series.length;i++){row[series[i].key]=hits[i].close;row.__previousCloses[series[i].key]=previousCloseMaps[i].get(key)??NaN;}
+    const row={timestamp:hits[0].timestamp,__periodKey:key,__sourceTimestamps:{},__previousCloses:{}};
+    for(let i=0;i<series.length;i++){row[series[i].key]=hits[i].close;row.__sourceTimestamps[series[i].key]=hits[i].timestamp;row.__previousCloses[series[i].key]=previousCloseMaps[i].get(key)??NaN;}
     return row;
-  }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp);
+  }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp).map((row,i,all)=>({...row,__elapsedHours:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/3600000):null,__elapsedDays:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/86400000):null}));
 }
