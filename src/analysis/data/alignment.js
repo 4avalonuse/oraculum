@@ -30,7 +30,7 @@ export function alignSeries(series,interval='1d'){
     for(const candle of s.candles||[]){
       const key=periodKey(candle.timestamp,interval);
       const close=Number(candle.close);
-      if(key&&Number.isFinite(close)&&close>0) map.set(key,{timestamp:Number(candle.timestamp),close});
+      if(key&&Number.isFinite(close)&&close>0){const timestamp=Number(candle.timestamp),previous=map.get(key);if(!previous||timestamp>previous.timestamp)map.set(key,{timestamp,close});}
     }
     return map;
   });
@@ -43,8 +43,8 @@ export function alignSeries(series,interval='1d'){
     const hits=maps.map(map=>map.get(key));
     if(hits.some(hit=>!hit))return null;
     seen.add(key);
-    const row={timestamp:hits[0].timestamp,__periodKey:key,__sourceTimestamps:{},__previousCloses:{}};
-    for(let i=0;i<series.length;i++){row[series[i].key]=hits[i].close;row.__sourceTimestamps[series[i].key]=hits[i].timestamp;row.__previousCloses[series[i].key]=previousCloseMaps[i].get(key)??NaN;}
+    const row={timestamp:hits[0].timestamp,__periodKey:key,__sourceTimestamps:{},__timestampOffsetsMs:{},__previousCloses:{},__sourceElapsedDays:{}};
+    for(let i=0;i<series.length;i++){row[series[i].key]=hits[i].close;row.__sourceTimestamps[series[i].key]=hits[i].timestamp;row.__timestampOffsetsMs[series[i].key]=hits[i].timestamp-hits[0].timestamp;row.__previousCloses[series[i].key]=previousCloseMaps[i].get(key)??NaN;}
     return row;
-  }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp).map((row,i,all)=>({...row,__elapsedHours:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/3600000):null,__elapsedDays:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/86400000):null}));
+  }).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp).map((row,i,all)=>{for(const s of series){const previous=all[i-1];row.__sourceElapsedDays[s.key]=previous?Math.max(0,(row.__sourceTimestamps[s.key]-previous.__sourceTimestamps[s.key])/86400000):null;}return {...row,__elapsedHours:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/3600000):null,__elapsedDays:i?Math.max(0,(row.timestamp-all[i-1].timestamp)/86400000):null};});
 }
