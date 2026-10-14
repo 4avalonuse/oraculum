@@ -18,9 +18,14 @@ function nearest(rows,target,toleranceMs){
   for(const row of rows){
     const delta=Math.abs(row.timestamp-target);
     if(delta<distance){best=row;distance=delta}
-    if(row.timestamp>target&&delta>distance)break;
   }
   return best&&distance<=toleranceMs?{...best,offsetMinutes:Math.round((best.timestamp-target)/60000)}:null;
+}
+function nearestBefore(rows,target,toleranceMs){
+  let best=null;
+  for(const row of rows)if(row.timestamp<target)best=row;
+  if(!best||target-best.timestamp>toleranceMs)return null;
+  return {...best,offsetMinutes:Math.round((best.timestamp-target)/60000)};
 }
 function pct(a,b){return a>0&&b>0?(b/a-1)*100:null}
 export function analyzeBtcEventWindow(candles,eventTimestamp,options={}){
