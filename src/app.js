@@ -30,7 +30,13 @@ function visibleBoundsFor(c){
 
 async function load(interval='1d'){
   const asset=getAsset(activeSymbol);
-  if(asset.supportedIntervals&&!asset.supportedIntervals.includes(interval)) interval=asset.supportedIntervals[0];
+  if(asset.supportedIntervals&&!asset.supportedIntervals.includes(interval)){
+    interval=asset.supportedIntervals[0];
+    activeInterval=interval;
+    const intervalToggle=$('#interval-toggle');
+    if(intervalToggle) intervalToggle.textContent=interval.toUpperCase();
+    document.querySelectorAll('[data-interval]').forEach(button=>button.classList.toggle('active',button.dataset.interval===interval));
+  }
   const host=$('#chart');
   $('#status').textContent='CARREGANDO';
   host.classList.add('is-loading');
@@ -65,7 +71,7 @@ async function load(interval='1d'){
     $('#asset-title').textContent=getAsset(activeSymbol).symbol+' / USD';
     timeline.refreshMenu?.();
     $('#source').textContent=(loaded.meta?.sourceName||loaded.meta?.provider||asset.provider)+' · '+(asset.kind==='series'?'SPOT · diário':(intervals[interval]||interval));
-    $('#count').textContent=candles.length+' candles';
+    $('#count').textContent=candles.length+(asset.kind==='series'?' observações spot':' candles');
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
     timeline.renderTimeline(candles,viewport);
