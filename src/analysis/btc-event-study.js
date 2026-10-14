@@ -33,8 +33,10 @@ export function analyzeBtcEventWindow(candles,eventTimestamp,options={}){
   if(!Number.isFinite(Number(eventTimestamp)))return {available:false,reason:'Horário do evento inválido.',observations:rows.length};
   if(rows.length<2)return {available:false,reason:'A série horária ainda não tem observações suficientes.',observations:rows.length};
   const event=Number(eventTimestamp);
-  const pre4=nearest(rows,event-4*HOUR,toleranceMs);
-  const anchor=nearest(rows,event-HOUR,toleranceMs);
+  const pre4=nearestBefore(rows,event-4*HOUR,toleranceMs);
+  // Strictly exclude a bar starting exactly at T−1h: hourly OHLCV timestamps
+  // often label the bar open, so its close may not yet have been observable.
+  const anchor=nearestBefore(rows,event-HOUR,toleranceMs);
   const post1=nearest(rows,event+HOUR,toleranceMs);
   const post4=nearest(rows,event+4*HOUR,toleranceMs);
   const post24=nearest(rows,event+24*HOUR,toleranceMs);
