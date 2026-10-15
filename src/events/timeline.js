@@ -33,7 +33,10 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
   }
 
   function relevantEvents(){
-    return timelineEvents.filter(event=>eventAppliesToAsset(event,getActiveSymbol?.()));
+    const activeSymbol=getActiveSymbol?.();
+    // BTC-related context remains available while another asset is displayed;
+    // events specific to the active asset and market-wide events are added too.
+    return timelineEvents.filter(event=>eventAppliesToAsset(event,'BTC-USD')||eventAppliesToAsset(event,activeSymbol));
   }
 
   function renderTimeline(candles,viewport){
@@ -73,7 +76,9 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
     const head=document.createElement('div');
     head.className='event-menu-head';
     const selectedVisible=[...selectedEventIds].filter(id=>scopedEvents.some(event=>String(event.id)===id)).length;
-    head.innerHTML='<span>EVENTOS</span><span class="event-menu-count">'+selectedVisible+'/'+scopedEvents.length+'</span>';
+    const activeSymbol=getActiveSymbol?.();
+    const scopeLabel=activeSymbol&&activeSymbol!=='BTC-USD'?'EVENTOS BTC + ATIVO':'EVENTOS BTC';
+    head.innerHTML='<span>'+scopeLabel+'</span><span class="event-menu-count">'+selectedVisible+'/'+scopedEvents.length+'</span>';
     menu.appendChild(head);
     const filters=document.createElement('div');
     filters.className='event-menu-filters';
