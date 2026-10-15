@@ -30,7 +30,13 @@ function chiSquareP(stat,df){return Number.isFinite(stat)&&stat>=0&&df>0?gammaQ(
 function auxiliaryR2(y,columns){
   const n=y.length,k=columns.length+1;
   if(n<=k+2)return null;
-  const x=Array.from({length:n},(_,i)=>[1,...columns.map(col=>col[i])]);
+  // Scale auxiliary regressors before forming X'X. R² is invariant to
+  // nonzero column scaling, while the unscaled normal equations can falsely
+  // look singular when White's squared terms are small (common with returns).
+  const scales=columns.map(col=>col.reduce((m,v)=>Math.max(m,Math.abs(v)),0));
+  if(scales.some(s=>!(s>0)||!Number.isFinite(s)))return null;
+  const scaled=columns.map((col,j)=>col.map(v=>v/scales[j]));
+  const x=Array.from({length:n},(_,i)=>[1,...scaled.map(col=>col[i])]);
   const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv)return null;
   const beta=multiply(multiply(inv,xt),y.map(v=>[v])).map(row=>row[0]);
   const fitted=x.map(row=>row.reduce((sum,v,j)=>sum+v*beta[j],0)),avg=mean(y);

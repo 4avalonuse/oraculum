@@ -88,3 +88,23 @@ test('heteroskedasticity tests match independent reference fixtures', () => {
   close(arch.statistic,11.442163033912015);
   close(arch.pValue,0.0032761657568049466);
 });
+
+test('variance diagnostics are invariant to harmless predictor rescaling', () => {
+  const x = Array.from({length:40},(_,i)=>(i-19.5)/10);
+  const smallX = x.map(v=>v*1e-3);
+  const residuals = x.map((_,i)=>(i%2===0?1:-1)*(0.2+0.03*i+0.07*(i%4)));
+  const close = (a,b) => assert.ok(
+    Number.isFinite(a) && Number.isFinite(b) &&
+    Math.abs(a-b) <= 1e-7*Math.max(1,Math.abs(a),Math.abs(b)),
+    `expected scale-invariant results; got ${a} and ${b}`
+  );
+  for (const run of [breuschPagan,whiteTest]) {
+    const ordinary = run(residuals,[x]);
+    const scaled = run(residuals,[smallX]);
+    assert.equal(ordinary.available,true,JSON.stringify(ordinary));
+    assert.equal(scaled.available,true,JSON.stringify(scaled));
+    assert.equal(scaled.df,ordinary.df);
+    close(scaled.statistic,ordinary.statistic);
+    close(scaled.pValue,ordinary.pValue);
+  }
+});
