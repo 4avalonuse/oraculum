@@ -1,3 +1,4 @@
+import { buildHeteroskedasticityReading } from './heteroskedasticity-reading.js';
 /* syntax fix */
 /* ORACULUM — leitura científica contextual.
  * Converte os resultados calculados em uma interpretação cautelosa e específica
@@ -57,15 +58,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     cards.push(card('O modelo multivariado tem ajuste amostral relevante','evidence',
       'O modelo associa conjuntamente os preditores selecionados aos retornos de <b>'+esc(model.target)+'</b>. O R² é <b>'+pct(model.r2,2)+'</b> ('+fmt(model.observations,0)+' observações): essa é uma medida de ajuste dentro da amostra, não uma prova de causalidade ou desempenho futuro.',
       'Os coeficientes são condicionais aos demais preditores incluídos. O teste F mostrado é convencional; os p-valores HAC dos coeficientes usam aproximação normal assintótica. São inferências diferentes e devem permanecer identificadas como tal.'));
-    if (flagged.length) {
-      cards.push(card('Há sinais de variância não constante','caution',
-        flagged.map(t=>'<b>'+esc(t.method)+'</b> (p='+esc(pText(t.pValue))+')').join('; ')+'. Ao menos um teste rejeita, ao nível de 5%, sua hipótese nula específica.',
-        'White e Breusch–Pagan investigam relações entre a variância residual e os preditores sob especificações auxiliares diferentes. ARCH-LM investiga dependência temporal nos resíduos ao quadrado. Resultados divergentes não são necessariamente contraditórios: os testes investigam alternativas distintas. HAC ajuda na inferência dos coeficientes, mas não torna o modelo automaticamente bem especificado.'));
-    } else if (tests.length) {
-      cards.push(card('Os testes não apontam evidência forte em todos os diagnósticos','reading',
-        'Nenhum dos testes disponíveis rejeitou sua hipótese nula ao nível de 5%. Isso <b>não prova</b> que a variância seja constante nem que os resíduos satisfaçam todos os pressupostos.',
-        'A conclusão depende do poder dos testes, da especificação auxiliar, do tamanho da amostra e da estrutura temporal.'));
-    }
+    if (tests.length) cards.push(buildHeteroskedasticityReading(diag, {fmt}));
     if (irregular) cards.push(card('Diagnósticos residuais: números válidos, inferência limitada','caution',
       'O espaçamento dos resíduos foi classificado como irregular. DW e Ljung–Box podem ser reproduzidos numericamente, mas seus valores-p convencionais pressupõem condições temporais que esta amostra não garante.',
       'Use os resultados como descrição exploratória, não como veredito formal sobre autocorrelação. A concordância entre duas implementações confirma consistência aritmética, não validade dos pressupostos.'));
