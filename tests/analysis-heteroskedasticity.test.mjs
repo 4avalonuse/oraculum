@@ -130,3 +130,43 @@ test('edge cases are explicit: nonfinite data and unidentifiable ARCH lags', () 
   const arch = archLM(Array.from({length:30},(_,i)=>i%2===0?1:-1),2);
   assert.equal(arch.available,false,JSON.stringify(arch));
 });
+
+test('real Oraculum model pipeline passes calculated residuals into variance interpretation', async () => {
+  const { runExplanatoryModel } = await import('../src/analysis/explanatory-model.js');
+  const { diagnoseModel } = await import('../src/analysis/model-diagnostics.js');
+  const start = Date.UTC(2024,0,1), day = 86400000;
+  const rows = [{timestamp:start,BTC:100,SOL:100}];
+  let btc=100,sol=100;
+  for(let i=0;i<180;i++){
+    const x = 0.018*Math.sin(i*0.37) + 0.009*Math.cos(i*0.13);
+    const hetero = 0.001 + 0.06*Math.abs(x) + (i%9===0?0.012:0);
+    const error = (i%2===0?1:-1)*hetero;
+    sol *= Math.exp(x);
+    btc *= Math.exp(0.0002 + 1.25*x + error);
+    rows.push({timestamp:start+(i+1)*day,BTC:btc,SOL:sol});
+  }
+  const series = [{key:'BTC',symbol:'BTC',category:'crypto'},{key:'SOL',symbol:'SOL',category:'crypto'}];
+  const model = runExplanatoryModel(rows,series,{hacLag:3});
+  assert.equal(model.available,true,model.reason);
+  assert.equal(model.observations,180);
+  assert.equal(model.residuals.length,180);
+  const diagnostics = diagnoseModel(model);
+  assert.equal(diagnostics.available,true);
+  assert.equal(diagnostics.heteroskedasticity.available,true);
+  assert.deepEqual(diagnostics.heteroskedasticity.tests.map(t=>t.method),['Breusch–Pagan','White','ARCH-LM']);
+  assert.ok(diagnostics.heteroskedasticity.tests.some(t=>t.available && Number.isFinite(t.pValue)));
+  const { buildHeteroskedasticityReading } = await import('../src/analysis/heteroskedasticity-reading.js');
+  const html = buildHeteroskedasticityReading({heteroskedasticity:diagnostics.heteroskedasticity},{fmt:v=>String(v)});
+  assert.match(html,/Interpretação dos resultados calculados/);
+  assert.match(html,/Próximo passo sugerido/);
+});
+
+test('scientific reading does not label invalid p-values as non-significant', async () => {
+  const { buildHeteroskedasticityReading } = await import('../src/analysis/heteroskedasticity-reading.js');
+  const html = buildHeteroskedasticityReading({heteroskedasticity:{
+    alpha:0.05,tests:[{method:'White',available:true,statistic:3,df:2,pValue:NaN,n:30}]
+  }},{fmt:v=>String(v)});
+  assert.match(html,/INCONCLUSIVO/);
+  assert.match(html,/valor-p não disponível ou inválido/);
+  assert.doesNotMatch(html,/não rejeita sua hipótese nula ao nível/);
+});
