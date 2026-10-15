@@ -42,15 +42,16 @@ function testCard(test, alpha, fmt) {
   if (!test.available) {
     return '<article class="variance-test variance-test-muted"><div class="variance-test-top"><h5>' + esc(test.method) + '</h5><span>INCONCLUSIVO</span></div><p>' + esc(test.reason || 'Teste indisponível.') + '</p><details><summary>Hipótese e método</summary><p>' + esc(meaning.null) + '</p><p>' + esc(meaning.interpretation) + '</p></details></article>';
   }
-  const significant = Number.isFinite(test.pValue) && test.pValue < alpha;
-  const status = significant ? 'SINAL DETECTADO' : 'SEM SINAL FORTE';
-  const statusClass = significant ? 'variance-test-signal' : 'variance-test-no-signal';
+  const interpretable = Number.isFinite(test.pValue) && test.pValue >= 0 && test.pValue <= 1;
+  const significant = interpretable && test.pValue < alpha;
+  const status = !interpretable ? 'INCONCLUSIVO' : significant ? 'SINAL DETECTADO' : 'SEM SINAL FORTE';
+  const statusClass = !interpretable ? 'variance-test-muted' : significant ? 'variance-test-signal' : 'variance-test-no-signal';
   const p = pLabel(test.pValue);
   const df = Number.isFinite(test.df) ? String(test.df) : '—';
   const lm = number(test.statistic, fmt);
   const n = Number.isFinite(test.n) ? test.n : null;
   const lagLine = /ARCH/i.test(test.method) ? '<span>Defasagens: <b>' + esc(test.lag ?? test.df ?? '—') + '</b></span>' : '';
-  return '<article class="variance-test ' + statusClass + '"><div class="variance-test-top"><h5>' + esc(test.method) + '</h5><span>' + status + '</span></div><p class="variance-test-question">' + esc(meaning.question) + '</p><div class="variance-test-stats"><span>LM <b>' + esc(lm) + '</b></span><span>gl <b>' + esc(df) + '</b></span><span>p <b>' + esc(p) + '</b></span>' + lagLine + (n !== null ? '<span>n <b>' + esc(n) + '</b></span>' : '') + '</div><p>' + (significant ? 'Este teste rejeita sua hipótese nula ao nível de ' + esc((alpha * 100).toLocaleString('pt-BR')) + '%.' : 'Este teste não rejeita sua hipótese nula ao nível de ' + esc((alpha * 100).toLocaleString('pt-BR')) + '%. Isso não prova que a variância seja constante.') + '</p><details><summary>Hipótese e interpretação correta</summary><p><b>Hipótese nula:</b> ' + esc(meaning.null) + '</p><p>' + esc(meaning.interpretation) + '</p><p><b>Estatística:</b> ' + esc(test.formula || 'LM baseado em regressão auxiliar.') + '</p></details></article>';
+  return '<article class="variance-test ' + statusClass + '"><div class="variance-test-top"><h5>' + esc(test.method) + '</h5><span>' + status + '</span></div><p class="variance-test-question">' + esc(meaning.question) + '</p><div class="variance-test-stats"><span>LM <b>' + esc(lm) + '</b></span><span>gl <b>' + esc(df) + '</b></span><span>p <b>' + esc(p) + '</b></span>' + lagLine + (n !== null ? '<span>n <b>' + esc(n) + '</b></span>' : '') + '</div><p>' + (!interpretable ? 'O valor-p não é válido ou não está disponível; não é possível classificar o resultado.' : significant ? 'Este teste rejeita sua hipótese nula ao nível de ' + esc((alpha * 100).toLocaleString('pt-BR')) + '%.' : 'Este teste não rejeita sua hipótese nula ao nível de ' + esc((alpha * 100).toLocaleString('pt-BR')) + '%. Isso não prova que a variância seja constante.') + '</p><details><summary>Hipótese e interpretação correta</summary><p><b>Hipótese nula:</b> ' + esc(meaning.null) + '</p><p>' + esc(meaning.interpretation) + '</p><p><b>Estatística:</b> ' + esc(test.formula || 'LM baseado em regressão auxiliar.') + '</p></details></article>';
 }
 export function buildHeteroskedasticityReading(diagnostics, { fmt } = {}) {
   const h = diagnostics?.heteroskedasticity;
@@ -58,7 +59,10 @@ export function buildHeteroskedasticityReading(diagnostics, { fmt } = {}) {
   const alpha = Number.isFinite(h.alpha) ? h.alpha : 0.05;
   const available = h.tests.filter(t => t?.available && Number.isFinite(t.pValue));
   const flagged = available.filter(t => t.pValue < alpha);
-  const summary = !available.length
+  const invalid = h.tests.filter(t => t?.available && (!Number.isFinite(t.pValue) || t.pValue < 0 || t.pValue > 1));
+  const summary = invalid.length
+    ? 'Há resultados sem valor-p válido; esses testes são inconclusivos e não entram na síntese inferencial.'
+    : !available.length
     ? 'Os testes não produziram resultados interpretáveis nesta amostra.'
     : flagged.length === available.length
       ? 'Sinais de variância não constante: ' + flagged.length + ' de ' + available.length + ' testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
@@ -69,7 +73,7 @@ export function buildHeteroskedasticityReading(diagnostics, { fmt } = {}) {
   const notes = (h.notes || []).map(note => '<li>' + esc(note) + '</li>').join('');
   const pText = p => !Number.isFinite(p) ? 'p não disponível' : p === 0 ? 'p ≈ 0 na precisão numérica' : 'p = ' + p.toLocaleString('pt-BR', { maximumFractionDigits: 6 });
   const findings = h.tests.map(t => {
-    if (!t?.available || !Number.isFinite(t.pValue)) return '<li><b>' + esc(t?.method || 'Teste') + ':</b> inconclusivo — ' + esc(t?.reason || 'resultado não disponível') + '</li>';
+    if (!t?.available || !Number.isFinite(t.pValue) || t.pValue < 0 || t.pValue > 1) return '<li><b>' + esc(t?.method || 'Teste') + ':</b> inconclusivo — ' + esc(t?.reason || 'valor-p não disponível ou inválido; não há base para classificar a evidência') + '</li>';
     const significant = t.pValue < alpha;
     let text;
     if (/Breusch/i.test(t.method)) text = significant
