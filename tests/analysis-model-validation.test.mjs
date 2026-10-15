@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runExplanatoryModel } from '../src/analysis/explanatory-model.js';
-import { validateModelTwoWays } from '../src/analysis/model-validation.js';
+import { validateModelTwoWays, validateResidualDiagnostics } from '../src/analysis/model-validation.js';
+import { diagnoseModel } from '../src/analysis/model-diagnostics.js';
 
 test('independent model validation agrees on a deterministic sample',()=>{
  const rows=[];let a=100,b=50,c=80;const start=Date.UTC(2024,0,1),day=86400000;rows.push({timestamp:start,A:a,B:b,C:c});
@@ -63,4 +64,27 @@ test('model audit design preserves exact source timestamps and elapsed intervals
  assert.equal(model.auditDesign.elapsedDaysBySeries.A.length,model.residuals.length);
  assert.ok(model.auditDesign.elapsedDaysBySeries.A.some(v=>v>1));
  assert.ok(model.auditDesign.sourceTimestampsBySeries.B.every((v,i)=>v-model.auditDesign.sourceTimestampsBySeries.A[i]===6*3600000));
+});
+
+
+test('independent residual diagnostics agree on one shared residual sequence',()=>{
+ const residuals=Array.from({length:120},(_,i)=>.7*Math.sin(i*.37)+.2*Math.cos(i*.11)+.03*Math.sin(i*1.7));
+ const model={available:true,residuals,auditDesign:{elapsedDaysBySeries:{BTC:Array(120).fill(1)}}};
+ const diagnostics=diagnoseModel(model);
+ const result=validateResidualDiagnostics(model,diagnostics);
+ assert.equal(result.status,'BOTH_PATHS_AGREE',JSON.stringify(result.checks));
+ assert.equal(result.passed,result.total);
+ assert.ok(result.checks.some(c=>c.name==='Ljung–Box Q'));
+});
+
+test('independent residual audit catches incompatible Durbin–Watson and Ljung–Box values',()=>{
+ const residuals=Array.from({length:1244},(_,i)=>.7*Math.sin(i*.37)+.2*Math.cos(i*.11)+.03*Math.sin(i*1.7));
+ const model={available:true,residuals,auditDesign:{elapsedDaysBySeries:{BTC:Array(1244).fill(1)}}};
+ const actual=diagnoseModel(model);
+ const inconsistent={...actual,durbinWatson:1.137,ljungBox:{...actual.ljungBox,stat:7.5425,p:.6734},residualLag1Correlation:.4315};
+ const result=validateResidualDiagnostics(model,inconsistent);
+ assert.equal(result.status,'ALERT');
+ assert.ok(result.checks.some(c=>c.status==='FAIL'&&c.name==='Durbin–Watson'));
+ assert.ok(result.checks.some(c=>c.status==='FAIL'&&c.name==='Ljung–Box Q'));
+ assert.ok(result.firstLagContributionToLjungBox>200);
 });

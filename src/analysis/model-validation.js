@@ -26,3 +26,34 @@ export function validateModelTwoWays(model){
  const passed=checks.filter(c=>c.status==='PASS').length,failed=checks.some(c=>c.status==='FAIL');
  return {status:failed?'ALERT':'BOTH_PATHS_AGREE',passed,total:checks.length,checks,message:failed?'Divergência entre os caminhos de cálculo.':'Os dois caminhos numéricos concordam dentro das tolerâncias.',validationScope:'cross-implementation-numerical-reproduction',crossChecked:!failed,independentlyValidated:false,externalReferenceValidation:'PENDING',economicValidity:'NOT_ASSESSED'};
 }
+
+/* Independent recomputation of residual diagnostics.
+   This validates numerical reproduction, not the statistical assumptions behind
+   conventional p-values or the economic adequacy of the model. */
+export function validateResidualDiagnostics(model, diagnostics) {
+ const e=model?.residuals, d=diagnostics;
+ if(!model?.available||!Array.isArray(e)||!d?.available||e.length<3||!e.every(Number.isFinite))
+  return {status:'NOT_CHECKED',passed:0,total:0,checks:[],reason:'Modelo ou sequência de resíduos indisponível.',validationScope:'independent-residual-numerical-reproduction',economicValidity:'NOT_ASSESSED'};
+ const close=(a,b,t=1e-8)=>Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=t*Math.max(1,Math.abs(a),Math.abs(b));
+ const add=(name,a,b,t=1e-8)=>checks.push({name,status:close(a,b,t)?'PASS':'FAIL',primary:Number.isFinite(a)?a:null,reference:Number.isFinite(b)?b:null});
+ const checks=[],n=e.length,mean=e.reduce((s,v)=>s+v,0)/n;
+ const denominator=e.reduce((s,v)=>s+v*v,0);
+ const dwNumerator=e.slice(1).reduce((s,v,i)=>s+(v-e[i])**2,0);
+ const dw=denominator>0?dwNumerator/denominator:NaN;
+ const centered=e.map(v=>v-mean),variance=centered.reduce((s,v)=>s+v*v,0);
+ const acfAt=lag=>variance>0?centered.slice(lag).reduce((s,v,i)=>s+v*centered[i],0)/variance:NaN;
+ const lagCount=Math.max(1,Math.min(10,Math.floor(n/5)));
+ let q=0;for(let lag=1;lag<=lagCount;lag++){const rho=acfAt(lag);q+=rho*rho/Math.max(1,n-lag)}q*=n*(n+2);
+ add('Quantidade de resíduos',d.residualCount,n,0);
+ add('Durbin–Watson',d.durbinWatson,dw);
+ add('Correlação residual lag 1',d.residualLag1Correlation,acfAt(1));
+ add('Ljung–Box Q',d.ljungBox?.stat,q);
+ add('Defasagens Ljung–Box',d.ljungBox?.lagsUsed??d.ljungBox?.df,lagCount,0);
+ const firstLagContribution=n*(n+2)*(acfAt(1)**2)/Math.max(1,n-1);
+ checks.push({name:'Ljung–Box Q contém contribuição da defasagem 1',status:Number.isFinite(q)&&q+1e-10>=firstLagContribution?'PASS':'FAIL',primary:q,reference:firstLagContribution});
+ const elapsedBySeries=model.auditDesign?.elapsedDaysBySeries||{},primaryKey=Object.keys(elapsedBySeries)[0],intervals=(elapsedBySeries[primaryKey]||[]).filter(v=>Number.isFinite(v)&&v>0),sorted=intervals.slice().sort((a,b)=>a-b),med=sorted.length?sorted[Math.floor((sorted.length-1)/2)]:NaN;
+ const regular=intervals.length===n&&med>0&&intervals.every(v=>Math.abs(v-med)<=Math.max(.05,med*.1));
+ if(d.temporalSpacing?.status==='REGULAR_INTERVALS'&&!regular)checks.push({name:'Classificação de espaçamento temporal',status:'FAIL',primary:d.temporalSpacing.status,reference:'IRREGULAR_INTERVALS'});
+ const passed=checks.filter(c=>c.status==='PASS').length,failed=checks.some(c=>c.status==='FAIL');
+ return {status:failed?'ALERT':'BOTH_PATHS_AGREE',passed,total:checks.length,checks,message:failed?'Os diagnósticos dos resíduos divergem da recomputação independente ou falham uma condição de consistência.':'A recomputação independente dos diagnósticos coincide dentro das tolerâncias.',validationScope:'independent-residual-numerical-reproduction',independentlyValidated:true,economicValidity:'NOT_ASSESSED',residualCount:n,firstLagContributionToLjungBox:firstLagContribution,warning:regular?'': 'A validação numérica não torna válidos os p-valores convencionais quando o espaçamento temporal é irregular ou os pressupostos do teste não são atendidos.'};
+}
