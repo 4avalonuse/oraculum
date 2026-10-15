@@ -108,3 +108,25 @@ test('variance diagnostics are invariant to harmless predictor rescaling', () =>
     close(scaled.pValue,ordinary.pValue);
   }
 });
+
+test('effective degrees of freedom account for redundant predictors and White terms', () => {
+  const x = Array.from({length:40},(_,i)=>(i-19.5)/10);
+  const residuals = x.map((_,i)=>(i%2===0?1:-1)*(0.2+0.03*i+0.07*(i%4)));
+  const bpSingle = breuschPagan(residuals,[x]);
+  const bpRedundant = breuschPagan(residuals,[x,x.map(v=>2*v)]);
+  const whiteSingle = whiteTest(residuals,[x]);
+  const whiteRedundant = whiteTest(residuals,[x,x.map(v=>2*v)]);
+  assert.equal(bpRedundant.available,true,JSON.stringify(bpRedundant));
+  assert.equal(bpRedundant.df,1);
+  assert.equal(whiteRedundant.available,true,JSON.stringify(whiteRedundant));
+  assert.equal(whiteRedundant.df,2);
+  assert.ok(Math.abs(bpSingle.statistic-bpRedundant.statistic)<1e-7);
+  assert.ok(Math.abs(whiteSingle.statistic-whiteRedundant.statistic)<1e-7);
+});
+
+test('edge cases are explicit: nonfinite data and unidentifiable ARCH lags', () => {
+  assert.equal(breuschPagan([1,NaN,2,3,4,5,6,7,8,9,10,11],[[1,2,3,4,5,6,7,8,9,10,11,12]]).available,false);
+  assert.equal(whiteTest(Array(20).fill(1),[Array.from({length:20},(_,i)=>i)]).available,true);
+  const arch = archLM(Array.from({length:30},(_,i)=>i%2===0?1:-1),2);
+  assert.equal(arch.available,false,JSON.stringify(arch));
+});
