@@ -8,7 +8,12 @@ on:
       - '.github/workflows/analysis-tests.yml'
   pull_request:
     paths:
-      - 'src/analysis/engine.js'
+      - 'src/analysis/**/*.js'
+      - 'src/ui/**'
+      - 'src/events/**'
+      - 'src/app.js'
+      - 'src/styles.css'
+      - 'index.html'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/analysis-tests.yml'
