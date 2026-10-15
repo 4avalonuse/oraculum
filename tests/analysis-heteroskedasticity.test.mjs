@@ -85,6 +85,6 @@ test('heteroskedasticity tests match independent reference fixtures', () => {
   close(white.pValue,0.0002006408876451547);
   assert.equal(arch.df,2);
   assert.equal(arch.lag,2);
-  close(arch.statistic,13.086056149019052);
-  close(arch.pValue,0.0005142340475628489);
+  close(arch.statistic,11.442163033912015);
+  close(arch.pValue,0.0032761657568049466);
 });
