@@ -62,3 +62,29 @@ test('constant squared residuals return no evidence rather than an unavailable t
   assert.equal(white.pValue,1);
   assert.equal(bp.interpretation,'NO_STRONG_EVIDENCE_AGAINST_NULL');
 });
+
+test('heteroskedasticity tests match independent reference fixtures', () => {
+  // Reference values precomputed with statsmodels.stats.diagnostic:
+  // het_breuschpagan(residuals, add_constant(x)),
+  // het_white(residuals, add_constant(x)), het_arch(residuals, nlags=2).
+  // This is an external numerical fixture, not a second copy of the production formulas.
+  const x = Array.from({length:20},(_,i)=>(i-9.5)/5);
+  const residuals = x.map((_,i)=>(i%2===0?1:-1)*(0.2+0.03*i+0.07*(i%4)));
+  const bp = breuschPagan(residuals,[x]);
+  const white = whiteTest(residuals,[x]);
+  const arch = archLM(residuals,2);
+  const close = (actual, expected, tolerance=1e-6) => assert.ok(
+    Math.abs(actual-expected) <= tolerance*Math.max(1,Math.abs(expected)),
+    `expected ${expected}, got ${actual}`
+  );
+  assert.equal(bp.df,1);
+  close(bp.statistic,16.535634295094184);
+  close(bp.pValue,4.7744320741398e-5);
+  assert.equal(white.df,2);
+  close(white.statistic,17.0279877529215);
+  close(white.pValue,0.0002006408876451547);
+  assert.equal(arch.df,2);
+  assert.equal(arch.lag,2);
+  close(arch.statistic,11.442163033912015);
+  close(arch.pValue,0.0032761657568049466);
+});
