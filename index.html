@@ -21,7 +21,7 @@
     </button>
     <div id="asset-picker-menu" class="asset-picker-menu" role="dialog" aria-label="Selecionar ativo principal">
       <div class="asset-picker-head">
-        <div><strong>ESCOLHER ATIVO</strong><small>O gráfico superior acompanha a série selecionada.</small></div>
+        <div><strong>ESCOLHER ATIVO</strong><small>O gráfico e a análise investigam o mesmo ativo.</small></div>
         <button id="asset-picker-close" class="asset-picker-close" aria-label="Fechar seleção">×</button>
       </div>
       <div class="asset-picker-body">
@@ -71,7 +71,7 @@
       <div class="analysis-block analysis-layered">
         <section class="analysis-step analysis-step-primary" aria-labelledby="step-question-title">
           <div class="step-heading"><div><span class="step-number">1</span><div><h2 id="step-question-title">O que você quer investigar?</h2><p>Comece pelo ativo principal. O restante pode ficar como está.</p></div></div><button class="section-help" type="button" data-topic="MÉTODO" aria-label="Ajuda sobre a investigação">?</button></div>
-          <label class="reference-control"><span>ATIVO DE REFERÊNCIA</span><select id="analysis-reference" aria-label="Escolher ativo de referência"><option value="BTC-USD">BTC · Bitcoin</option><option value="SOL-USD">SOL · Solana</option><option value="RENDER-USD">RENDER</option><option value="JUP-USD">JUP · Jupiter</option><option value="ONDO-USD">ONDO</option><option value="GOLD-SPOT">OURO SPOT · XAU/USD</option><option value="WTI-SPOT">WTI SPOT · petróleo</option><option value="TEST-A">TEST-A · validação</option><option value="TEST-B">TEST-B · validação</option><option value="TEST-C">TEST-C · validação</option></select><small>É a série que queremos compreender. Os outros ativos entram como comparação ou possíveis fatores associados.</small></label>
+          <div class="reference-control analysis-target-card" aria-live="polite"><span>ATIVO INVESTIGADO</span><strong id="analysis-target-label">BTC · Bitcoin</strong><small>Este é o ativo do gráfico e o foco da análise. Para mudar o foco, use o seletor de ativo no topo. Depois, adicione outros ativos em “Compare com”.</small><select id="analysis-reference" aria-label="Ativo investigado" hidden tabindex="-1" aria-hidden="true"></select></div>
           <div class="step-subheading"><h3>Compare com</h3><button class="section-help" type="button" data-topic="CORR." aria-label="Ajuda sobre comparar ativos">?</button></div>
           <div class="asset-picks common-picks">
             <label class="asset-pick"><input class="analysis-asset" value="SOL-USD" type="checkbox"><span>SOL</span><small>CRIPTO</small></label>
@@ -135,7 +135,7 @@
   </section>
   <section class="btc-event-study" id="btc-event-study" aria-labelledby="btc-event-title">
     <div class="btc-event-head">
-      <div><span class="btc-event-kicker">INVESTIGAÇÃO PRIORITÁRIA · BTC</span><h2 id="btc-event-title">O que aconteceu com o Bitcoin após o CPI?</h2><p>Estudo de evento do anúncio de inflação dos EUA, em 14/10/2026 às 08:30 ET (12:30 UTC).</p></div>
+      <div><span class="btc-event-kicker">INVESTIGAÇÃO PRIORITÁRIA · BTC</span><h2 id="btc-event-title">O que aconteceu com o Bitcoin após o CPI?</h2><p>Estudo específico do BTC. Continua sendo uma investigação do Bitcoin mesmo quando o gráfico principal mostra outro ativo. Evento: anúncio de inflação dos EUA, em 14/10/2026 às 08:30 ET (12:30 UTC).</p></div>
       <span id="btc-event-status" class="btc-event-status">AGUARDANDO</span>
     </div>
     <div class="btc-event-context"><strong>Hipótese a testar, não conclusão:</strong> a surpresa de inflação anual pode ter coincidido com alta dos rendimentos e do dólar e pressão nos ativos de risco. O estudo mede a reação temporal do BTC; não presume causalidade.</div>
