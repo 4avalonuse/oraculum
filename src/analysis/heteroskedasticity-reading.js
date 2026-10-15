@@ -61,7 +61,7 @@ export function buildHeteroskedasticityReading(diagnostics, { fmt } = {}) {
   const summary = !available.length
     ? 'Os testes não produziram resultados interpretáveis nesta amostra.'
     : flagged.length === available.length
-      ? 'Sinais de variância não constante: todos os testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
+      ? 'Sinais de variância não constante: ' + flagged.length + ' de ' + available.length + ' testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
       : flagged.length
         ? 'Há sinais de variância não constante: ' + flagged.length + ' de ' + available.length + ' testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
         : 'Nenhum teste disponível rejeitou sua hipótese nula ao nível escolhido; isso não comprova variância constante.';
