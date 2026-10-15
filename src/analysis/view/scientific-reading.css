@@ -21,3 +21,32 @@
 .science-caution summary{color:#f2c94c}
 .science-evidence .science-level{color:#74d6bd}
 @media(max-width:700px){.scientific-reading{padding:11px;margin:10px 0 13px}.science-heading h3{font-size:15px!important}.science-heading>p{font-size:12px}.science-cards{grid-template-columns:1fr;gap:8px}.science-card{padding:11px}.science-card h4{font-size:13px}.science-card p,.science-card details>div{font-size:12px;line-height:1.7}}
+
+/* Camada detalhada e modular para interpretar Breusch–Pagan, White e ARCH-LM */
+.variance-reading{grid-column:1/-1;min-width:0;margin-top:2px;padding:12px;border:1px solid #24465b;border-radius:8px;background:linear-gradient(145deg,rgba(8,25,39,.95),rgba(5,13,23,.98))}
+.variance-reading-heading>span{font-size:9px;letter-spacing:.13em;font-weight:700;color:#72c9ff}
+.variance-reading-heading h4{margin:5px 0;color:#e2f3ff;font-size:14px;line-height:1.4}
+.variance-reading-heading>p{margin:0 0 10px;color:#a8bdcf;font-size:12px;line-height:1.65}
+.variance-test-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.variance-test{min-width:0;padding:10px;border:1px solid #284256;border-radius:7px;background:rgba(4,13,23,.8)}
+.variance-test-top{display:flex;align-items:flex-start;justify-content:space-between;gap:7px;flex-wrap:wrap}
+.variance-test-top h5{margin:0;color:#e0f1ff;font-size:12px}
+.variance-test-top>span{font-size:8px;letter-spacing:.06em;font-weight:800;color:#f1c85b}
+.variance-test-signal{border-color:#665027}
+.variance-test-no-signal .variance-test-top>span{color:#80d9bf}
+.variance-test-muted .variance-test-top>span{color:#a0adbb}
+.variance-test-question{margin:9px 0;color:#bfd1e1;font-size:11px;line-height:1.55}
+.variance-test-stats{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.variance-test-stats>span{padding:4px 6px;border:1px solid #21394c;border-radius:4px;color:#92abc0;font-size:10px}
+.variance-test-stats b{color:#e4f4ff;font-weight:700}
+.variance-test>p:not(.variance-test-question){margin:7px 0 0;color:#a9bdcf;font-size:11px;line-height:1.6}
+.variance-test details,.variance-reading-notes{margin-top:9px;padding-top:7px;border-top:1px solid #20384b}
+.variance-test summary,.variance-reading-notes summary{color:#71c8ff;font-size:11px;line-height:1.5;cursor:pointer}
+.variance-test details p{margin:7px 0 0;color:#a8bdcf;font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+.variance-test details b{color:#e4f4ff}
+.variance-reading-conclusion{margin-top:9px;padding:10px;border-left:2px solid #62bde9;background:rgba(14,37,54,.45)}
+.variance-reading-conclusion>b{color:#dcefff;font-size:12px}
+.variance-reading-conclusion p,.variance-reading-notes li{color:#a8bdcf;font-size:11px;line-height:1.7}
+.variance-reading-conclusion p{margin:5px 0 0}
+.variance-reading-notes ul{padding-left:18px}
+@media(max-width:700px){.variance-reading{padding:10px}.variance-test-grid{grid-template-columns:1fr}.variance-test{padding:11px}.variance-test-top h5{font-size:13px}.variance-test-question,.variance-test>p:not(.variance-test-question),.variance-test details p,.variance-reading-conclusion p,.variance-reading-notes li{font-size:12px;line-height:1.7}.variance-test-stats>span{font-size:11px}}
