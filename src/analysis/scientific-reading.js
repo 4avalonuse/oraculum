@@ -1,3 +1,4 @@
+/* syntax fix */
 /* ORACULUM — leitura científica contextual.
  * Converte os resultados calculados em uma interpretação cautelosa e específica
  * da investigação atual. Não recalcula estatísticas nem infere causalidade.
@@ -47,7 +48,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     reading+='O beta '+(Number.isFinite(beta)?fmt(beta,3):'não estimado')+' descreve a sensibilidade do retorno de <b>'+esc(rel.target)+'</b> em relação ao retorno da referência <b>'+esc(rel.primary)+'</b>, nesta regressão bivariada.';
     const detail='Convenção direcional: alvo = '+esc(rel.target)+'; referência/preditor = '+esc(rel.primary)+'. O beta é Cov(referência, alvo) / Var(referência). Correlação é simétrica; beta não é. R² = '+pct(rel.r2,2)+'. Nenhum desses números demonstra causalidade.';
     cards.push(card(rel.primary+' × '+rel.target,'evidence',reading,
-      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.'));
+      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.')));
   }
   if (model?.available) {
     const tests=diag?.heteroskedasticity?.tests||[];
