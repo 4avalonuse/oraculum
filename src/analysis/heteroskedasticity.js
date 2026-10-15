@@ -28,21 +28,40 @@ function gammaQ(a,x){
 }
 function chiSquareP(stat,df){return Number.isFinite(stat)&&stat>=0&&df>0?gammaQ(df/2,stat/2):NaN}
 function auxiliaryR2(y,columns){
-  const n=y.length,k=columns.length+1;
-  if(n<=k+2)return null;
-  // Scale auxiliary regressors before forming X'X. R² is invariant to
-  // nonzero column scaling, while the unscaled normal equations can falsely
-  // look singular when White's squared terms are small (common with returns).
+  const n=y.length;
+  if(n<8)return null;
+  // Normalize columns, then remove linear dependencies before fitting.
+  // The effective degrees of freedom are the rank of the auxiliary design
+  // excluding the intercept, not the number of terms we attempted to add.
   const scales=columns.map(col=>col.reduce((m,v)=>Math.max(m,Math.abs(v)),0));
-  if(scales.some(s=>!(s>0)||!Number.isFinite(s)))return null;
-  const scaled=columns.map((col,j)=>col.map(v=>v/scales[j]));
-  const x=Array.from({length:n},(_,i)=>[1,...scaled.map(col=>col[i])]);
+  if(scales.some(s=>!Number.isFinite(s)))return null;
+  const scaled=columns.map((col,j)=>scales[j]>0?col.map(v=>v/scales[j]):col.map(()=>0));
+  const independent=[],basis=[];
+  for(const col of scaled){
+    const avg=mean(col),centered=col.map(v=>v-avg);
+    const originalNorm=Math.sqrt(centered.reduce((sum,v)=>sum+v*v,0));
+    if(!(originalNorm>1e-12))continue;
+    const residual=centered.slice();
+    for(const q of basis){
+      const projection=residual.reduce((sum,v,i)=>sum+v*q[i],0);
+      for(let i=0;i<n;i++)residual[i]-=projection*q[i];
+    }
+    const norm=Math.sqrt(residual.reduce((sum,v)=>sum+v*v,0));
+    if(!(norm>1e-10*originalNorm))continue;
+    basis.push(residual.map(v=>v/norm));
+    independent.push(col);
+  }
+  const df=independent.length;
+  const avg=mean(y),sst=y.reduce((sum,v)=>sum+(v-avg)**2,0);
+  if(df===0)return {r2:0,df:0};
+  if(n<=df+3)return null;
+  if(!(sst>1e-24))return {r2:0,df}; // Resposta auxiliar constante: LM=0, sem evidência contra H0.
+  const x=Array.from({length:n},(_,i)=>[1,...independent.map(col=>col[i])]);
   const xt=transpose(x),inv=inverse(multiply(xt,x));if(!inv)return null;
   const beta=multiply(multiply(inv,xt),y.map(v=>[v])).map(row=>row[0]);
-  const fitted=x.map(row=>row.reduce((sum,v,j)=>sum+v*beta[j],0)),avg=mean(y);
-  const sst=y.reduce((sum,v)=>sum+(v-avg)**2,0),sse=y.reduce((sum,v,i)=>sum+(v-fitted[i])**2,0);
-  if(!(sst>1e-24))return 0; // Resposta auxiliar constante: LM=0, sem evidência contra a hipótese nula.
-  return Math.max(0,Math.min(1,1-sse/sst));
+  const fitted=x.map(row=>row.reduce((sum,v,j)=>sum+v*beta[j],0));
+  const sse=y.reduce((sum,v,i)=>sum+(v-fitted[i])**2,0);
+  return {r2:Math.max(0,Math.min(1,1-sse/sst)),df};
 }
 function unavailable(method,reason){return {method,available:false,reason,statistic:null,df:null,pValue:null,interpretation:'INCONCLUSIVE'}}
 function result(method,statistic,df,pValue,n,details={}){
@@ -58,29 +77,29 @@ function validInput(residuals,predictors){
 }
 export function breuschPagan(residuals,predictors){
   const reason=validInput(residuals,predictors);if(reason)return unavailable('Breusch–Pagan',reason);
-  const y=residuals.map(v=>v*v),r2=auxiliaryR2(y,predictors);
-  if(r2===null)return unavailable('Breusch–Pagan','Regressão auxiliar singular ou amostra insuficiente.');
-  const df=predictors.length,statistic=residuals.length*r2;
-  return result('Breusch–Pagan',statistic,df,chiSquareP(statistic,df),residuals.length,{rSquaredAuxiliary:r2,nullHypothesis:'A variância condicional dos resíduos não depende linearmente dos preditores.',formula:'LM = n × R² da regressão auxiliar de resíduos² sobre os preditores.'});
+  const y=residuals.map(v=>v*v),aux=auxiliaryR2(y,predictors);
+  if(aux===null||aux.df<1)return unavailable('Breusch–Pagan','A regressão auxiliar não tem graus de liberdade identificáveis ou a amostra é insuficiente.');
+  const df=aux.df,statistic=residuals.length*aux.r2;
+  return result('Breusch–Pagan',statistic,df,chiSquareP(statistic,df),residuals.length,{rSquaredAuxiliary:aux.r2,nullHypothesis:'A variância condicional dos resíduos não depende linearmente dos preditores.',formula:'LM = n × R² da regressão auxiliar de resíduos² sobre os preditores.'});
 }
 export function whiteTest(residuals,predictors){
   const reason=validInput(residuals,predictors);if(reason)return unavailable('White',reason);
   const columns=predictors.slice();
   for(let i=0;i<predictors.length;i++)columns.push(predictors[i].map(v=>v*v));
   for(let i=0;i<predictors.length;i++)for(let j=i+1;j<predictors.length;j++)columns.push(predictors[i].map((v,k)=>v*predictors[j][k]));
-  const y=residuals.map(v=>v*v),r2=auxiliaryR2(y,columns);
-  if(r2===null)return unavailable('White','Regressão auxiliar singular ou amostra insuficiente; reduza preditores redundantes.');
-  const df=columns.length,statistic=residuals.length*r2;
-  return result('White',statistic,df,chiSquareP(statistic,df),residuals.length,{rSquaredAuxiliary:r2,auxiliaryTerms:df,nullHypothesis:'A variância condicional é constante contra alternativas relacionadas a preditores, quadrados e interações.',formula:'LM = n × R² da regressão auxiliar de resíduos² sobre preditores, quadrados e interações.'});
+  const y=residuals.map(v=>v*v),aux=auxiliaryR2(y,columns);
+  if(aux===null||aux.df<1)return unavailable('White','A regressão auxiliar não tem graus de liberdade identificáveis ou a amostra é insuficiente; reduza preditores redundantes.');
+  const df=aux.df,statistic=residuals.length*aux.r2;
+  return result('White',statistic,df,chiSquareP(statistic,df),residuals.length,{rSquaredAuxiliary:aux.r2,auxiliaryTerms:df,nullHypothesis:'A variância condicional é constante contra alternativas relacionadas a preditores, quadrados e interações.',formula:'LM = n × R² da regressão auxiliar de resíduos² sobre preditores, quadrados e interações.'});
 }
 export function archLM(residuals,lag=1){
   if(!Array.isArray(residuals)||residuals.length<15||!residuals.every(Number.isFinite))return unavailable('ARCH-LM','São necessários pelo menos 15 resíduos finitos.');
   const q=Math.floor(Number(lag));
   if(!Number.isFinite(q)||q<1||q>Math.floor(residuals.length/4))return unavailable('ARCH-LM','Defasagem inválida para o tamanho da amostra.');
-  const squares=residuals.map(v=>v*v),y=squares.slice(q),columns=Array.from({length:q},(_,j)=>squares.slice(q-j-1,squares.length-j-1)),r2=auxiliaryR2(y,columns);
-  if(r2===null)return unavailable('ARCH-LM','Regressão auxiliar singular ou amostra insuficiente.');
-  const statistic=y.length*r2;
-  return result('ARCH-LM',statistic,q,chiSquareP(statistic,q),y.length,{lag:q,rSquaredAuxiliary:r2,nullHypothesis:'Não há efeito ARCH até a defasagem especificada.',formula:'LM = n_eff × R² de resíduos² sobre suas próprias defasagens.'});
+  const squares=residuals.map(v=>v*v),y=squares.slice(q),columns=Array.from({length:q},(_,j)=>squares.slice(q-j-1,squares.length-j-1)),aux=auxiliaryR2(y,columns);
+  if(aux===null||aux.df<1)return unavailable('ARCH-LM','As defasagens dos resíduos ao quadrado não têm variação independente suficiente para identificar o teste.');
+  const df=aux.df,statistic=y.length*aux.r2;
+  return result('ARCH-LM',statistic,df,chiSquareP(statistic,df),y.length,{lag:q,rSquaredAuxiliary:aux.r2,nullHypothesis:'Não há efeito ARCH até a defasagem especificada.',formula:'LM = n_eff × R² de resíduos² sobre suas próprias defasagens.'});
 }
 export function diagnoseHeteroskedasticity(model,options={}){
   if(!model?.available||!Array.isArray(model.residuals)||!Array.isArray(model.auditDesign?.x))return {available:false,reason:'Modelo e desenho da regressão não disponíveis.'};
