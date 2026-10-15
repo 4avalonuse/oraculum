@@ -54,16 +54,16 @@ function testCard(test, alpha, fmt) {
 }
 export function buildHeteroskedasticityReading(diagnostics, { fmt } = {}) {
   const h = diagnostics?.heteroskedasticity;
-  if (!h?.available || !Array.isArray(h.tests) || !h.tests.length) return '';
+  if (!h || !Array.isArray(h.tests) || !h.tests.length) return '';
   const alpha = Number.isFinite(h.alpha) ? h.alpha : 0.05;
   const available = h.tests.filter(t => t?.available && Number.isFinite(t.pValue));
   const flagged = available.filter(t => t.pValue < alpha);
   const summary = !available.length
     ? 'Os testes não produziram resultados interpretáveis nesta amostra.'
     : flagged.length === available.length
-      ? 'Todos os testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
+      ? 'Sinais de variância não constante: todos os testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
       : flagged.length
-        ? flagged.length + ' de ' + available.length + ' testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
+        ? 'Há sinais de variância não constante: ' + flagged.length + ' de ' + available.length + ' testes disponíveis detectaram evidência contra suas hipóteses nulas específicas.'
         : 'Nenhum teste disponível rejeitou sua hipótese nula ao nível escolhido; isso não comprova variância constante.';
   const cards = h.tests.map(t => testCard(t, alpha, fmt || ((v) => String(v)))).join('');
   const notes = (h.notes || []).map(note => '<li>' + esc(note) + '</li>').join('');
