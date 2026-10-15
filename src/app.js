@@ -29,6 +29,37 @@ function visibleBoundsFor(c){
           y:{min:Math.min(...v.map(x=>x.low)),max:Math.max(...v.map(x=>x.high))}};
 }
 
+function syncAnalysisTarget(symbol){
+  const asset=ASSETS[symbol]||getAsset(DEFAULT_ASSET);
+  const select=$('#analysis-reference');
+  const label=$('#analysis-target-label');
+  const previous=select?.value;
+  if(select){
+    if(![...select.options].some(option=>option.value===symbol)){
+      const option=document.createElement('option');
+      option.value=symbol;
+      option.textContent=asset.symbol+' · '+asset.name;
+      select.appendChild(option);
+    }
+    select.value=symbol;
+  }
+  if(label)label.textContent=asset.symbol+' · '+asset.name;
+  document.querySelectorAll('.analysis-asset').forEach(input=>{
+    const isTarget=input.value===symbol;
+    if(isTarget)input.checked=false;
+    input.disabled=isTarget;
+    input.closest('.asset-pick')?.classList.toggle('is-investigated-asset',isTarget);
+  });
+  if(previous&&previous!==symbol){
+    $('#analysis-results')?.classList.add('is-hidden');
+    $('#full-analysis')?.classList.add('is-hidden');
+    $('#comparison-panel')?.classList.add('is-hidden');
+    $('#analysis-context')?.classList.add('is-hidden');
+    const status=$('#analysis-status');
+    if(status)status.textContent='REANALISAR';
+  }
+}
+
 async function load(interval='1d'){
   const asset=getAsset(activeSymbol);
   if(asset.supportedIntervals&&!asset.supportedIntervals.includes(interval)){
@@ -108,6 +139,7 @@ attachAssetPicker({
   getActiveSymbol:()=>activeSymbol,
   setActiveSymbol:value=>{
     activeSymbol=value;
+    syncAnalysisTarget(value);
     activeInterval='1d';
     const intervalToggle=$('#interval-toggle');
     if(intervalToggle) intervalToggle.textContent='1D';
@@ -153,6 +185,7 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
 });
 
 const timeline=attachTimeline({dataClient,getActive:()=>active,getActiveSymbol:()=>activeSymbol});
+syncAnalysisTarget(activeSymbol);
 load('1d');
 
 attachDiagnosticCopy({
