@@ -463,3 +463,54 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
  .btc-event-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
  .btc-event-metric strong{font-size:16px}
 }
+
+
+/* UX pass: one clear source of truth for the investigated asset */
+.analysis-target-card{
+  display:flex;flex-direction:column;gap:7px;margin:14px 0 16px;
+  padding:13px;border:1px solid #1e6389;border-radius:8px;
+  background:linear-gradient(135deg,rgba(11,43,64,.9),rgba(7,20,33,.95));
+}
+.analysis-target-card>span{font-size:11px;font-weight:800;letter-spacing:.09em;color:#6ecbff}
+.analysis-target-card>strong{font-size:19px;line-height:1.3;color:#eef8ff}
+.analysis-target-card>small{font-size:12px;line-height:1.65;color:#9cb8cc}
+.analysis-target-card select[hidden]{display:none!important}
+.asset-pick:has(input:disabled){opacity:.5;border-style:dashed;cursor:not-allowed}
+.asset-pick input:disabled{cursor:not-allowed}
+.asset-pick.is-investigated-asset{border-color:#23658a;background:#0b2030}
+.asset-pick.is-investigated-asset::after{content:'ATIVO INVESTIGADO';grid-column:2;color:#69c8ff;font-size:8px;letter-spacing:.05em}
+#analysis-status{font-size:10px}
+.analysis-context .context-row>div span{font-size:10px}
+.analysis-context .context-row>div strong{font-size:13px}
+.context-note,.context-method span{font-size:12px;line-height:1.7}
+.comparison-timeline-help{font-size:11px;line-height:1.6}
+.chart-foot{font-size:12px;line-height:1.5}
+.timeline-event-date{font-size:10px}
+.event-menu-head{font-size:11px}
+.event-filter{font-size:10px;min-height:34px}
+.event-row-date{font-size:10px}
+.event-row strong{font-size:11px}
+.event-row-state{font-size:9px}
+.btc-event-head p,.btc-event-context,.btc-event-message,.btc-event-caveat{font-size:12px;line-height:1.65}
+.btc-event-sources a,.btc-event-actions>span,.btc-event-meta{font-size:11px;line-height:1.6}
+.btc-event-facts span,.btc-event-metric span{font-size:11px}
+.btc-event-facts small{font-size:11px}
+#run-btc-event-study,.btc-event-copy{font-size:11px;min-height:40px}
+.analysis-modal-body .analysis-note,.analysis-modal-body .analysis-diagnostics p{font-size:12px;line-height:1.65}
+.analysis-modal-body table{font-size:12px}
+.analysis-modal-body th{font-size:10px}
+@media(max-width:700px){
+  .chart-controls button{font-size:11px;padding:8px 9px;min-height:36px}
+  .timeline-event-date{font-size:9px}
+  .event-row-date{font-size:11px}
+  .event-row strong{font-size:12px}
+  .event-row-state{font-size:10px}
+  .analysis-target-card{padding:12px;margin:12px 0}
+  .analysis-target-card>strong{font-size:18px}
+  .analysis-target-card>small{font-size:12px}
+  .analysis-context .context-row>div span{font-size:10px}
+  .analysis-context .context-row>div strong{font-size:13px}
+  .analysis-modal-body{padding:10px}
+  .analysis-modal-body section{padding:10px}
+  .analysis-modal-body table{font-size:12px}
+}
