@@ -155,7 +155,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      result.relations=commonResult.relations;
      result.explanatoryModel=runExplanatoryModel(commonRows,windowedSeries,{returnMode});
      result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);
-     state.rows=commonRows;state.commonSeries=windowedSeries;state.independentTimelines=!sameWindowDates(slots);
+     state.rows=commonRows;state.commonSeries=modelSeries;state.independentTimelines=!sameWindowDates(slots);
    }else{
      result={...primaryResult,relations:[],temporal:{method:slots.length<2?'single selected series; no cross-series inference requested':'individual selected windows; no common calendar sample with enough observations for cross-series inference',sharedRows:0,firstBucket:null,lastBucket:null,gaps:0},alignedObservations:0};
      result.explanatoryModel={available:false,reason:slots.length<2?'Selecione outra série temporal para comparar ativos.':modelSeries.length<2?'Há apenas um ativo distinto; séries repetidas podem ser comparadas por período, mas não são duplicadas no modelo multivariado.':'As janelas selecionadas não têm pelo menos 10 observações em datas comuns; o modelo multivariado foi omitido para evitar pareamento artificial.'};
@@ -171,7 +171,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    }else result.audit={...primaryResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:[]};
    result.interval=interval;result.returnMode=returnMode;result.rollingWindow=rollingWindow;result.observations=primaryRows.length;result.alignedObservations=hasCommon?commonRows.length:0;
    result.rowsStart=primaryRows[0].timestamp;result.rowsEnd=primaryRows.at(-1).timestamp;result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
-   result.temporal={...(result.temporal||{}),method:hasCommon?'individual native-window statistics; cross-series inference on shared calendar buckets within selected windows':'individual selected windows; no valid shared sample for cross-series inference',sharedRows:hasCommon?commonRows.length:0};
+   result.temporal={...(result.temporal||{}),method:hasCommon?'individual native-window statistics; cross-series inference on shared calendar buckets within selected windows':slots.length<2?'single selected series; no cross-series inference requested':modelSeries.length<2?'only one distinct asset; repeated periods excluded from multivariate inference':'individual selected windows; no valid shared sample for cross-series inference',sharedRows:hasCommon?commonRows.length:0};
    state.result=result;state.markers={start:0,base:0,end:Math.max(0,(state.rows?.length||1)-1)};
    render(result,slots);
  };
@@ -193,7 +193,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const primary=series[0],targets=series.slice(1).map(s=>s.symbol).join(' + ')||'nenhum alvo selecionado';
    const windows=series.map(s=>s.symbol+': '+date(s.window?.start??result.rowsStart)+' → '+date(s.window?.end??result.rowsEnd)).join(' · ');
    const common=result.temporal?.sharedRows??0;
-   const relationText=common>=10?'Relações, beta e regressão usam somente buckets de calendário comuns dentro das janelas selecionadas ('+common+' observações).':'As janelas não têm amostra comum suficiente; correlações, beta e regressão ficam indisponíveis para evitar pareamento artificial.';
+   const relationText=common>=10?'Relações, beta e regressão usam somente buckets de calendário comuns dentro das janelas selecionadas ('+common+' observações).':new Set(series.map(s=>s.assetKey)).size<2?'Há apenas um ativo distinto. Séries repetidas podem ser comparadas por período, mas não são tratadas como ativos independentes em correlações ou regressões.':'As janelas não têm amostra comum suficiente; correlações, beta e regressão ficam indisponíveis para evitar pareamento artificial.';
    $('#analysis-context').innerHTML='<div class="context-row"><div><span>ATIVO INVESTIGADO</span><strong>'+primary.symbol+'</strong></div><div><span>COMPARAÇÕES</span><strong>'+targets+'</strong></div><div><span>PERÍODO PRINCIPAL</span><strong>'+date(result.rowsStart)+' → '+date(result.rowsEnd)+'</strong></div><div><span>INTERVALO</span><strong>'+result.interval+'</strong></div><div><span>OBSERVAÇÕES PRINCIPAIS</span><strong>'+result.observations+'</strong></div></div><div class="context-method"><div><b>JANELAS SELECIONADAS</b><span>'+windows+'</span></div><button id="show-data-table" type="button">'+(common>=10?'VER DADOS COMUNS ↗':'VER DADOS DO ATIVO PRINCIPAL ↗')+'</button><button id="show-method" type="button">MÉTODO ?</button></div><div class="context-note"><b>Desenho científico:</b> as estatísticas individuais usam a janela escolhida para cada série. '+relationText+' A comparação visual usa tempo relativo, normalizando cada janela em 100 no seu primeiro preço; portanto, deslocar uma janela compara épocas diferentes, não retornos simultâneos. Associação não implica causalidade.</div>';
    $('#analysis-context').classList.remove('is-hidden');
  };
