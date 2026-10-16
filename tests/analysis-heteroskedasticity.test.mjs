@@ -172,9 +172,8 @@ test('scientific reading does not label invalid p-values as non-significant', as
 });
 
 
-test('invalid chi-square p-values remain inconclusive in the core result contract', () => {
-  // A non-finite statistic can propagate to a non-finite p-value; that must
-  // never be silently classified as evidence for the null hypothesis.
+test('ordinary chi-square inputs produce valid p-values and consistent labels', () => {
+  // A well-conditioned sample must yield a valid probability and matching label.
   const residuals = Array.from({length:20},(_,i)=>(i%2===0?1:-1)*(0.2+0.03*i));
   const x = Array.from({length:20},(_,i)=>i);
   const r = breuschPagan(residuals,[x]);
@@ -183,11 +182,11 @@ test('invalid chi-square p-values remain inconclusive in the core result contrac
   assert.equal(r.interpretation,r.pValue<0.05?'EVIDENCE_AGAINST_CONSTANT_VARIANCE':'NO_STRONG_EVIDENCE_AGAINST_NULL');
 });
 
-test('degenerate numeric overflow does not label invalid inference as no evidence', () => {
+test('squared-residual overflow is explicitly inconclusive, never non-significant', () => {
   const x = Array.from({length:20},(_,i)=>i);
   const residuals = x.map((_,i)=>(i%2===0?1:-1)*1e200*(1+i/20));
   const r = breuschPagan(residuals,[x]);
-  if (!Number.isFinite(r.pValue) || r.pValue < 0 || r.pValue > 1) {
-    assert.equal(r.interpretation,'INCONCLUSIVE',JSON.stringify(r));
-  }
+  assert.equal(r.available,false,JSON.stringify(r));
+  assert.equal(r.interpretation,'INCONCLUSIVE',JSON.stringify(r));
+  assert.match(r.reason,/faixa numérica/);
 });
