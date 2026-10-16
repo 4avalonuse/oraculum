@@ -586,3 +586,11 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-add-picker select{max-width:180px;min-height:34px;border:1px solid #27364a;background:#0b111b;color:#e0eaf6;border-radius:7px;padding:5px;font-size:11px}
 .cmp-add-series{font-size:18px;line-height:1;min-width:34px;padding:4px}
 @media(max-width:480px){.comparison-timeline-controls{gap:6px}.cmp-mode-toggle{font-size:10px;padding:7px 8px}.cmp-add-picker{margin-left:0;flex:1}.cmp-add-picker select{flex:1;min-width:0;max-width:100%}.cmp-add-picker span{display:none}}
+
+/* Timelines usam janelas fixas por contagem de candles; apenas deslizam. */
+.cmp-timeline-range{touch-action:none;cursor:grab;min-width:8px}
+.cmp-timeline-range:active{cursor:grabbing}
+.cmp-timeline-handle{display:none!important}
+.cmp-add-picker select{width:100%;max-width:260px;min-height:40px;font-size:12px}
+.cmp-add-picker{flex:0 1 260px}
+@media(max-width:480px){.cmp-add-picker{flex:1 1 100%;order:2}.cmp-add-picker select{max-width:100%}.cmp-mode-toggle{order:1}}
