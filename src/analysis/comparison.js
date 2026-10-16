@@ -193,7 +193,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      '1. CONFIGURAÇÃO E AMOSTRA',
      'Ativo investigado: '+(series[0]?.symbol||'indefinido'),
      'Comparações: '+(series.slice(1).map(s=>s.symbol).join(', ')||'nenhuma'),
-     'Período comum: '+auditDate(result.rowsStart)+' a '+auditDate(result.rowsEnd),
+     'Período principal: '+auditDate(result.rowsStart)+' a '+auditDate(result.rowsEnd),
+     'Janelas selecionadas: '+series.map(x=>x.symbol+' '+auditDate(x.window?.start)+' a '+auditDate(x.window?.end)+' ('+(state.timelineRows[x.key]?.length??0)+' preços)').join(' | '),
      'Intervalo solicitado: '+(result.interval||'indefinido')+' | Tipo de retorno: '+mode,
      'Desenho temporal: estatísticas individuais em observações nativas; relações e modelo multivariado em buckets comuns. Retornos comuns são close-to-close e podem abranger mais de 1 dia de calendário.',
      'Buckets comuns: '+(result.temporal?.sharedRows??result.observations)+' | lacunas acima de 1,5 dia entre timestamps comuns: '+(result.temporal?.gaps??'não calculado'),
@@ -286,7 +287,17 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      for(const check of stamp.checks||[])lines.push('  Verificação '+check.name+': '+check.status+' | observado='+auditNumber(check.actual,12)+' | referência='+auditNumber(check.expected,12));
    }
    lines.push('','6. TRECHOS DE DADOS PARA CONFERÊNCIA RÁPIDA');
-   if(sampleRows.length){
+   if(state.timelineSlots?.length){
+     lines.push('Amostras curtas por janela individual; janelas deslocadas não são pareadas artificialmente.');
+     for(const s of series){
+       const rows=state.timelineRows[s.key]||[];
+       if(!rows.length){lines.push(s.symbol+': janela sem dados.');continue}
+       const indices=[...new Set([0,1,2,Math.floor((rows.length-1)/2),rows.length-3,rows.length-2,rows.length-1])].filter(i=>i>=0&&i<rows.length).sort((a,b)=>a-b);
+       lines.push('',s.symbol+' | '+auditDate(rows[0].timestamp)+' a '+auditDate(rows.at(-1).timestamp)+' | '+rows.length+' preços');
+       lines.push('Data | preço | timestamp-fonte UTC');
+       for(const i of indices)lines.push(auditDate(rows[i].timestamp)+' | '+auditNumber(rows[i][s.key],8)+' | '+auditTimestamp(rows[i].__sourceTimestamps?.[s.key]??rows[i].timestamp));
+     }
+   }else if(sampleRows.length){
      const indices=[...new Set([0,1,2,Math.floor((sampleRows.length-1)/2)-1,Math.floor((sampleRows.length-1)/2),Math.floor((sampleRows.length-1)/2)+1,sampleRows.length-3,sampleRows.length-2,sampleRows.length-1])].filter(i=>i>=0&&i<sampleRows.length).sort((a,b)=>a-b);
      lines.push('Amostra curta de preços alinhados; serve para inspeção pontual, não para recalcular sozinha toda a regressão.');
      lines.push('Data do bucket | '+series.map(s=>s.symbol+' preço @ timestamp-fonte UTC').join(' | '));
