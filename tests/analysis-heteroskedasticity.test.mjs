@@ -180,7 +180,7 @@ test('invalid chi-square p-values remain inconclusive in the core result contrac
   const r = breuschPagan(residuals,[x]);
   assert.equal(r.available,true);
   assert.ok(Number.isFinite(r.pValue) && r.pValue >= 0 && r.pValue <= 1, JSON.stringify(r));
-  assert.ok(['EVIDENCE_AGAINST_CONSTANT_VARIANCE','NO_STRONG_EVIDENCE_AGAINST_NULL','INCONCLUSIVE'].includes(r.interpretation));
+  assert.equal(r.interpretation,r.pValue<0.05?'EVIDENCE_AGAINST_CONSTANT_VARIANCE':'NO_STRONG_EVIDENCE_AGAINST_NULL');
 });
 
 test('degenerate numeric overflow does not label invalid inference as no evidence', () => {
