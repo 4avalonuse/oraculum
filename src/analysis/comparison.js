@@ -17,6 +17,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
+ const assetColor=assetKey=>{const palette=['#39b6ff','#f6c85f','#a78bfa','#4adeb5','#fb7185','#f97316','#22d3ee','#c4b5fd'];let hash=0;for(const char of String(assetKey||''))hash=(hash*31+char.charCodeAt(0))>>>0;return palette[hash%palette.length]};
  const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
  const rowsInWindow=slot=>{
    const w=slot?.window,rows=timelineRowsFor(slot);
@@ -45,17 +46,13 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const host=$('#comparison-timelines');
    if(!host||!state.timelineSlots.length)return;
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
-     const rows=timelineRowsFor(slot),w=slot.window,first=rows[0]?.timestamp??0,last=rows.at(-1)?.timestamp??first,span=Math.max(1,last-first);
+     const rows=timelineRowsFor(slot),w=slot.window,first=rows[0]?.timestamp??0,last=rows.at(-1)?.timestamp??first,span=Math.max(1,last-first),color=assetColor(slot.assetKey);
      const left=w?.valid?clamp((w.start-first)/span*100,0,100):0,right=w?.valid?clamp((w.end-first)/span*100,0,100):100;
-     const options=state.assetCatalog.map(asset=>'<option value="'+asset.assetKey+'" '+(asset.assetKey===slot.assetKey?'selected':'')+'>'+asset.symbol+' · '+asset.name+'</option>').join('');
-     const title=i===0?'ATIVO PRINCIPAL':'COMPARAÇÃO '+i;
-     const selector=i===0?'':'<select class="cmp-slot-asset" data-slot="'+i+'" aria-label="Ativo da timeline '+i+'">'+options+'</select>';
-     const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="'+(i===0?'Deslocar período principal':'Deslocar período de '+slot.symbol)+'" tabindex="0"></div>';
-     const handles=i===0?'<button class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:'+left+'%" aria-label="Alterar início '+date(w?.start)+'"></button><button class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:'+right+'%" aria-label="Alterar fim '+date(w?.end)+'"></button>':'';
+     const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="Deslocar janela '+(i+1)+'" tabindex="0"></div>';
+     const handles=i===0?'<button class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="--timeline-color:'+color+';left:'+left+'%" aria-label="Alterar início '+date(w?.start)+'"></button><button class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="--timeline-color:'+color+';left:'+right+'%" aria-label="Alterar fim '+date(w?.end)+'"></button>':'';
      const dates='<span class="cmp-timeline-date" style="left:'+left+'%">'+date(w?.start)+'</span><span class="cmp-timeline-date date-end" style="left:'+right+'%">'+date(w?.end)+'</span>';
-     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><strong>'+title+' · '+slot.symbol+'</strong><small>'+date(w?.start)+' → '+date(w?.end)+' · '+(w?.observations||0)+' observações</small></div>'+selector+(i>0?'<button type="button" class="cmp-timeline-remove" data-slot="'+i+'" aria-label="Remover timeline de '+slot.symbol+'">REMOVER ×</button>':'')+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div><div class="cmp-timeline-foot"><span>Início <strong>'+date(w?.start)+'</strong></span><span class="timeline-shift">'+(i===0?'Ajuste as extremidades':'Arraste a faixa para outra época')+'</span><span>Fim <strong>'+date(w?.end)+'</strong></span></div></section>';
-   }).join('')+'<button type="button" id="cmp-add-timeline" class="cmp-timeline-add">+ ADICIONAR SÉRIE TEMPORAL</button>';
-   host.querySelectorAll('.cmp-slot-asset').forEach(select=>select.addEventListener('change',()=>switchTimelineAsset(Number(select.dataset.slot),select.value)));
+     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><span class="cmp-timeline-color" aria-hidden="true"></span><span class="cmp-timeline-sample" aria-hidden="true">'+(w?.observations||0)+'</span>'+(i>0?'<button type="button" class="cmp-timeline-remove" data-slot="'+i+'" aria-label="Remover linha temporal '+(i+1)+'" title="Remover">×</button>':'')+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div></section>';
+   }).join('')+'<button type="button" id="cmp-add-timeline" class="cmp-timeline-add" aria-label="Adicionar série temporal" title="Adicionar série temporal">+</button>';
    host.querySelectorAll('.cmp-timeline-remove').forEach(button=>button.addEventListener('click',()=>removeTimeline(Number(button.dataset.slot))));
    host.querySelector('#cmp-add-timeline')?.addEventListener('click',addTimeline);
    host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>handle.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(handle.dataset.slot),handle.dataset.edge)));
@@ -84,9 +81,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
  const addTimeline=()=>{
    if(!state.timelineSlots.length)return;
-   const index=state.timelineSlots.length,main=state.timelineSlots[0],asset=state.assetPool.find(x=>x.assetKey===main.assetKey)||state.assetPool[0];
+   const used=new Set(state.timelineSlots.map(slot=>slot.assetKey));
+   const asset=state.assetPool.find(x=>!used.has(x.assetKey))||state.assetPool.find(x=>x.assetKey===state.timelineSlots[0].assetKey)||state.assetPool[0];
    if(!asset)return;
-   const slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
+   const index=state.timelineSlots.length,main=state.timelineSlots[0],slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
    slot.window=startWindow(slot,main.window.start,main.window.end,10);
    slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
    state.timelineSlots.push(slot);syncComparisonDurations();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
@@ -97,26 +95,6 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    state.timelineSlots=remaining.map((old,i)=>{const slot=makeSlot(state.assetPool.find(x=>x.assetKey===old.assetKey)||old,i);slot.window=old.window;return slot;});
    syncComparisonDurations();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
- const switchTimelineAsset=async(index,assetKey)=>{
-   if(index===0)return;
-   const meta=assets[assetKey];if(!meta)return;
-   const existing=state.assetPool.find(x=>x.assetKey===assetKey);
-   try{
-     let asset=existing;
-     if(!asset){
-       $('#analysis-status').textContent='CARREGANDO '+(meta.symbol||assetKey);
-       const interval=state.interval||'1d',activeSymbol=getActiveSymbol(),sameLoaded=assetKey===activeSymbol&&interval===(getInterval()||'1d');
-       const loaded=sameLoaded?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||assetKey,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
-       const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+(meta.symbol||assetKey)+'.');
-       asset={key:assetKey,assetKey,symbol:meta.symbol||assetKey,name:meta.name||assetKey,category:meta.category,candles};state.assetPool.push(asset);
-     }
-     const slot=makeSlot(asset,index),main=state.timelineSlots[0],rows=timelineRowsFor(slot);
-     const targetStart=main?.window?.start??rows[0]?.timestamp,targetEnd=main?.window?.end??rows.at(-1)?.timestamp;
-     slot.window=startWindow(slot,targetStart,targetEnd,10);
-     if(main?.window?.valid)slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
-     state.timelineSlots[index]=slot;renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
-   }catch(error){console.error('[ORACULUM TIMELINE]',error);$('#analysis-status').textContent='ERRO AO CARREGAR COMPARAÇÃO';openInfo(error.message)}
- };
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
    const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:20,b:34};
@@ -126,9 +104,9 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const all=normalized.flatMap(x=>x.values);if(!all.length){host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';return}
    const lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
    const line=values=>values.map((v,i)=>{const x=p.l+(i/Math.max(1,values.length-1))*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
-   const polylines=normalized.map((x,i)=>'<polyline points="'+line(x.values)+'" class="cmp-line cmp-'+i+'"/>').join('');
+   const polylines=normalized.map(x=>'<polyline points="'+line(x.values)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey)+'"/>').join('');
    host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação normalizada por tempo relativo; cada janela começa em base 100"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">Início relativo</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">Fim relativo</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">100 = início de cada janela</text></svg>';
-   const legend=$('#comparison-legend');if(legend)legend.innerHTML=normalized.map((x,i)=>'<span><i class="legend-'+i+'"></i>'+x.slot.symbol+'<small class="cmp-legend-period">'+date(x.rows[0].timestamp)+' → '+date(x.rows.at(-1).timestamp)+'</small></span>').join('');
+   const legend=$('#comparison-legend');if(legend)legend.innerHTML='';
  };
  const sameWindowDates=slots=>slots.every(slot=>{
    const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1),main=rowsInWindow(slots[0]);
