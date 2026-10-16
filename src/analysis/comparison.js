@@ -21,7 +21,9 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
  const rowsInWindow=slot=>{
    const w=slot?.window,rows=timelineRowsFor(slot);
-   return w?.valid?rows.filter(r=>r.timestamp>=w.start&&r.timestamp<=w.end):[];
+   if(!w?.valid)return [];
+   const start=Math.max(0,Number(w.startIndex)||0),end=Math.min(rows.length-1,Number(w.endIndex)||0);
+   return rows.slice(start,end+1);
  };
  const periodKeyFor=row=>row?.__periodKey||row?.timestamp;
  const makeSlot=(asset,index)=>{
@@ -38,45 +40,51 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const sharedRows=()=>state.timelineSlots.length>1
    ?alignSeries(state.timelineSlots.map(slot=>({...slot,key:slot.key})),state.interval)
    :timelineRowsFor(state.timelineSlots[0]);
+ const setCommonWindow=(startIndex,count)=>{
+   const slots=state.timelineSlots,common=sharedRows();
+   if(!slots.length||!common.length)return;
+   const size=Math.max(10,Math.min(common.length,Math.floor(count||common.length)));
+   const start=clamp(Math.floor(startIndex||0),0,Math.max(0,common.length-size));
+   const startKey=periodKeyFor(common[start]),endKey=periodKeyFor(common[start+size-1]);
+   for(const slot of slots){
+     const rows=timelineRowsFor(slot);
+     const a=rows.findIndex(row=>periodKeyFor(row)===startKey),b=rows.findIndex(row=>periodKeyFor(row)===endKey);
+     slot.window=a>=0&&b>=a?timelineWindow(rows,a,b,10):timelineWindow([],0,0,10);
+   }
+ };
  const syncComparisonDurations=(resetToMaximum=false,anchorIndex=0)=>{
    const slots=state.timelineSlots;
    if(!slots.length)return;
-   if(state.timelineMode==='independent')return;
-   const common=sharedRows();
-   if(!common.length){
-     slots.forEach(slot=>{slot.window=timelineWindow([],0,0,10)});
+   if(state.timelineMode==='independent'){
+     const count=resetToMaximum?Math.min(...slots.map(slot=>timelineRowsFor(slot).length)):Math.max(10,slots[0].window?.observations||10);
+     for(const slot of slots){
+       const rows=timelineRowsFor(slot),size=Math.min(rows.length,count);
+       const start=resetToMaximum?Math.max(0,rows.length-size):clamp(slot.window?.startIndex||0,0,Math.max(0,rows.length-size));
+       slot.window=timelineWindow(rows,start,start+size-1,10);
+     }
      return;
    }
-   const firstKey=common[0].__periodKey,lastKey=common.at(-1).__periodKey;
-   const main=slots[anchorIndex]||slots[0],mainRows=timelineRowsFor(main);
-   let startKey=firstKey,endKey=lastKey;
-   if(!resetToMaximum&&main?.window?.valid){
-     const visible=mainRows.filter(row=>row.timestamp>=main.window.start&&row.timestamp<=main.window.end);
-     if(visible.length){
-       const wantedStart=periodKeyFor(visible[0]),wantedEnd=periodKeyFor(visible.at(-1));
-       const bounded=common.filter(row=>row.__periodKey>=wantedStart&&row.__periodKey<=wantedEnd);
-       if(bounded.length){startKey=bounded[0].__periodKey;endKey=bounded.at(-1).__periodKey;}
-     }
-   }
-   for(const slot of slots){
-     const rows=timelineRowsFor(slot);
-     let a=rows.findIndex(row=>periodKeyFor(row)===startKey),b=rows.findIndex(row=>periodKeyFor(row)===endKey);
-     if(a<0||b<0){a=0;b=Math.max(0,rows.length-1);}
-     slot.window=timelineWindow(rows,a,b,10);
-   }
+   const common=sharedRows();
+   if(!common.length){slots.forEach(slot=>{slot.window=timelineWindow([],0,0,10)});return;}
+   if(resetToMaximum){setCommonWindow(0,common.length);return;}
+   const anchor=slots[anchorIndex]||slots[0],visible=rowsInWindow(anchor);
+   const count=Math.max(10,visible.length||anchor.window?.observations||common.length);
+   const firstKey=visible.length?periodKeyFor(visible[0]):periodKeyFor(common[0]);
+   let start=common.findIndex(row=>row.__periodKey===firstKey);
+   if(start<0)start=0;
+   setCommonWindow(start,count);
  };
  const renderTimelineControls=()=>{
    const host=$('#comparison-timeline-controls');
    if(!host)return;
    const options=Object.entries(assets).map(([key,meta])=>'<option value="'+key+'">'+(meta.symbol||key)+' · '+(meta.name||key)+'</option>').join('');
-   host.innerHTML='<button type="button" id="cmp-timeline-mode" class="cmp-mode-toggle" aria-pressed="'+(state.timelineMode==='common')+'" title="Alternar sincronização temporal">'+(state.timelineMode==='common'?'⛓ Período comum':'◷ Épocas independentes')+'</button><label class="cmp-add-picker"><span>Adicionar série</span><select id="cmp-add-asset" aria-label="Ativo para adicionar">'+options+'</select></label><button type="button" id="cmp-add-series" class="cmp-add-series" aria-label="Adicionar série selecionada" title="Adicionar série">+</button>';
+   host.innerHTML='<button type="button" id="cmp-timeline-mode" class="cmp-mode-toggle" aria-pressed="'+(state.timelineMode==='common')+'" title="Alternar sincronização temporal">'+(state.timelineMode==='common'?'⛓ Período comum':'◷ Épocas independentes')+'</button><label class="cmp-add-picker"><span>Adicionar série</span><select id="cmp-add-asset" aria-label="Selecionar ativo para adicionar"><option value="">＋ Adicionar ativo…</option>'+options+'</select></label>';
    const picker=host.querySelector('#cmp-add-asset');
-   if(picker)picker.value=state.addAssetKey||state.timelineSlots[0]?.assetKey||state.assetPool[0]?.assetKey||'';
-   picker?.addEventListener('change',()=>{state.addAssetKey=picker.value});
-   host.querySelector('#cmp-add-series')?.addEventListener('click',()=>addTimeline(state.addAssetKey||picker?.value));
+   if(picker)picker.value='';
+   picker?.addEventListener('change',()=>{const key=picker.value;if(key)addTimeline(key);});
    host.querySelector('#cmp-timeline-mode')?.addEventListener('click',()=>{
      state.timelineMode=state.timelineMode==='common'?'independent':'common';
-     if(state.timelineMode==='common')syncComparisonDurations(true);
+     syncComparisonDurations(true);
      renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
    });
  };
@@ -84,33 +92,56 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const host=$('#comparison-timelines');
    if(!host||!state.timelineSlots.length)return;
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
-     const rows=timelineRowsFor(slot),w=slot.window,first=rows[0]?.timestamp??0,last=rows.at(-1)?.timestamp??first,span=Math.max(1,last-first),color=assetColor(slot.assetKey);
-     const left=w?.valid?clamp((w.start-first)/span*100,0,100):0,right=w?.valid?clamp((w.end-first)/span*100,0,100):100;
+     const rows=timelineRowsFor(slot),w=slot.window,color=assetColor(slot.assetKey);
+     let scaleRows=rows,startIndex=w?.startIndex||0,endIndex=w?.endIndex||0;
+     if(state.timelineMode==='common'&&state.timelineSlots.length>1){
+       scaleRows=sharedRows();
+       const visible=rowsInWindow(slot),startKey=visible[0]&&periodKeyFor(visible[0]),endKey=visible.at(-1)&&periodKeyFor(visible.at(-1));
+       startIndex=scaleRows.findIndex(row=>row.__periodKey===startKey);
+       endIndex=scaleRows.findIndex(row=>row.__periodKey===endKey);
+     }
+     const left=w?.valid?clamp(startIndex/Math.max(1,scaleRows.length-1)*100,0,100):0,right=w?.valid?clamp(endIndex/Math.max(1,scaleRows.length-1)*100,0,100):100;
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="Deslocar janela '+(i+1)+'" tabindex="0"></div>';
-     const handles=i===0?'<button class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="--timeline-color:'+color+';left:'+left+'%" aria-label="Alterar início '+date(w?.start)+'"></button><button class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="--timeline-color:'+color+';left:'+right+'%" aria-label="Alterar fim '+date(w?.end)+'"></button>':'';
+     const handles='';
      const dates='<span class="cmp-timeline-date" style="left:'+left+'%">'+date(w?.start)+'</span><span class="cmp-timeline-date date-end" style="left:'+right+'%">'+date(w?.end)+'</span>';
      return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><span class="cmp-timeline-color" aria-hidden="true"></span>'+(i>0?'<button type="button" class="cmp-timeline-remove" data-slot="'+i+'" aria-label="Remover linha temporal '+(i+1)+'" title="Remover">×</button>':'')+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div></section>';
    }).join('');
    host.querySelectorAll('.cmp-timeline-remove').forEach(button=>button.addEventListener('click',()=>removeTimeline(Number(button.dataset.slot))));
-   host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>handle.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(handle.dataset.slot),handle.dataset.edge)));
    host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
-     range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot),'shift'));
+     range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot)));
      range.addEventListener('keydown',event=>{
        if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-       event.preventDefault();const slot=state.timelineSlots[Number(range.dataset.slot)],direction=event.key==='ArrowRight'?1:-1;
-       slot.window=shiftTimelineWindow(timelineRowsFor(slot),slot.window,direction*slot.window.durationMs*.1,10);renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+       event.preventDefault();shiftTimelineByPeriods(Number(range.dataset.slot),event.key==='ArrowRight'?1:-1);renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
      });
    });
  };
- const beginTimelineDrag=(event,index,mode)=>{
+ const shiftTimelineByPeriods=(index,steps)=>{
+   const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
+   if(state.timelineMode==='common'){
+     const common=sharedRows(),visible=rowsInWindow(slot),key=visible[0]&&periodKeyFor(visible[0]);
+     let start=common.findIndex(row=>row.__periodKey===key);if(start<0)start=0;
+     setCommonWindow(start+steps,visible.length||slot.window.observations);
+   }else{
+     const rows=timelineRowsFor(slot),count=slot.window.endIndex-slot.window.startIndex+1;
+     const start=clamp(slot.window.startIndex+steps,0,Math.max(0,rows.length-count));
+     slot.window=timelineWindow(rows,start,start+count-1,10);
+   }
+ };
+ const beginTimelineDrag=(event,index)=>{
    event.preventDefault();
    const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
-   const baseWindow={...slot.window},startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),rows=timelineRowsFor(slot),span=Math.max(1,(rows.at(-1)?.timestamp||0)-(rows[0]?.timestamp||0));
+   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect();
+   const common=state.timelineMode==='common'?sharedRows():null;
+   const activeRows=state.timelineMode==='common'?common:timelineRowsFor(slot);
+   const visible=rowsInWindow(slot),count=visible.length||slot.window.observations;
+   let baseStart=state.timelineMode==='common'?common.findIndex(row=>row.__periodKey===periodKeyFor(visible[0])):slot.window.startIndex;
+   if(baseStart<0)baseStart=0;
+   const maxStart=Math.max(0,activeRows.length-count);
    const move=ev=>{
-     const delta=(ev.clientX-startX)/Math.max(1,rect.width)*span;
-     if(index===0&&mode!=='shift')slot.window=resizeTimelineWindow(rows,baseWindow,mode,delta,10);
-     else slot.window=shiftTimelineWindow(rows,baseWindow,delta,10);
-     if(state.timelineMode==='common')syncComparisonDurations(false,index);
+     const deltaSteps=Math.round((ev.clientX-startX)/Math.max(1,rect.width)*maxStart);
+     const start=clamp(baseStart+deltaSteps,0,maxStart);
+     if(state.timelineMode==='common')setCommonWindow(start,count);
+     else slot.window=timelineWindow(activeRows,start,start+count-1,10);
      renderTimelinePanel();renderChart();
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
@@ -142,7 +173,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(index<=0||index>=state.timelineSlots.length)return;
    const remaining=state.timelineSlots.filter((_,i)=>i!==index);
    state.timelineSlots=remaining.map((old,i)=>{const slot=makeSlot(state.assetPool.find(x=>x.assetKey===old.assetKey)||old,i);slot.window=old.window;return slot;});
-   if(state.timelineMode==='common')syncComparisonDurations(true);
+   syncComparisonDurations(true);
    renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
  const renderChart=()=>{
