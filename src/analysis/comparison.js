@@ -38,8 +38,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const syncComparisonDurations=()=>{
    const main=state.timelineSlots[0];
    if(!main?.window?.valid)return;
+   // Por padrão, todas as séries compartilham o mesmo intervalo de calendário.
+   // Cada série usa suas próprias observações mais próximas dessas datas.
    for(const slot of state.timelineSlots.slice(1)){
-     slot.window=resizeTimelineDuration(timelineRowsFor(slot),slot.window,main.window.durationMs,10);
+     slot.window=startWindow(slot,main.window.start,main.window.end,10);
    }
  };
  const renderTimelinePanel=()=>{
