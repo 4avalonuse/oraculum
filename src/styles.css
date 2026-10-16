@@ -514,3 +514,36 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
   .analysis-modal-body section{padding:10px}
   .analysis-modal-body table{font-size:12px}
 }
+
+/* Independent investigation timelines — equal duration, independently shifted epochs */
+.comparison-timelines{display:grid;gap:12px;margin:12px 0 4px}
+.cmp-timeline-row{min-width:0;padding:10px 8px 8px;border:1px solid #17394f;border-radius:7px;background:#071521}
+.cmp-timeline-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px}
+.cmp-timeline-title{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cmp-timeline-title strong{font-size:12px;color:#dceefa;letter-spacing:.04em}
+.cmp-timeline-title small{font-size:11px;color:#87a9bf;line-height:1.5}
+.cmp-timeline-head select{width:min(48%,220px);min-height:38px;padding:6px 8px;background:#081b29;color:#dff3ff;border:1px solid #28516a;border-radius:5px;font-size:12px}
+.cmp-timeline-track{position:relative;height:52px;margin:0 8px;touch-action:none;user-select:none}
+.cmp-timeline-rail{position:absolute;left:0;right:0;top:27px;height:3px;border-radius:3px;background:#24465d}
+.cmp-timeline-range{position:absolute;top:20px;height:17px;min-width:16px;border:1px solid #287eaa;border-radius:4px;background:rgba(39,169,255,.2);cursor:grab;touch-action:none}
+.cmp-timeline-range:active{cursor:grabbing}
+.cmp-timeline-range::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;transform:translate(-50%,-50%);border-radius:50%;background:#8bd7ff;box-shadow:0 0 8px #2787b8}
+.cmp-timeline-handle{position:absolute;top:12px;transform:translateX(-50%);width:34px;height:34px;padding:0;border:0;background:transparent;box-shadow:none;cursor:ew-resize;touch-action:none;z-index:3}
+.cmp-timeline-handle::before{content:"";position:absolute;left:50%;top:6px;transform:translateX(-50%);width:12px;height:23px;border-radius:4px;background:#07111d;border:2px solid var(--blue);box-shadow:0 0 8px rgba(39,169,255,.35)}
+.cmp-timeline-handle.handle-end::before{border-color:#ff9b9b}
+.cmp-timeline-date{position:absolute;top:0;transform:translateX(-50%);font-size:10px;font-weight:700;color:#a9d6f1;white-space:nowrap;pointer-events:none}
+.cmp-timeline-date.date-end{color:#ffb4b4}
+.cmp-timeline-foot{display:flex;justify-content:space-between;gap:8px;color:#789bb0;font-size:11px;line-height:1.5}
+.cmp-timeline-foot strong{color:#c4e4f6;font-weight:600}
+.cmp-timeline-foot .timeline-shift{color:#8dcaff}
+.comparison-timeline-help{margin:7px 2px 0;color:#789bb0;font-size:11px;line-height:1.6}
+.cmp-legend-period{display:block;margin-top:3px;color:#87a9bf;font-size:10px;font-weight:400}
+@media(max-width:700px){
+ .cmp-timeline-row{padding:9px 7px}
+ .cmp-timeline-head{flex-direction:column}
+ .cmp-timeline-head select{width:100%;min-height:42px;font-size:13px}
+ .cmp-timeline-title strong{font-size:12px}
+ .cmp-timeline-title small,.cmp-timeline-foot{font-size:11px}
+ .cmp-timeline-date{font-size:9px}
+ .cmp-timeline-track{margin:0 3px}
+}
