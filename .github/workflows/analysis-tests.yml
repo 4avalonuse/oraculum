@@ -1,5 +1,6 @@
 name: Analysis core tests
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'src/analysis/**/*.js'
