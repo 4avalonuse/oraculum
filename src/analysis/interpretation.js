@@ -60,7 +60,7 @@ export function buildScientificReport(result,series=[]) {
   const lines=reportCore(result,series), primary=series[0], x=primary&&result?.series?.[primary.key], rel=result?.relations||[], model=result?.explanatoryModel;
   lines.push('','CONCLUSÃO EM LINGUAGEM SIMPLES');
   if(x) lines.push('O ativo '+primary.symbol+' terminou '+(x.total>0?'acima':x.total<0?'abaixo':'próximo')+' do preço inicial ('+p(x.total)+'). A volatilidade estimada foi '+p(x.vol)+' e o drawdown máximo '+p(Math.abs(x.drawdown))+'.');
-  for(const r of rel)lines.push('A correlação entre '+r.primary+' e '+r.target+' foi '+n(r.correlation)+' ('+strength(r.correlation)+'); isso descreve associação no período, não causalidade.');
+  for(const r of rel)lines.push('A correlação entre '+r.primary+' e '+r.target+' foi '+n(r.correlation)+' ('+strength(r.correlation)+'); isso descreve associação no período e não prova causalidade.');
   if(model?.available)lines.push('O R² de '+p(model.r2)+' indica ajuste dentro da amostra, não percentagem de previsões corretas nem garantia futura.');
   const tests=result?.modelDiagnostics?.heteroskedasticity?.tests||[], valid=tests.filter(t=>t?.available&&Number.isFinite(t.pValue)&&t.pValue>=0&&t.pValue<=1), flagged=valid.filter(t=>t.pValue<(result.modelDiagnostics.heteroskedasticity.alpha??.05));
   if(valid.length)lines.push(flagged.length?'Os testes de variância levantaram alerta em '+flagged.length+'/'+valid.length+' resultados; a inferência precisa de cautela.':'Os testes disponíveis não rejeitaram suas hipóteses nulas; isso não comprova variância constante.');
