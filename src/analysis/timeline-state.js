@@ -68,3 +68,18 @@ export function timelineWindowLabel(window, formatDate) {
   if(!window?.valid) return 'Período indisponível';
   return formatDate(window.start)+' → '+formatDate(window.end);
 }
+export function resizeTimelineDuration(candles, window, durationMs, minObservations=2) {
+  const rows=validCandles(candles);
+  if(!rows.length || !window?.valid) return timelineWindow(rows,0,rows.length-1,minObservations);
+  const duration=Math.max(0,Number(durationMs)||0);
+  const first=timeOf(rows[0]),last=timeOf(rows.at(-1));
+  const startTime=Math.max(first,Math.min(last-duration,Number(window.start)));
+  const start=nearestTimelineIndex(rows,startTime);
+  let end=nearestTimelineIndex(rows,Math.min(last,startTime+duration));
+  const minCount=Math.max(2,Math.floor(Number(minObservations)||2));
+  if(end-start+1<minCount) {
+    end=Math.min(rows.length-1,start+minCount-1);
+    if(end-start+1<minCount) return timelineWindow(rows,0,rows.length-1,minCount);
+  }
+  return timelineWindow(rows,start,end,minCount);
+}
