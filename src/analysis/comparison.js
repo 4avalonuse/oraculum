@@ -84,7 +84,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    picker?.addEventListener('change',()=>{const key=picker.value;if(key)addTimeline(key);});
    host.querySelector('#cmp-timeline-mode')?.addEventListener('click',()=>{
      state.timelineMode=state.timelineMode==='common'?'independent':'common';
-     syncComparisonDurations(true);
+     syncComparisonDurations(false);
      renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
    });
  };
@@ -165,7 +165,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      slot.window=startWindow(slot,main.window.start,main.window.end,10);
      slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
      state.timelineSlots.push(slot);
-     if(state.timelineMode==='common')syncComparisonDurations(true);
+     syncComparisonDurations(false);
      renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
    }catch(error){console.error('[ORACULUM TIMELINE ADD]',error);$('#analysis-status').textContent='ERRO AO ADICIONAR';}
  };
@@ -173,7 +173,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(index<=0||index>=state.timelineSlots.length)return;
    const remaining=state.timelineSlots.filter((_,i)=>i!==index);
    state.timelineSlots=remaining.map((old,i)=>{const slot=makeSlot(state.assetPool.find(x=>x.assetKey===old.assetKey)||old,i);slot.window=old.window;return slot;});
-   syncComparisonDurations(true);
+   syncComparisonDurations(false);
    renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
  const renderChart=()=>{
