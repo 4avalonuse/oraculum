@@ -45,10 +45,8 @@ function syncAnalysisTarget(symbol){
   }
   if(label)label.textContent=asset.symbol+' · '+asset.name;
   document.querySelectorAll('.analysis-asset').forEach(input=>{
-    const isTarget=input.value===symbol;
-    if(isTarget)input.checked=false;
-    input.disabled=isTarget;
-    input.closest('.asset-pick')?.classList.toggle('is-investigated-asset',isTarget);
+    input.disabled=false;
+    input.closest('.asset-pick')?.classList.toggle('is-investigated-asset',input.value===symbol);
   });
   if(previous&&previous!==symbol){
     $('#analysis-results')?.classList.add('is-hidden');
