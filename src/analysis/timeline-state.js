@@ -83,3 +83,9 @@ export function resizeTimelineDuration(candles, window, durationMs, minObservati
   }
   return timelineWindow(rows,start,end,minCount);
 }
+
+/** Return one primary timeline plus every distinct selected comparison series. */
+export function timelineAssetKeys(reference, selectedKeys=[]) {
+  const unique=[...new Set(selectedKeys.filter(key=>key&&key!==reference))];
+  return [reference,...unique];
+}
