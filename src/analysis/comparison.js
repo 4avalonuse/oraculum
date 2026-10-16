@@ -14,7 +14,7 @@ import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWi
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
- const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false};
+ const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
  const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
@@ -47,7 +47,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const rows=timelineRowsFor(slot),w=slot.window,first=rows[0]?.timestamp??0,last=rows.at(-1)?.timestamp??first,span=Math.max(1,last-first);
      const left=w?.valid?clamp((w.start-first)/span*100,0,100):0,right=w?.valid?clamp((w.end-first)/span*100,0,100):100;
-     const options=state.assetPool.map(asset=>'<option value="'+asset.assetKey+'" '+(asset.assetKey===slot.assetKey?'selected':'')+'>'+asset.symbol+' · '+asset.name+'</option>').join('');
+     const options=state.assetCatalog.map(asset=>'<option value="'+asset.assetKey+'" '+(asset.assetKey===slot.assetKey?'selected':'')+'>'+asset.symbol+' · '+asset.name+'</option>').join('');
      const title=i===0?'ATIVO PRINCIPAL':'COMPARAÇÃO '+i;
      const selector=i===0?'':'<select class="cmp-slot-asset" data-slot="'+i+'" aria-label="Ativo da timeline '+i+'">'+options+'</select>';
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="'+(i===0?'Deslocar período principal':'Deslocar período de '+slot.symbol)+'" tabindex="0"></div>';
@@ -80,14 +80,25 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
- const switchTimelineAsset=(index,assetKey)=>{
+ const switchTimelineAsset=async(index,assetKey)=>{
    if(index===0)return;
-   const asset=state.assetPool.find(x=>x.assetKey===assetKey);if(!asset)return;
-   const previous=state.timelineSlots[index],slot=makeSlot(asset,index),main=state.timelineSlots[0];
-   const targetStart=main?.window?.start??timelineRowsFor(slot)[0]?.timestamp,targetEnd=main?.window?.end??timelineRowsFor(slot).at(-1)?.timestamp;
-   slot.window=startWindow(slot,targetStart,targetEnd,10);
-   if(main?.window?.valid)slot.window=resizeTimelineDuration(timelineRowsFor(slot),slot.window,main.window.durationMs,10);
-   state.timelineSlots[index]=slot;renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+   const meta=assets[assetKey];if(!meta)return;
+   const existing=state.assetPool.find(x=>x.assetKey===assetKey);
+   try{
+     let asset=existing;
+     if(!asset){
+       $('#analysis-status').textContent='CARREGANDO '+(meta.symbol||assetKey);
+       const interval=state.interval||'1d',activeSymbol=getActiveSymbol(),sameLoaded=assetKey===activeSymbol&&interval===(getInterval()||'1d');
+       const loaded=sameLoaded?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||assetKey,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
+       const candles=normalizeCandles(loaded.candles);if(candles.length<10)throw new Error('Poucos dados para '+(meta.symbol||assetKey)+'.');
+       asset={key:assetKey,assetKey,symbol:meta.symbol||assetKey,name:meta.name||assetKey,category:meta.category,candles};state.assetPool.push(asset);
+     }
+     const slot=makeSlot(asset,index),main=state.timelineSlots[0],rows=timelineRowsFor(slot);
+     const targetStart=main?.window?.start??rows[0]?.timestamp,targetEnd=main?.window?.end??rows.at(-1)?.timestamp;
+     slot.window=startWindow(slot,targetStart,targetEnd,10);
+     if(main?.window?.valid)slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
+     state.timelineSlots[index]=slot;renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+   }catch(error){console.error('[ORACULUM TIMELINE]',error);$('#analysis-status').textContent='ERRO AO CARREGAR COMPARAÇÃO';openInfo(error.message)}
  };
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
@@ -146,7 +157,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    render(result,slots);
  };
  const initializeTimelineSlots=(pool,reference,interval,period)=>{
-   state.interval=interval;state.assetPool=pool;const mainRows=alignSeries([pool.find(x=>x.assetKey===reference)||pool[0]],interval);
+   state.interval=interval;state.assetPool=pool;state.assetCatalog=Object.entries(assets).map(([key,meta])=>({key,assetKey:key,symbol:meta.symbol||key,name:meta.name||key,category:meta.category}));const mainRows=alignSeries([pool.find(x=>x.assetKey===reference)||pool[0]],interval);
    if(mainRows.length<10)throw new Error('Poucos dados para a timeline principal.');
    let mainStart=mainRows[0].timestamp,mainEnd=mainRows.at(-1).timestamp;
    if(period!=='full'){const days=Number(period);mainStart=Math.max(mainStart,mainEnd-days*86400000);const at=nearestTimelineIndex(mainRows,mainStart);mainStart=mainRows[Math.max(0,at)].timestamp;}
