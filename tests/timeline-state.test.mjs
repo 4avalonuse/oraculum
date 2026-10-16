@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,timelineWindowLabel} from '../src/analysis/timeline-state.js';
+import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineWindowLabel} from '../src/analysis/timeline-state.js';
 
 const day=86400000;
 const candles=(start,count,step=day)=>Array.from({length:count},(_,i)=>({timestamp:start+i*step,close:100+i}));
@@ -53,4 +53,13 @@ test('resizing either edge preserves the opposite edge and minimum length',()=>{
 test('window labels make the selected absolute dates explicit',()=>{
   const w=timelineWindow(candles(t,5),1,3);
   assert.equal(timelineWindowLabel(w,ms=>new Date(ms).toISOString().slice(0,10)),'2024-01-02 → 2024-01-04');
+});
+
+test('comparison windows inherit the main window duration while keeping their own epoch',()=>{
+  const rows=candles(t,40);
+  const comparison=timelineWindow(rows,20,25,4);
+  const synced=resizeTimelineDuration(rows,comparison,10*day,4);
+  assert.equal(synced.startIndex,20);
+  assert.equal(synced.endIndex,30);
+  assert.equal(synced.durationMs,10*day);
 });
