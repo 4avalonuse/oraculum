@@ -143,8 +143,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    }
    state.timelineRows=timelineRows;state.series=slots;state.selected=slots.map(slot=>slot.key);
    const windowedSeries=slots.map(slot=>({...slot,candles:slot.candles.filter(c=>Number(c.timestamp)>=slot.window.start&&Number(c.timestamp)<=slot.window.end)}));
-   const commonRows=alignSeries(windowedSeries,interval),hasCommon=commonRows.length>=10;
-   const commonResult=hasCommon?analyzeSeries(commonRows,windowedSeries,interval,{returnMode,rollingWindow}):null;
+   // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
+   const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
+   const commonRows=alignSeries(modelSeries,interval),hasCommon=modelSeries.length>=2&&commonRows.length>=10;
+   const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
    const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
    const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
    let result;
@@ -155,8 +157,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);
      state.rows=commonRows;state.commonSeries=windowedSeries;state.independentTimelines=!sameWindowDates(slots);
    }else{
-     result={...primaryResult,relations:[],temporal:{method:'individual selected windows; no common calendar sample with enough observations for cross-series inference',sharedRows:0,firstBucket:null,lastBucket:null,gaps:0},alignedObservations:0};
-     result.explanatoryModel={available:false,reason:'As janelas selecionadas não têm pelo menos 10 observações em datas comuns; o modelo multivariado foi omitido para evitar pareamento artificial.'};
+     result={...primaryResult,relations:[],temporal:{method:slots.length<2?'single selected series; no cross-series inference requested':'individual selected windows; no common calendar sample with enough observations for cross-series inference',sharedRows:0,firstBucket:null,lastBucket:null,gaps:0},alignedObservations:0};
+     result.explanatoryModel={available:false,reason:slots.length<2?'Selecione outra série temporal para comparar ativos.':modelSeries.length<2?'Há apenas um ativo distinto; séries repetidas podem ser comparadas por período, mas não são duplicadas no modelo multivariado.':'As janelas selecionadas não têm pelo menos 10 observações em datas comuns; o modelo multivariado foi omitido para evitar pareamento artificial.'};
      result.modelDiagnostics={available:false,heteroskedasticity:{available:false}};
      result.modelValidation={status:'NOT_CHECKED',passed:0,total:0,checks:[],message:'Não aplicável sem amostra comum suficiente.'};
      result.residualValidation={status:'NOT_CHECKED',passed:0,total:0,checks:[],reason:'Modelo multivariado não estimado.'};
