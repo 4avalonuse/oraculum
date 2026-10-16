@@ -577,3 +577,12 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-add{display:grid;place-items:center;width:42px;min-height:38px;margin:9px auto 2px;border-style:solid;border-color:#294d65;border-radius:50%;font-size:23px;line-height:1;transition:all .18s}
 .cmp-timeline-add:hover{border-color:#55c2ff;background:#0c2638;color:#dff5ff;box-shadow:0 0 18px #39b6ff20}
 @media(max-width:700px){.cmp-timeline-row{padding:8px 8px 4px}.cmp-timeline-track{margin:0 2px}.cmp-timeline-date{font-size:9px}.cmp-timeline-color{left:13px;top:12px;width:18px}.cmp-timeline-remove{width:30px;height:30px}.cmp-timeline-sample{font-size:10px}}
+
+/* Controles discretos para modo temporal e adição explícita de séries. */
+.comparison-timeline-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 10px 2px}
+.cmp-mode-toggle,.cmp-add-series{border:1px solid #27364a;background:#101a29;color:#b9d8f6;border-radius:7px;padding:8px 10px;font-size:11px;min-height:34px}
+.cmp-mode-toggle[aria-pressed="true"]{border-color:#315d83;color:#8bc8ff}
+.cmp-add-picker{display:flex;align-items:center;gap:6px;margin-left:auto;color:#8997a9;font-size:10px}
+.cmp-add-picker select{max-width:180px;min-height:34px;border:1px solid #27364a;background:#0b111b;color:#e0eaf6;border-radius:7px;padding:5px;font-size:11px}
+.cmp-add-series{font-size:18px;line-height:1;min-width:34px;padding:4px}
+@media(max-width:480px){.comparison-timeline-controls{gap:6px}.cmp-mode-toggle{font-size:10px;padding:7px 8px}.cmp-add-picker{margin-left:0;flex:1}.cmp-add-picker select{flex:1;min-width:0;max-width:100%}.cmp-add-picker span{display:none}}
