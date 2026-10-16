@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineWindowLabel} from '../src/analysis/timeline-state.js';
+import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineWindowLabel,timelineAssetKeys} from '../src/analysis/timeline-state.js';
 
 const day=86400000;
 const candles=(start,count,step=day)=>Array.from({length:count},(_,i)=>({timestamp:start+i*step,close:100+i}));
@@ -62,4 +62,10 @@ test('comparison windows inherit the main window duration while keeping their ow
   assert.equal(synced.startIndex,20);
   assert.equal(synced.endIndex,30);
   assert.equal(synced.durationMs,10*day);
+});
+
+test('timeline asset list grows with every selected series and permits later repeated assets',()=>{
+  const selected=['ETH','SOL','GOLD','DXY','ETH','BTC'];
+  assert.deepEqual(timelineAssetKeys('BTC',selected),['BTC','ETH','SOL','GOLD','DXY']);
+  assert.deepEqual(timelineAssetKeys('BTC',[]),['BTC']);
 });
