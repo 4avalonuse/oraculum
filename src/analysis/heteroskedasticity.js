@@ -73,7 +73,9 @@ function validInput(residuals,predictors){
   const n=residuals.length;
   if(n<12||predictors.some(x=>!Array.isArray(x)||x.length!==n))return 'A amostra é pequena ou os preditores não estão alinhados.';
   if(!residuals.every(Number.isFinite)||predictors.some(x=>!x.every(Number.isFinite)))return 'Há valores ausentes ou não finitos.';
-  if(!(residuals.reduce((s,v)=>s+v*v,0)>1e-24))return 'Resíduos sem variação: teste não identificável.';
+  const squaredResiduals=residuals.map(v=>v*v);
+  if(!squaredResiduals.every(Number.isFinite)||!Number.isFinite(squaredResiduals.reduce((s,v)=>s+v,0)))return 'Os resíduos ao quadrado excedem a faixa numérica; inferência não identificável com segurança.';
+  if(!(squaredResiduals.reduce((s,v)=>s+v,0)>1e-24))return 'Resíduos sem variação: teste não identificável.';
   return null;
 }
 export function breuschPagan(residuals,predictors){
