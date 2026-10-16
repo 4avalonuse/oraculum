@@ -89,5 +89,5 @@ export function wireReportButtons(container,result,series=[]) {
     const b=document.createElement('button');b.type='button';b.className='report-action';b.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
     b.addEventListener('click',()=>write(build(result,series),b,label));bar.appendChild(b);
   }
-  container.prepend(bar);
+  container.append(bar);
 }
