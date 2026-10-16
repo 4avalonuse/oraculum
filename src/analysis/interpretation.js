@@ -67,3 +67,27 @@ export function buildScientificReport(result,series=[]) {
   lines.push('UTILIDADE: estes resultados ajudam a descrever retorno, risco e associações históricas. Para decisão prática, combine com objetivo, horizonte, liquidez, custos e tolerância a perdas. Não são recomendação de compra/venda.');
   return lines.join('\n');
 }
+
+export function wireReportButtons(container,result,series=[]) {
+  if(!container)return;
+  container.querySelector('.copy-toolbar')?.remove();
+  container.querySelector('.report-actions')?.remove();
+  const bar=document.createElement('div');bar.className='report-actions';
+  const write=async(text,button,label)=>{
+    button.disabled=true;button.textContent='PREPARANDO…';
+    try{
+      if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text);}
+      else {const field=document.createElement('textarea');field.value=text;field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();const ok=document.execCommand?.('copy');field.remove();if(!ok)throw new Error('Cópia não autorizada pelo navegador.');}
+      button.textContent='COPIADO ✓';button.classList.add('report-done');
+    }catch(error){button.textContent='NÃO FOI POSSÍVEL COPIAR';button.title=error.message;}
+    finally{button.disabled=false;window.setTimeout(()=>{button.textContent=label;button.classList.remove('report-done')},2200);}
+  };
+  for(const [label,sub,build] of [
+    ['RELATÓRIO TÉCNICO ENXUTO','Números, método e pontos para Ava conferir',buildTechnicalReport],
+    ['RELATÓRIO CIENTÍFICO','Interpretação, limites e conclusão',buildScientificReport]
+  ]){
+    const b=document.createElement('button');b.type='button';b.className='report-action';b.innerHTML=esc(label)+'<small>'+esc(sub)+'</small>';
+    b.addEventListener('click',()=>write(build(result,series),b,label));bar.appendChild(b);
+  }
+  container.prepend(bar);
+}
