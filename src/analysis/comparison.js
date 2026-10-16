@@ -53,9 +53,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="'+(i===0?'Deslocar período principal':'Deslocar período de '+slot.symbol)+'" tabindex="0"></div>';
      const handles=i===0?'<button class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:'+left+'%" aria-label="Alterar início '+date(w?.start)+'"></button><button class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:'+right+'%" aria-label="Alterar fim '+date(w?.end)+'"></button>':'';
      const dates='<span class="cmp-timeline-date" style="left:'+left+'%">'+date(w?.start)+'</span><span class="cmp-timeline-date date-end" style="left:'+right+'%">'+date(w?.end)+'</span>';
-     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><strong>'+title+' · '+slot.symbol+'</strong><small>'+date(w?.start)+' → '+date(w?.end)+' · '+(w?.observations||0)+' observações</small></div>'+selector+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div><div class="cmp-timeline-foot"><span>Início <strong>'+date(w?.start)+'</strong></span><span class="timeline-shift">'+(i===0?'Ajuste as extremidades':'Arraste a faixa para outra época')+'</span><span>Fim <strong>'+date(w?.end)+'</strong></span></div></section>';
-   }).join('');
+     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><strong>'+title+' · '+slot.symbol+'</strong><small>'+date(w?.start)+' → '+date(w?.end)+' · '+(w?.observations||0)+' observações</small></div>'+selector+(i>0?'<button type="button" class="cmp-timeline-remove" data-slot="'+i+'" aria-label="Remover timeline de '+slot.symbol+'">REMOVER ×</button>':'')+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div><div class="cmp-timeline-foot"><span>Início <strong>'+date(w?.start)+'</strong></span><span class="timeline-shift">'+(i===0?'Ajuste as extremidades':'Arraste a faixa para outra época')+'</span><span>Fim <strong>'+date(w?.end)+'</strong></span></div></section>';
+   }).join('')+'<button type="button" id="cmp-add-timeline" class="cmp-timeline-add">+ ADICIONAR SÉRIE TEMPORAL</button>';
    host.querySelectorAll('.cmp-slot-asset').forEach(select=>select.addEventListener('change',()=>switchTimelineAsset(Number(select.dataset.slot),select.value)));
+   host.querySelectorAll('.cmp-timeline-remove').forEach(button=>button.addEventListener('click',()=>removeTimeline(Number(button.dataset.slot))));
+   host.querySelector('#cmp-add-timeline')?.addEventListener('click',addTimeline);
    host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>handle.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(handle.dataset.slot),handle.dataset.edge)));
    host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
      range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot),'shift'));
@@ -79,6 +81,21 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
+ };
+ const addTimeline=()=>{
+   if(!state.timelineSlots.length)return;
+   const index=state.timelineSlots.length,main=state.timelineSlots[0],asset=state.assetPool.find(x=>x.assetKey===main.assetKey)||state.assetPool[0];
+   if(!asset)return;
+   const slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
+   slot.window=startWindow(slot,main.window.start,main.window.end,10);
+   slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
+   state.timelineSlots.push(slot);syncComparisonDurations();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+ };
+ const removeTimeline=index=>{
+   if(index<=0||index>=state.timelineSlots.length)return;
+   const remaining=state.timelineSlots.filter((_,i)=>i!==index);
+   state.timelineSlots=remaining.map((old,i)=>{const slot=makeSlot(state.assetPool.find(x=>x.assetKey===old.assetKey)||old,i);slot.window=old.window;return slot;});
+   syncComparisonDurations();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
  const switchTimelineAsset=async(index,assetKey)=>{
    if(index===0)return;
@@ -162,7 +179,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    let mainStart=mainRows[0].timestamp,mainEnd=mainRows.at(-1).timestamp;
    if(period!=='full'){const days=Number(period);mainStart=Math.max(mainStart,mainEnd-days*86400000);const at=nearestTimelineIndex(mainRows,mainStart);mainStart=mainRows[Math.max(0,at)].timestamp;}
    const selectedKeys=[...new Set([...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value).filter(x=>x!==reference&&pool.some(a=>a.assetKey===x)))];
-   const choices=[reference,selectedKeys[0]||reference,selectedKeys[1]||reference];
+   const choices=[reference,...selectedKeys];
    state.timelineSlots=choices.map((key,index)=>{
      const asset=pool.find(x=>x.assetKey===key)||pool[0],slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
      slot.window=startWindow(slot,mainStart,mainEnd,10);return slot;
