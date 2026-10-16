@@ -65,7 +65,8 @@ function auxiliaryR2(y,columns){
 }
 function unavailable(method,reason){return {method,available:false,reason,statistic:null,df:null,pValue:null,interpretation:'INCONCLUSIVE'}}
 function result(method,statistic,df,pValue,n,details={}){
-  return {method,available:true,statistic,df,pValue,n,interpretation:pValue<0.05?'EVIDENCE_AGAINST_CONSTANT_VARIANCE':'NO_STRONG_EVIDENCE_AGAINST_NULL',alpha:0.05,...details};
+  const validPValue=Number.isFinite(pValue)&&pValue>=0&&pValue<=1;
+  return {method,available:true,statistic,df,pValue,n,interpretation:!validPValue?'INCONCLUSIVE':pValue<0.05?'EVIDENCE_AGAINST_CONSTANT_VARIANCE':'NO_STRONG_EVIDENCE_AGAINST_NULL',alpha:0.05,...details};
 }
 function validInput(residuals,predictors){
   if(!Array.isArray(residuals)||!Array.isArray(predictors)||!predictors.length)return 'Resíduos e ao menos um preditor são necessários.';
