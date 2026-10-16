@@ -1,0 +1,31 @@
+/* ORACULUM — hierarquia visual para conclusão, legendas e relatórios */
+.analysis-conclusion{margin:14px 0 18px;padding:16px;border:1px solid #2b5874;border-left:4px solid #67c7ff;border-radius:9px;background:linear-gradient(135deg,rgba(12,36,55,.96),rgba(6,16,28,.98))}
+.conclusion-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;color:#78d4ff}
+.analysis-conclusion h3{margin:5px 0 8px!important;font-size:20px!important;line-height:1.3;color:#f0f8ff!important}
+.conclusion-status{display:inline-block;margin:0 0 8px;padding:4px 8px;border:1px solid #526c7f;border-radius:4px;color:#d9e9f5;font-size:10px;font-weight:800;letter-spacing:.05em}
+.analysis-conclusion ul{margin:4px 0 10px;padding-left:19px}
+.analysis-conclusion li{margin:7px 0;color:#d1e0ec;font-size:13px;line-height:1.6}
+.analysis-conclusion li b{color:#fff}
+.conclusion-foot{margin:0;padding-top:9px;border-top:1px solid #24465c;color:#9fb8ca;font-size:12px;line-height:1.6}
+.metric-education{margin:12px 0 18px;padding:12px;border:1px solid #263d51;border-radius:8px;background:rgba(5,15,26,.75)}
+.metric-education>h3{margin:0 0 5px!important;font-size:15px!important;color:#e3f3ff!important}
+.metric-education>p{margin:0 0 9px;color:#9db4c7;font-size:12px;line-height:1.55}
+.metric-legend{border-top:1px solid #20374a}
+.metric-legend summary{display:flex;align-items:center;gap:8px;min-height:42px;cursor:pointer;list-style:none;color:#dcecf9;font-size:12px}
+.metric-legend summary::-webkit-details-marker{display:none}
+.metric-legend summary>b{padding:4px 7px;border:1px solid #28516b;border-radius:4px;color:#72ceff;font-size:10px;white-space:nowrap}
+.metric-legend summary>span{flex:1;font-weight:650}
+.metric-legend summary:after{content:"＋";color:#72ceff;font-size:16px}
+.metric-legend[open] summary:after{content:"−"}
+.metric-legend-body{padding:0 4px 12px;color:#b3c6d5}
+.metric-legend-body p{margin:7px 0;font-size:12px;line-height:1.65}
+.metric-legend-body p b{color:#f0f7ff}
+.metric-mini-drawing{margin:8px 0;padding:8px;border:1px solid #203a4e;border-radius:6px;background:rgba(10,27,42,.7);overflow:hidden}
+.metric-mini-drawing svg{display:block;max-width:100%;color:#b6cadb}
+.report-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0 10px}
+.report-action{min-height:46px;padding:10px;border:1px solid #2878a4;border-radius:7px;background:#0b2b42;color:#dff3ff;font-size:11px;font-weight:800;letter-spacing:.025em;line-height:1.4}
+.report-action small{display:block;margin-top:3px;color:#9ec3d9;font-size:10px;font-weight:500;letter-spacing:0}
+.report-action:hover{border-color:#65c7ff;background:#103851}
+.report-action:disabled{opacity:.7}
+.report-action.report-done{border-color:#358e78;color:#c6f9e7;background:#0c3028}
+@media(max-width:700px){.analysis-conclusion{padding:13px}.analysis-conclusion h3{font-size:18px!important}.analysis-conclusion li{font-size:13px;line-height:1.7}.metric-education{padding:10px}.metric-legend summary{min-height:46px;font-size:13px}.metric-legend-body p{font-size:13px;line-height:1.7}.report-actions{grid-template-columns:1fr}.report-action{min-height:48px;font-size:12px}}
