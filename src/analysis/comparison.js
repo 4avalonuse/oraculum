@@ -38,7 +38,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const sharedRows=()=>state.timelineSlots.length>1
    ?alignSeries(state.timelineSlots.map(slot=>({...slot,key:slot.key})),state.interval)
    :timelineRowsFor(state.timelineSlots[0]);
- const syncComparisonDurations=(resetToMaximum=false)=>{
+ const syncComparisonDurations=(resetToMaximum=false,anchorIndex=0)=>{
    const slots=state.timelineSlots;
    if(!slots.length)return;
    if(state.timelineMode==='independent')return;
@@ -48,7 +48,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      return;
    }
    const firstKey=common[0].__periodKey,lastKey=common.at(-1).__periodKey;
-   const main=slots[0],mainRows=timelineRowsFor(main);
+   const main=slots[anchorIndex]||slots[0],mainRows=timelineRowsFor(main);
    let startKey=firstKey,endKey=lastKey;
    if(!resetToMaximum&&main?.window?.valid){
      const visible=mainRows.filter(row=>row.timestamp>=main.window.start&&row.timestamp<=main.window.end);
@@ -110,7 +110,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const delta=(ev.clientX-startX)/Math.max(1,rect.width)*span;
      if(index===0&&mode!=='shift')slot.window=resizeTimelineWindow(rows,baseWindow,mode,delta,10);
      else slot.window=shiftTimelineWindow(rows,baseWindow,delta,10);
-     if(state.timelineMode==='common')syncComparisonDurations(false);
+     if(state.timelineMode==='common')syncComparisonDurations(false,index);
      renderTimelinePanel();renderChart();
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
