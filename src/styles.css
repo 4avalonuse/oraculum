@@ -555,3 +555,25 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-title{min-width:0;flex:1}
 .cmp-timeline-track{touch-action:pan-y}
 @media(max-width:520px){.cmp-timeline-head{align-items:flex-start;gap:8px}.cmp-timeline-head select{max-width:100%;min-width:0;flex:1}.cmp-timeline-remove{font-size:11px;padding:6px 8px}.cmp-timeline-add{font-size:13px}}
+
+/* Timeline UX — cor identifica a série; interface sem rótulos redundantes. */
+.comparison-timelines{gap:8px;margin:10px 0 4px}
+.cmp-timeline-row{position:relative;padding:8px 10px 5px;border:1px solid color-mix(in srgb,var(--timeline-color) 24%,#17394f);border-radius:10px;background:linear-gradient(105deg,color-mix(in srgb,var(--timeline-color) 7%,#071521),#071521 72%);box-shadow:inset 3px 0 0 var(--timeline-color);transition:border-color .18s,background .18s}
+.cmp-timeline-row:focus-within,.cmp-timeline-row:hover{border-color:color-mix(in srgb,var(--timeline-color) 58%,#17394f);background:linear-gradient(105deg,color-mix(in srgb,var(--timeline-color) 11%,#071521),#071521 78%)}
+.cmp-timeline-head{display:flex;align-items:center;justify-content:flex-end;gap:9px;min-height:12px;margin:0}
+.cmp-timeline-color{position:absolute;left:17px;top:13px;width:22px;height:4px;border-radius:4px;background:var(--timeline-color);box-shadow:0 0 10px color-mix(in srgb,var(--timeline-color) 55%,transparent)}
+.cmp-timeline-sample{font-size:9px;color:#648196;font-variant-numeric:tabular-nums}
+.cmp-timeline-track{height:47px;margin:0 5px}
+.cmp-timeline-rail{top:25px;height:4px;background:#1c3548}
+.cmp-timeline-range{top:18px;height:18px;border:1px solid var(--timeline-color);background:color-mix(in srgb,var(--timeline-color) 25%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--timeline-color) 12%,transparent)}
+.cmp-timeline-range::after{width:5px;height:5px;background:var(--timeline-color);box-shadow:0 0 9px var(--timeline-color)}
+.cmp-timeline-handle{top:10px}
+.cmp-timeline-handle::before{border-color:var(--timeline-color);box-shadow:0 0 9px color-mix(in srgb,var(--timeline-color) 35%,transparent)}
+.cmp-timeline-handle.handle-end::before{border-color:var(--timeline-color)}
+.cmp-timeline-date{top:-1px;color:#c1d8e8;font-size:10px;text-shadow:0 1px 5px #071521}
+.cmp-timeline-date.date-end{color:#c1d8e8}
+.cmp-timeline-remove{display:grid;place-items:center;width:28px;min-height:28px;height:28px;padding:0;border-radius:50%;border-color:#294255;color:#6f91a7;font-size:19px;line-height:1}
+.cmp-timeline-remove:hover{border-color:#fb7185;color:#fb7185;background:#281722}
+.cmp-timeline-add{display:grid;place-items:center;width:42px;min-height:38px;margin:9px auto 2px;border-style:solid;border-color:#294d65;border-radius:50%;font-size:23px;line-height:1;transition:all .18s}
+.cmp-timeline-add:hover{border-color:#55c2ff;background:#0c2638;color:#dff5ff;box-shadow:0 0 18px #39b6ff20}
+@media(max-width:700px){.cmp-timeline-row{padding:8px 8px 4px}.cmp-timeline-track{margin:0 2px}.cmp-timeline-date{font-size:9px}.cmp-timeline-color{left:13px;top:12px;width:18px}.cmp-timeline-remove{width:30px;height:30px}.cmp-timeline-sample{font-size:10px}}
