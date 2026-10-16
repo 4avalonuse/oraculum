@@ -10,7 +10,7 @@ import {validateModelTwoWays,validateResidualDiagnostics} from './model-validati
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
 import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpretation.js';
-import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration} from './timeline-state.js';
+import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -179,7 +179,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    let mainStart=mainRows[0].timestamp,mainEnd=mainRows.at(-1).timestamp;
    if(period!=='full'){const days=Number(period);mainStart=Math.max(mainStart,mainEnd-days*86400000);const at=nearestTimelineIndex(mainRows,mainStart);mainStart=mainRows[Math.max(0,at)].timestamp;}
    const selectedKeys=[...new Set([...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value).filter(x=>x!==reference&&pool.some(a=>a.assetKey===x)))];
-   const choices=[reference,...selectedKeys];
+   const choices=timelineAssetKeys(reference,selectedKeys);
    state.timelineSlots=choices.map((key,index)=>{
      const asset=pool.find(x=>x.assetKey===key)||pool[0],slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
      slot.window=startWindow(slot,mainStart,mainEnd,10);return slot;
