@@ -43,7 +43,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const setCommonWindow=(startIndex,count)=>{
    const slots=state.timelineSlots,common=sharedRows();
    if(!slots.length||!common.length)return;
-   const size=Math.max(10,Math.min(common.length,Math.floor(count||common.length)));
+   const size=Math.min(common.length,Math.max(10,Math.floor(count||common.length)));
    const start=clamp(Math.floor(startIndex||0),0,Math.max(0,common.length-size));
    const startKey=periodKeyFor(common[start]),endKey=periodKeyFor(common[start+size-1]);
    for(const slot of slots){
@@ -56,7 +56,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const slots=state.timelineSlots;
    if(!slots.length)return;
    if(state.timelineMode==='independent'){
-     const count=resetToMaximum?Math.min(...slots.map(slot=>timelineRowsFor(slot).length)):Math.max(10,slots[0].window?.observations||10);
+     const count=Math.min(...slots.map(slot=>timelineRowsFor(slot).length),resetToMaximum?Infinity:Math.max(10,slots[0].window?.observations||10));
      for(const slot of slots){
        const rows=timelineRowsFor(slot),size=Math.min(rows.length,count);
        const start=resetToMaximum?Math.max(0,rows.length-size):clamp(slot.window?.startIndex||0,0,Math.max(0,rows.length-size));
