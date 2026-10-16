@@ -50,14 +50,14 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const options=state.assetPool.map(asset=>'<option value="'+asset.assetKey+'" '+(asset.assetKey===slot.assetKey?'selected':'')+'>'+asset.symbol+' · '+asset.name+'</option>').join('');
      const title=i===0?'ATIVO PRINCIPAL':'COMPARAÇÃO '+i;
      const selector=i===0?'':'<select class="cmp-slot-asset" data-slot="'+i+'" aria-label="Ativo da timeline '+i+'">'+options+'</select>';
-     const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" '+(i===0?'aria-hidden="true"':'role="slider" aria-label="Deslocar período de '+slot.symbol+'" tabindex="0"')+'></div>';
+     const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="left:'+left+'%;width:'+Math.max(0.8,right-left)+'%" role="slider" aria-label="'+(i===0?'Deslocar período principal':'Deslocar período de '+slot.symbol)+'" tabindex="0"></div>';
      const handles=i===0?'<button class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:'+left+'%" aria-label="Alterar início '+date(w?.start)+'"></button><button class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:'+right+'%" aria-label="Alterar fim '+date(w?.end)+'"></button>':'';
-     const dates=i===0?'<span class="cmp-timeline-date" style="left:'+left+'%">'+date(w?.start)+'</span><span class="cmp-timeline-date date-end" style="left:'+right+'%">'+date(w?.end)+'</span>':'';
+     const dates='<span class="cmp-timeline-date" style="left:'+left+'%">'+date(w?.start)+'</span><span class="cmp-timeline-date date-end" style="left:'+right+'%">'+date(w?.end)+'</span>';
      return '<section class="cmp-timeline-row" data-timeline-row="'+i+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><strong>'+title+' · '+slot.symbol+'</strong><small>'+date(w?.start)+' → '+date(w?.end)+' · '+(w?.observations||0)+' observações</small></div>'+selector+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+dates+'</div><div class="cmp-timeline-foot"><span>Início <strong>'+date(w?.start)+'</strong></span><span class="timeline-shift">'+(i===0?'Ajuste as extremidades':'Arraste a faixa para outra época')+'</span><span>Fim <strong>'+date(w?.end)+'</strong></span></div></section>';
    }).join('');
    host.querySelectorAll('.cmp-slot-asset').forEach(select=>select.addEventListener('change',()=>switchTimelineAsset(Number(select.dataset.slot),select.value)));
    host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>handle.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(handle.dataset.slot),handle.dataset.edge)));
-   host.querySelectorAll('.cmp-timeline-range[role="slider"]').forEach(range=>{
+   host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
      range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot),'shift'));
      range.addEventListener('keydown',event=>{
        if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
@@ -150,7 +150,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(mainRows.length<10)throw new Error('Poucos dados para a timeline principal.');
    let mainStart=mainRows[0].timestamp,mainEnd=mainRows.at(-1).timestamp;
    if(period!=='full'){const days=Number(period);mainStart=Math.max(mainStart,mainEnd-days*86400000);const at=nearestTimelineIndex(mainRows,mainStart);mainStart=mainRows[Math.max(0,at)].timestamp;}
-   const selectedKeys=[...new Set([...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value).filter(x=>pool.some(a=>a.assetKey===x)))];
+   const selectedKeys=[...new Set([...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value).filter(x=>x!==reference&&pool.some(a=>a.assetKey===x)))];
    const choices=[reference,selectedKeys[0]||reference,selectedKeys[1]||reference];
    state.timelineSlots=choices.map((key,index)=>{
      const asset=pool.find(x=>x.assetKey===key)||pool[0],slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
