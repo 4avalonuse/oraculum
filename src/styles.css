@@ -547,3 +547,11 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
  .cmp-timeline-date{font-size:9px}
  .cmp-timeline-track{margin:0 3px}
 }
+
+/* Timelines dinâmicas: uma linha por série temporal observada. */
+.cmp-timeline-add{display:block;width:100%;min-height:44px;margin:12px 0 4px;padding:10px 14px;border:1px dashed var(--accent,#60a5fa);border-radius:10px;background:transparent;color:var(--accent,#93c5fd);font:inherit;font-weight:700;text-align:center;cursor:pointer}
+.cmp-timeline-remove{flex:0 0 auto;min-height:36px;padding:7px 10px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer}
+.cmp-timeline-head{flex-wrap:wrap}
+.cmp-timeline-title{min-width:0;flex:1}
+.cmp-timeline-track{touch-action:pan-y}
+@media(max-width:520px){.cmp-timeline-head{align-items:flex-start;gap:8px}.cmp-timeline-head select{max-width:100%;min-width:0;flex:1}.cmp-timeline-remove{font-size:11px;padding:6px 8px}.cmp-timeline-add{font-size:13px}}
