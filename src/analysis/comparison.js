@@ -84,10 +84,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const w=slot.window,color=assetColor(slot.assetKey,i);
      // Every track uses the same common-calendar domain, so no asset can extend beyond the shared period.
-     const visibleStart=w?.valid?Math.max(commonStart,Number(w.start)):commonStart;
-     const visibleEnd=w?.valid?Math.min(commonEnd,Number(w.end)):commonEnd;
-     const left=clamp((visibleStart-commonStart)/commonSpan*100,0,100);
-     const right=clamp((visibleEnd-commonStart)/commonSpan*100,0,100);
+     const visibleStart=w?.valid?clamp(Number(w.start),commonStart,commonEnd):commonStart;
+     const visibleEnd=w?.valid?clamp(Number(w.end),commonStart,commonEnd):commonEnd;
+     const left=clamp((Math.min(visibleStart,visibleEnd)-commonStart)/commonSpan*100,0,100);
+     const right=clamp((Math.max(visibleStart,visibleEnd)-commonStart)/commonSpan*100,0,100);
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=slot.symbol||slot.name||slot.assetKey;
