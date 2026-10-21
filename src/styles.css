@@ -620,3 +620,11 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
  .cmp-timeline-track{margin:0 2px}
  .cmp-timeline-remove{width:24px;height:24px;min-height:24px}
 }
+
+/* Mobile-safe shared-period timeline scale */
+.comparison-timelines{min-width:0;width:100%;max-width:100%;overflow:hidden}
+.cmp-timeline-row{min-width:0;width:100%;max-width:100%;overflow:hidden}
+.cmp-timeline-track{min-width:0;width:auto;max-width:100%;box-sizing:border-box;overflow:hidden;touch-action:pan-y}
+.cmp-timeline-rail{left:0;right:0;max-width:100%}
+.cmp-timeline-range{box-sizing:border-box;max-width:100%;}
+.cmp-timeline-handle{max-width:100%}
