@@ -628,3 +628,13 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-rail{left:0;right:0;max-width:100%}
 .cmp-timeline-range{box-sizing:border-box;max-width:100%;}
 .cmp-timeline-handle{max-width:100%}
+
+/* Reset legacy absolute-position offsets that caused mobile timeline overflow */
+#comparison-timelines,
+.comparison-timelines,
+.cmp-timeline-row,
+.cmp-timeline-track{box-sizing:border-box;min-width:0;width:100%;max-width:100%}
+.cmp-timeline-track{position:relative!important;left:auto!important;right:auto!important;top:auto!important;height:31px;margin:0 0!important;overflow:hidden;touch-action:pan-y}
+.cmp-timeline-rail{left:0!important;right:0!important}
+.cmp-timeline-range{box-sizing:border-box;max-width:100%;min-width:0}
+.cmp-timeline-handle{max-width:100%}
