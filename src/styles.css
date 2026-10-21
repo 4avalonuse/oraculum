@@ -638,3 +638,9 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-rail{left:0!important;right:0!important}
 .cmp-timeline-range{box-sizing:border-box;max-width:100%;min-width:0}
 .cmp-timeline-handle{max-width:100%}
+
+/* Ensure the shared-frame tracks stay inside the visible mobile panel */
+#comparison-timelines,.comparison-timelines,.cmp-timeline-row,.cmp-timeline-track{box-sizing:border-box;min-width:0;width:100%;max-width:100%}
+.cmp-timeline-track{position:relative!important;inset-inline:auto!important;overflow:hidden!important;margin-inline:0!important}
+.cmp-timeline-rail{left:0!important;right:0!important}
+.cmp-timeline-range{box-sizing:border-box;min-width:0;max-width:100%}
