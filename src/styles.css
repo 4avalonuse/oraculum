@@ -644,3 +644,9 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-track{position:relative!important;inset-inline:auto!important;overflow:hidden!important;margin-inline:0!important}
 .cmp-timeline-rail{left:0!important;right:0!important}
 .cmp-timeline-range{box-sizing:border-box;min-width:0;max-width:100%}
+
+/* Primary timeline endpoint handles: override legacy hide rule. */
+#comparison-timelines .cmp-timeline-handle{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+#comparison-timelines .cmp-timeline-handle.start{left:var(--handle-start)!important}
+#comparison-timelines .cmp-timeline-handle.end{left:var(--handle-end)!important}
+#comparison-timelines .cmp-timeline-handle::before{display:block!important}
