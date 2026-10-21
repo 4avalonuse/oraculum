@@ -17,7 +17,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false,timelineMode:'common',addAssetKey:''};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
- const assetColor=assetKey=>{const palette=['#3984ff','#f5a742','#35c780','#8b5cf6','#e0528d','#17a2b8','#f97316','#a3a3a3'];const index=state.timelineSlots.findIndex(slot=>slot.assetKey===assetKey);return palette[Math.max(0,index)%palette.length]};
+ const assetColor=(assetKey,indexOverride)=>{const palette=['#3984ff','#f5a742','#35c780','#8b5cf6','#e0528d','#17a2b8','#f97316','#a3a3a3'];const found=indexOverride??state.timelineSlots.findIndex(slot=>slot.assetKey===assetKey);return palette[Math.max(0,found)%palette.length]};
  const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
  const rowsInWindow=slot=>{
    const w=slot?.window,rows=timelineRowsFor(slot);
@@ -80,12 +80,12 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!host||!state.timelineSlots.length)return;
    const referenceRows=timelineRowsFor(state.timelineSlots[0]);
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
-     const w=slot.window,color=assetColor(slot.assetKey);
+     const w=slot.window,color=assetColor(slot.assetKey,i);
      const startIndex=w?.valid?nearestTimelineIndex(referenceRows,w.start):0;
      const endIndex=w?.valid?nearestTimelineIndex(referenceRows,w.end):Math.max(0,referenceRows.length-1);
      const left=w?.valid?clamp(startIndex/Math.max(1,referenceRows.length-1)*100,0,100):0;
      const right=w?.valid?clamp(endIndex/Math.max(1,referenceRows.length-1)*100,0,100):100;
-     const days=Math.max(0,Math.round((Number(w?.durationMs)||0)/86400000));
+     const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=slot.symbol||slot.name||slot.assetKey;
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
@@ -178,7 +178,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const all=normalized.flatMap(x=>x.values);if(!all.length){host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';return}
    const lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
    const line=values=>values.map((v,i)=>{const x=p.l+(i/Math.max(1,values.length-1))*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
-   const polylines=normalized.map(x=>'<polyline points="'+line(x.values)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey)+'"/>').join('');
+   const polylines=normalized.map(x=>'<polyline points="'+line(x.values)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey,x.slot.slotIndex)+'"/>').join('');
    host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação normalizada por tempo relativo; cada janela começa em base 100"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">Início relativo</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">Fim relativo</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">100 = início de cada janela</text></svg>';
    const legend=$('#comparison-legend');if(legend)legend.innerHTML='';
  };
