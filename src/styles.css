@@ -594,3 +594,29 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-add-picker select{width:100%;max-width:260px;min-height:40px;font-size:12px}
 .cmp-add-picker{flex:0 1 260px}
 @media(max-width:480px){.cmp-add-picker{flex:1 1 100%;order:2}.cmp-add-picker select{max-width:100%}.cmp-mode-toggle{order:1}}
+
+/* Compact, quiet timeline controls — Oraculum analysis */
+.cmp-timeline-row{padding:7px 9px 5px;border:0;border-bottom:1px solid #1d2a38;border-radius:3px;background:transparent;box-shadow:none}
+.cmp-timeline-row:focus-within,.cmp-timeline-row:hover{border-color:#29394b;background:rgba(255,255,255,.012)}
+.cmp-timeline-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px;margin:0}
+.cmp-timeline-title{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
+.cmp-timeline-title strong{color:#d8e3ef;font-size:11px;font-weight:600}
+.cmp-timeline-period{color:#8292a5;font-size:10px;font-weight:400;white-space:nowrap}
+.cmp-timeline-color{position:static;display:inline-block;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--timeline-color);box-shadow:none}
+.cmp-timeline-track{position:relative;height:31px;margin:0 5px;touch-action:pan-y}
+.cmp-timeline-rail{top:15px;height:2px;background:#263547}
+.cmp-timeline-range{top:10px;height:12px;min-width:8px;border:0;border-radius:999px;background:color-mix(in srgb,var(--timeline-color) 38%,transparent);box-shadow:none;cursor:grab}
+.cmp-timeline-range::after{width:4px;height:4px;background:var(--timeline-color);box-shadow:none}
+.cmp-timeline-handle{position:absolute;z-index:3;top:10px;transform:translateX(-50%);width:12px;height:12px;min-height:12px;padding:0;border:2px solid #e8f0fb;border-radius:50%;background:var(--timeline-color);box-shadow:0 0 0 2px #071521;cursor:ew-resize;touch-action:none}
+.cmp-timeline-handle:hover{filter:brightness(1.18)}
+.cmp-timeline-remove{width:22px;min-height:22px;height:22px;border:0;background:transparent;font-size:17px;color:#687b8d}
+.cmp-timeline-remove:hover{background:transparent;color:#fb7185}
+#cmp-align-all{min-height:32px;padding:6px 9px;border:1px solid #26384b;background:transparent;color:#9fb7ce;font-size:11px}
+#cmp-align-all:hover{border-color:#3984ff;color:#c5ddff}
+@media(max-width:700px){
+ .cmp-timeline-row{padding:7px 5px 5px}
+ .cmp-timeline-title{gap:6px}
+ .cmp-timeline-period{font-size:9px}
+ .cmp-timeline-track{margin:0 2px}
+ .cmp-timeline-remove{width:24px;height:24px;min-height:24px}
+}
