@@ -78,13 +78,16 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderTimelinePanel=()=>{
    const host=$('#comparison-timelines');
    if(!host||!state.timelineSlots.length)return;
-   const referenceRows=timelineRowsFor(state.timelineSlots[0]);
+   const common=sharedRows();
+   const commonStart=Number(common[0]?.timestamp)||0,commonEnd=Number(common.at(-1)?.timestamp)||commonStart;
+   const commonSpan=Math.max(1,commonEnd-commonStart);
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const w=slot.window,color=assetColor(slot.assetKey,i);
-     const startIndex=w?.valid?nearestTimelineIndex(referenceRows,w.start):0;
-     const endIndex=w?.valid?nearestTimelineIndex(referenceRows,w.end):Math.max(0,referenceRows.length-1);
-     const left=w?.valid?clamp(startIndex/Math.max(1,referenceRows.length-1)*100,0,100):0;
-     const right=w?.valid?clamp(endIndex/Math.max(1,referenceRows.length-1)*100,0,100):100;
+     // Every track uses the same common-calendar domain, so no asset can extend beyond the shared period.
+     const visibleStart=w?.valid?Math.max(commonStart,Number(w.start)):commonStart;
+     const visibleEnd=w?.valid?Math.min(commonEnd,Number(w.end)):commonEnd;
+     const left=clamp((visibleStart-commonStart)/commonSpan*100,0,100);
+     const right=clamp((visibleEnd-commonStart)/commonSpan*100,0,100);
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=slot.symbol||slot.name||slot.assetKey;
