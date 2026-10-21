@@ -53,12 +53,17 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    }
  };
  const syncComparisonDurations=()=>{
-   const slots=state.timelineSlots,primary=slots[0];
-   if(!primary?.window?.valid)return;
-   for(const slot of slots.slice(1)){
+   const slots=state.timelineSlots,primary=slots[0],common=sharedRows();
+   if(!primary?.window?.valid||!common.length)return;
+   const first=Number(common[0].timestamp),last=Number(common.at(-1).timestamp);
+   const startTime=clamp(Number(primary.window.start),first,last),endTime=clamp(Number(primary.window.end),first,last);
+   const a=nearestTimelineIndex(common,startTime),b=nearestTimelineIndex(common,endTime);
+   const startIndex=Math.min(a,b),endIndex=Math.max(a,b),frameCount=endIndex-startIndex+1;
+   const start=Number(common[startIndex].timestamp),end=Number(common[endIndex].timestamp);
+   for(const slot of slots){
      const rows=timelineRowsFor(slot);
-     const aligned=startWindow(slot,primary.window.start,primary.window.end,10);
-     slot.window=resizeTimelineDuration(rows,aligned,primary.window.durationMs,10);
+     const from=nearestTimelineIndex(rows,start),to=nearestTimelineIndex(rows,end);
+     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,Math.min(10,frameCount));
    }
  };
  const alignAllTimelines=()=>{
@@ -80,14 +85,14 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!host||!state.timelineSlots.length)return;
    const common=sharedRows();
    const commonStart=Number(common[0]?.timestamp)||0,commonEnd=Number(common.at(-1)?.timestamp)||commonStart;
-   const commonSpan=Math.max(1,commonEnd-commonStart);
+   const commonSpan=Math.max(1,common.length-1);
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const w=slot.window,color=assetColor(slot.assetKey,i);
-     // Every track uses the same common-calendar domain, so no asset can extend beyond the shared period.
-     const visibleStart=w?.valid?clamp(Number(w.start),commonStart,commonEnd):commonStart;
-     const visibleEnd=w?.valid?clamp(Number(w.end),commonStart,commonEnd):commonEnd;
-     const left=clamp((Math.min(visibleStart,visibleEnd)-commonStart)/commonSpan*100,0,100);
-     const right=clamp((Math.max(visibleStart,visibleEnd)-commonStart)/commonSpan*100,0,100);
+     // Each track is measured in the same shared frames, never in each asset's full native history.
+     const frameStart=w?.valid?clamp(nearestTimelineIndex(common,Number(w.start)),0,common.length-1):0;
+     const frameEnd=w?.valid?clamp(nearestTimelineIndex(common,Number(w.end)),0,common.length-1):common.length-1;
+     const left=clamp(Math.min(frameStart,frameEnd)/commonSpan*100,0,100);
+     const right=clamp(Math.max(frameStart,frameEnd)/commonSpan*100,0,100);
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=slot.symbol||slot.name||slot.assetKey;
@@ -109,21 +114,22 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    });
  };
  const shiftTimelineByPeriods=(index,steps)=>{
-   const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
-   const rows=timelineRowsFor(slot),count=slot.window.endIndex-slot.window.startIndex+1;
-   const start=clamp(slot.window.startIndex+steps,0,Math.max(0,rows.length-count));
-   slot.window=timelineWindow(rows,start,start+count-1,10);
+   const slot=state.timelineSlots[index],common=sharedRows();if(!slot?.window?.valid||!common.length)return;
+   const startFrame=nearestTimelineIndex(common,slot.window.start),endFrame=nearestTimelineIndex(common,slot.window.end);
+   const count=Math.max(10,endFrame-startFrame+1),start=clamp(startFrame+steps,0,Math.max(0,common.length-count));
+   const rows=timelineRowsFor(slot),from=nearestTimelineIndex(rows,common[start].timestamp),to=nearestTimelineIndex(rows,common[Math.min(common.length-1,start+count-1)].timestamp);
+   if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
  };
  const beginTimelineDrag=(event,index)=>{
    event.preventDefault();
    const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
-   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect();
-   const rows=timelineRowsFor(slot),count=slot.window.endIndex-slot.window.startIndex+1,baseStart=slot.window.startIndex;
-   const maxStart=Math.max(0,rows.length-count);
+   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),common=sharedRows();
+   const rows=timelineRowsFor(slot),baseStart=nearestTimelineIndex(common,slot.window.start),baseEnd=nearestTimelineIndex(common,slot.window.end);
+   const count=Math.max(10,baseEnd-baseStart+1),maxStart=Math.max(0,common.length-count);
    const move=ev=>{
-     const deltaSteps=Math.round((ev.clientX-startX)/Math.max(1,rect.width)*Math.max(1,maxStart));
-     const start=clamp(baseStart+deltaSteps,0,maxStart);
-     slot.window=timelineWindow(rows,start,start+count-1,10);
+     const deltaSteps=Math.round((ev.clientX-startX)/Math.max(1,rect.width)*Math.max(1,common.length-1));
+     const start=clamp(baseStart+deltaSteps,0,maxStart),from=nearestTimelineIndex(rows,common[start].timestamp),to=nearestTimelineIndex(rows,common[Math.min(common.length-1,start+count-1)].timestamp);
+     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
      renderTimelinePanel();renderChart();
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
