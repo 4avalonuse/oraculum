@@ -137,14 +137,19 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
  const beginTimelineResize=(event,edge)=>{
    event.preventDefault();event.stopPropagation();
-   const slot=state.timelineSlots[0];if(!slot?.window?.valid)return;
+   const slot=state.timelineSlots[0],common=sharedRows();if(!slot?.window?.valid||common.length<10)return;
    const rows=timelineRowsFor(slot),original=slot.window;
    const track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),startX=event.clientX;
-   const historyStart=Number(rows[0]?.timestamp),historyEnd=Number(rows.at(-1)?.timestamp);
-   const historySpan=Math.max(1,historyEnd-historyStart);
+   const baseStart=nearestTimelineIndex(common,original.start),baseEnd=nearestTimelineIndex(common,original.end);
    const move=ev=>{
-     const deltaMs=((ev.clientX-startX)/Math.max(1,rect.width))*historySpan;
-     slot.window=resizeTimelineWindow(rows,original,edge,deltaMs,10);
+     const deltaFrames=Math.round(((ev.clientX-startX)/Math.max(1,rect.width))*(common.length-1));
+     const startFrame=clamp(edge==='start'?baseStart+deltaFrames:baseStart,0,common.length-1);
+     const endFrame=clamp(edge==='end'?baseEnd+deltaFrames:baseEnd,0,common.length-1);
+     const minFrames=10;
+     let a=Math.min(startFrame,endFrame),b=Math.max(startFrame,endFrame);
+     if(b-a+1<minFrames){if(edge==='start')a=Math.max(0,b-minFrames+1);else b=Math.min(common.length-1,a+minFrames-1);}
+     const from=nearestTimelineIndex(rows,common[a].timestamp),to=nearestTimelineIndex(rows,common[b].timestamp);
+     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
      syncComparisonDurations();
      renderTimelinePanel();renderChart();
    };
