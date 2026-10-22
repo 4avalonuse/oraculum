@@ -14,7 +14,7 @@ function card(title, level, body, detail='') {
 function strength(value) {
   if (!Number.isFinite(value)) return 'não estimada';
   const a=Math.abs(value);
-  return a>=.7?'forte':a>=.3?'moderada':a>=.1?'fraca':'próxima de zero';
+  return a>=.7?'forte nesta amostra':a>=.3?'moderada nesta amostra':a>=.1?'fraca nesta amostra':'próxima de zero nesta amostra';
 }
 export function buildScientificReading(result, {fmt, pct, date}) {
   if (!result) return '';
@@ -40,7 +40,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     const corr=rel.correlation, beta=rel.beta, rolling=rel.rolling;
     const sign=Number.isFinite(corr)?(corr>0?'positiva':corr<0?'negativa':'próxima de zero'):'indeterminada';
     const rollDiff=Number.isFinite(rolling)&&Number.isFinite(corr)?Math.abs(rolling-corr):NaN;
-    let reading='A correlação é '+strength(corr)+' e '+sign+' ('+fmt(corr,3)+'). ';
+    let reading='A magnitude da correlação é '+strength(corr)+' e sua direção é '+sign+' ('+fmt(corr,3)+'). Essa classificação é descritiva para a amostra, não um teste de significância nem uma garantia de estabilidade. ';
     reading+='O beta '+(Number.isFinite(beta)?fmt(beta,3):'não estimado')+' descreve a sensibilidade do retorno de <b>'+esc(rel.target)+'</b> em relação ao retorno da referência <b>'+esc(rel.primary)+'</b>, nesta regressão bivariada.';
     const detail='Nesta relação bivariada, a série cuja variação é modelada = '+esc(rel.target)+'; a série usada como referência = '+esc(rel.primary)+'. O beta é Cov(referência, série modelada) / Var(referência). Correlação é simétrica; beta não é. R² = '+pct(rel.r2,2)+'. Isso descreve o par; o modelo multivariado, quando disponível, usa o ativo investigado como alvo. Nenhum desses números demonstra causalidade.';
     cards.push(card(rel.primary+' × '+rel.target,'evidence',reading,
