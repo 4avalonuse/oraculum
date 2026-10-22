@@ -628,3 +628,24 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-timeline-range{box-sizing:border-box;min-width:0;max-width:100%}
 #comparison-timelines .cmp-timeline-handle{display:block;visibility:visible;opacity:1;pointer-events:auto;max-width:100%}
 #comparison-timelines .cmp-timeline-handle::before{display:block}
+
+/* Primary range handles: visible, touch-friendly, and not clipped at track edges. */
+#comparison-timelines .cmp-timeline-track{overflow:hidden!important;touch-action:pan-y}
+#comparison-timelines .cmp-timeline-range{touch-action:none;z-index:1}
+#comparison-timelines .cmp-timeline-handle{
+ display:block!important;visibility:visible!important;opacity:1!important;
+ position:absolute!important;top:4px!important;transform:translateX(-50%)!important;
+ width:28px!important;height:28px!important;min-height:28px!important;
+ padding:0!important;border:0!important;border-radius:0!important;
+ background:transparent!important;box-shadow:none!important;
+ pointer-events:auto!important;touch-action:none!important;z-index:5!important;
+}
+#comparison-timelines .cmp-timeline-handle::before{
+ content:""!important;display:block!important;position:absolute!important;
+ left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;
+ width:14px!important;height:14px!important;border-radius:50%!important;
+ background:var(--timeline-color,#3984ff)!important;
+ border:3px solid #eaf5ff!important;box-shadow:0 0 0 2px #071521,0 0 10px var(--timeline-color,#3984ff)!important;
+}
+#comparison-timelines .cmp-timeline-handle:focus-visible{outline:2px solid #eaf5ff!important;outline-offset:1px}
+#comparison-timelines .cmp-timeline-row:first-child .cmp-timeline-track{--timeline-color:#3984ff}
