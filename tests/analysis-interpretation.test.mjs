@@ -17,7 +17,7 @@ test('conclusion is contextual and avoids universal good/bad or causal claims',(
   assert.match(html,/Conclusão desta investigação/);
   assert.match(html,/42/);
   assert.match(html,/não prova causa|não garante|não significa/);
-  assert.match(html,/concordância entre os dois caminhos/);
+  assert.match(html,/os caminhos de cálculo avaliados concordaram/);
   assert.match(html,/Conferência numérica:/);
   assert.doesNotMatch(html,/A volatilidade anualizada estimada foi/);
   assert.ok((html.match(/<li>/g)||[]).length<=5,'conclusion should stay focused on at most five findings');
