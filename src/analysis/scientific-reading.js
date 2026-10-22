@@ -50,7 +50,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     const tests=diag?.heteroskedasticity?.tests||[];
     const flagged=tests.filter(t=>t?.available&&Number.isFinite(t.pValue)&&t.pValue<.05);
     const irregular=diag?.temporalSpacing?.status==='IRREGULAR_INTERVALS';
-    cards.push(card('O modelo multivariado tem ajuste amostral relevante','evidence',
+    cards.push(card('Como interpretar o ajuste do modelo multivariado','evidence',
       'O modelo associa conjuntamente os preditores selecionados aos retornos de <b>'+esc(model.target)+'</b>. O R² é <b>'+pct(model.r2,2)+'</b> ('+fmt(model.observations,0)+' observações): essa é uma medida de ajuste dentro da amostra, não uma prova de causalidade ou desempenho futuro.',
       'Os coeficientes são condicionais aos demais preditores incluídos. O teste F mostrado é convencional; os p-valores HAC dos coeficientes usam aproximação normal assintótica. São inferências diferentes e devem permanecer identificadas como tal.'));
     if (tests.length) cards.push(buildHeteroskedasticityReading(diag, {fmt}));
