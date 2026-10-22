@@ -43,8 +43,13 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     let reading='A magnitude da correlação é '+strength(corr)+' e sua direção é '+sign+' ('+fmt(corr,3)+'). Essa classificação é descritiva para a amostra, não um teste de significância nem uma garantia de estabilidade. ';
     reading+='O beta '+(Number.isFinite(beta)?fmt(beta,3):'não estimado')+' descreve a sensibilidade do retorno de <b>'+esc(rel.target)+'</b> em relação ao retorno da referência <b>'+esc(rel.primary)+'</b>, nesta regressão bivariada.';
     const detail='Nesta relação bivariada, a série cuja variação é modelada = '+esc(rel.target)+'; a série usada como referência = '+esc(rel.primary)+'. O beta é Cov(referência, série modelada) / Var(referência). Correlação é simétrica; beta não é. R² = '+pct(rel.r2,2)+'. Isso descreve o par; o modelo multivariado, quando disponível, usa o ativo investigado como alvo. Nenhum desses números demonstra causalidade.';
+    const relationAction=Number.isFinite(rollDiff)&&rollDiff>=.25
+      ?'Próximo passo: compare a correlação móvel em janelas diferentes e confira se a mudança coincide com diferenças de período, frequência ou qualidade dos dados.'
+      :Math.abs(corr||0)>=.7
+        ?'Próximo passo: verifique se a associação se mantém em subperíodos e em cenários de estresse antes de usá-la como hipótese de diversificação.'
+        :'Próximo passo: trate a relação como exploratória e compare-a com outros períodos e com a pergunta econômica que deseja investigar.';
     cards.push(card(rel.primary+' × '+rel.target,'evidence',reading,
-      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.')));
+      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.')+'<p class="science-next-step"><b>Próximo passo sugerido:</b> '+esc(relationAction)+'</p>'));
   }
   if (model?.available) {
     const tests=diag?.heteroskedasticity?.tests||[];
@@ -56,7 +61,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     if (tests.length) cards.push(buildHeteroskedasticityReading(diag, {fmt}));
     if (irregular) cards.push(card('Diagnósticos residuais: números válidos, inferência limitada','caution',
       'O espaçamento dos resíduos foi classificado como irregular. DW e Ljung–Box podem ser reproduzidos numericamente, mas seus valores-p convencionais pressupõem condições temporais que esta amostra não garante.',
-      'Use os resultados como descrição exploratória, não como veredito formal sobre autocorrelação. A concordância entre duas implementações confirma consistência aritmética, não validade dos pressupostos.'));
+      'Use os resultados como descrição exploratória, não como veredito formal sobre autocorrelação. A concordância entre duas implementações confirma consistência aritmética, não validade dos pressupostos.<p class="science-next-step"><b>Próximo passo sugerido:</b> confira o calendário dos candles, os intervalos ausentes e a ordenação temporal; evite tratar p-valores convencionais como decisivos enquanto o espaçamento for irregular.</p>'));
   } else {
     cards.push(card('O modelo multivariado não foi estimado','caution',
       esc(model?.reason||'Selecione variáveis explicativas e verifique se há observações suficientes.'),
