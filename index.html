@@ -159,14 +159,13 @@
 <script>
 /* ORACULUM: diagnóstico de inicialização do módulo principal. */
 (() => {
-  let appStarted = false;
   const status = () => document.getElementById('status');
   const source = () => document.getElementById('source');
   const chart = () => document.getElementById('chart');
 
   const markStartupFailure = (message) => {
     const current = status();
-    if (appStarted || !current || current.textContent.trim() !== 'CARREGANDO') return;
+    if (!current || current.textContent.trim() !== 'CARREGANDO') return;
     current.textContent = 'ERRO JS';
     if (source()) source().textContent = message;
     if (chart()) {
@@ -189,7 +188,6 @@
     markStartupFailure('Falha ao iniciar JavaScript: ' + (reason && reason.message ? reason.message : String(reason || 'promessa rejeitada')));
   });
 
-  document.addEventListener('oraculum:started', () => { appStarted = true; }, { once: true });
 
   window.setTimeout(() => {
     markStartupFailure('A aplicação não iniciou em 30 segundos. A falha ocorreu antes da conclusão do carregamento do gráfico; esta mensagem ajuda a distinguir erro de módulo de erro da API.');
