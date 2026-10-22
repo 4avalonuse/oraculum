@@ -156,6 +156,46 @@
     <a href="#" class="spacework-link" aria-disabled="true" title="Spacework será conectado quando o workspace estiver disponível">ABRIR SPACEWORK ↗</a>
   </section>
 </main>
+<script>
+/* ORACULUM: diagnóstico de inicialização do módulo principal. */
+(() => {
+  let appStarted = false;
+  const status = () => document.getElementById('status');
+  const source = () => document.getElementById('source');
+  const chart = () => document.getElementById('chart');
+
+  const markStartupFailure = (message) => {
+    const current = status();
+    if (appStarted || !current || current.textContent.trim() !== 'CARREGANDO') return;
+    current.textContent = 'ERRO JS';
+    if (source()) source().textContent = message;
+    if (chart()) {
+      chart().classList.remove('is-loading');
+      chart().classList.add('is-error');
+    }
+    console.error('[ORACULUM startup]', message);
+  };
+
+  window.addEventListener('error', (event) => {
+    if (event.target && event.target !== window && event.target.tagName === 'SCRIPT') {
+      markStartupFailure('Não foi possível carregar um script da aplicação. Verifique a conexão e os módulos JavaScript.');
+      return;
+    }
+    if (event.message) markStartupFailure('Falha ao iniciar JavaScript: ' + event.message);
+  }, true);
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    markStartupFailure('Falha ao iniciar JavaScript: ' + (reason && reason.message ? reason.message : String(reason || 'promessa rejeitada')));
+  });
+
+  document.addEventListener('oraculum:started', () => { appStarted = true; }, { once: true });
+
+  window.setTimeout(() => {
+    markStartupFailure('A aplicação não iniciou em 30 segundos. A falha ocorreu antes da conclusão do carregamento do gráfico; esta mensagem ajuda a distinguir erro de módulo de erro da API.');
+  }, 30000);
+})();
+</script>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
