@@ -25,7 +25,7 @@ export function buildConclusion(result, series=[]) {
   const valid=tests.filter(t=>t?.available&&Number.isFinite(t.pValue)&&t.pValue>=0&&t.pValue<=1);
   const alpha=result.modelDiagnostics?.heteroskedasticity?.alpha??.05;
   const flagged=valid.filter(t=>t.pValue<alpha);
-  if(flagged.length) findings.push('<b>Atenção à inferência:</b> '+flagged.length+' de '+valid.length+' testes de variância encontraram evidência contra suas hipóteses nulas específicas. Isso não invalida automaticamente o modelo, mas pede cautela com erros-padrão e pressupostos.');
+  if(flagged.length) findings.push('<b>Atenção à inferência:</b> '+flagged.length+' de '+valid.length+' testes de variância encontraram evidência contra suas hipóteses nulas específicas. Isso não invalida automaticamente o modelo, mas pede cautela com erros-padrão e pressupostos. <a href="#science-variance-diagnostics" data-science-target="science-variance-diagnostics">Ver testes e evidências ↗</a>');
   else if(valid.length) findings.push('Os testes de variância disponíveis não detectaram evidência forte contra suas hipóteses nulas no nível escolhido; isso não prova variância constante.');
   const validation=result.modelValidation;
   const validationText=validation?.status==='BOTH_PATHS_AGREE'
