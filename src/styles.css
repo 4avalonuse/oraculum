@@ -590,7 +590,6 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 /* Timelines usam janelas fixas por contagem de candles; apenas deslizam. */
 .cmp-timeline-range{touch-action:none;cursor:grab;min-width:8px}
 .cmp-timeline-range:active{cursor:grabbing}
-.cmp-timeline-handle{display:none!important}
 .cmp-add-picker select{width:100%;max-width:260px;min-height:40px;font-size:12px}
 .cmp-add-picker{flex:0 1 260px}
 @media(max-width:480px){.cmp-add-picker{flex:1 1 100%;order:2}.cmp-add-picker select{max-width:100%}.cmp-mode-toggle{order:1}}
@@ -621,32 +620,11 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
  .cmp-timeline-remove{width:24px;height:24px;min-height:24px}
 }
 
-/* Mobile-safe shared-period timeline scale */
-.comparison-timelines{min-width:0;width:100%;max-width:100%;overflow:hidden}
-.cmp-timeline-row{min-width:0;width:100%;max-width:100%;overflow:hidden}
-.cmp-timeline-track{min-width:0;width:auto;max-width:100%;box-sizing:border-box;overflow:hidden;touch-action:pan-y}
-.cmp-timeline-rail{left:0;right:0;max-width:100%}
-.cmp-timeline-range{box-sizing:border-box;max-width:100%;}
-.cmp-timeline-handle{max-width:100%}
-
-/* Reset legacy absolute-position offsets that caused mobile timeline overflow */
-#comparison-timelines,
-.comparison-timelines,
-.cmp-timeline-row,
-.cmp-timeline-track{box-sizing:border-box;min-width:0;width:100%;max-width:100%}
-.cmp-timeline-track{position:relative!important;left:auto!important;right:auto!important;top:auto!important;height:31px;margin:0 0!important;overflow:hidden;touch-action:pan-y}
-.cmp-timeline-rail{left:0!important;right:0!important}
-.cmp-timeline-range{box-sizing:border-box;max-width:100%;min-width:0}
-.cmp-timeline-handle{max-width:100%}
-
-/* Ensure the shared-frame tracks stay inside the visible mobile panel */
+/* Timeline layout: one shared scale, bounded to the mobile viewport. */
 #comparison-timelines,.comparison-timelines,.cmp-timeline-row,.cmp-timeline-track{box-sizing:border-box;min-width:0;width:100%;max-width:100%}
-.cmp-timeline-track{position:relative!important;inset-inline:auto!important;overflow:hidden!important;margin-inline:0!important}
-.cmp-timeline-rail{left:0!important;right:0!important}
+.cmp-timeline-row{overflow:hidden}
+.cmp-timeline-track{position:relative;height:31px;inset-inline:auto;overflow:hidden;margin:0!important;touch-action:pan-y}
+.cmp-timeline-rail{left:0;right:0;max-width:100%}
 .cmp-timeline-range{box-sizing:border-box;min-width:0;max-width:100%}
-
-/* Primary timeline endpoint handles: override legacy hide rule. */
-#comparison-timelines .cmp-timeline-handle{display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
-#comparison-timelines .cmp-timeline-handle.start{left:var(--handle-start)!important}
-#comparison-timelines .cmp-timeline-handle.end{left:var(--handle-end)!important}
-#comparison-timelines .cmp-timeline-handle::before{display:block!important}
+#comparison-timelines .cmp-timeline-handle{display:block;visibility:visible;opacity:1;pointer-events:auto;max-width:100%}
+#comparison-timelines .cmp-timeline-handle::before{display:block}
