@@ -10,6 +10,7 @@ import {validateModelTwoWays,validateResidualDiagnostics} from './model-validati
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
 import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpretation.js';
+import {buildScientificReading} from './scientific-reading.js';
 import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
@@ -400,6 +401,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const validationMessage=validation.message||(validationState==='consistent'?'As implementações comparadas produziram resultados compatíveis. Isso não confirma, por si só, a validade econômica do modelo.':validationState==='alert'?'Há uma divergência que precisa ser examinada antes de confiar neste resultado.':'Esta conferência ainda não foi concluída para o modelo atual.');
    html+='<section class="analysis-validation is-'+validationState+'" role="status" aria-label="Conferência numérica"><div class="analysis-validation__head"><span class="analysis-validation__marker" aria-hidden="true">'+(validationState==='consistent'?'✓':validationState==='alert'?'!':'…')+'</span><div class="analysis-validation__summary"><strong>'+validationLabel+'</strong><span>'+validation.passed+'/'+validation.total+' verificações numéricas</span></div><details class="analysis-validation__details"><summary>Detalhes e limites</summary><p>'+validationMessage+'</p><ul>'+(validation.checks||[]).map(item=>'<li><span class="analysis-validation__check">'+item.status+'</span> · '+item.name+'</li>').join('')+'</ul><small>Esta é uma conferência entre implementações, não um benchmark externo independente. Ela não comprova validade econômica, causalidade nem adequação do modelo.</small></details></div></section>';
 
+   const scientificReading=buildScientificReading(result,{fmt,pct,date});
+   if(scientificReading)html+='<details class="scientific-reading-layer"><summary><span><b>INVESTIGAR</b><strong>Leitura científica contextual</strong><small>O que os dados mostram, pressupostos e limites da conclusão</small></span><span class="scientific-reading-layer__symbol" aria-hidden="true">＋</span></summary>'+scientificReading+'</details>';
    html+=buildMetricEducation(result,series);
    html+='<div class="analysis-section-label">AVANÇADO</div><div class="advanced-teaser"><span>Mediana, melhor/pior período, covariância, alpha, correlação móvel e diagnóstico de lead/lag.</span><button id="advanced-analysis">VER ESTATÍSTICAS AVANÇADAS ↗</button></div>';
    const em=result.explanatoryModel;
