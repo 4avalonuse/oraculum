@@ -25,6 +25,9 @@ test('contextual reading identifies investigation, beta direction and irregular 
   assert.match(html,/não demonstra causalidade|não demonstram/);
   assert.match(html,/variância não constante/);
   assert.match(html,/espaçamento dos resíduos foi classificado como irregular/);
+  assert.match(html,/Próximo passo sugerido/);
+  assert.match(html,/compare a correlação móvel em janelas diferentes/);
+  assert.match(html,/confira o calendário dos candles/);
 });
 
 test('contextual reading explains unavailable models without inventing estimates',()=>{
