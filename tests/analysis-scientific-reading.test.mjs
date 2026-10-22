@@ -20,6 +20,8 @@ test('contextual reading identifies investigation, beta direction and irregular 
   assert.match(html,/LEITURA CIENTÍFICA/);
   assert.match(html,/12 lacunas acima de 1,5 dia/);
   assert.match(html,/série cuja variação é modelada = SOL; a série usada como referência = BTC/);
+  assert.match(html,/A magnitude da correlação é forte nesta amostra/);
+  assert.match(html,/não um teste de significância nem uma garantia de estabilidade/);
   assert.match(html,/não demonstra causalidade|não demonstram/);
   assert.match(html,/variância não constante/);
   assert.match(html,/espaçamento dos resíduos foi classificado como irregular/);
