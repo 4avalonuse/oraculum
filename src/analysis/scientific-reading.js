@@ -1,5 +1,4 @@
 import { buildHeteroskedasticityReading } from './heteroskedasticity-reading.js';
-/* syntax fix */
 /* ORACULUM — leitura científica contextual.
  * Converte os resultados calculados em uma interpretação cautelosa e específica
  * da investigação atual. Não recalcula estatísticas nem infere causalidade.
@@ -16,10 +15,6 @@ function strength(value) {
   if (!Number.isFinite(value)) return 'não estimada';
   const a=Math.abs(value);
   return a>=.7?'forte':a>=.3?'moderada':a>=.1?'fraca':'próxima de zero';
-}
-function pText(p) {
-  if (!Number.isFinite(p)) return 'não disponível';
-  return p<.001?'inferior a 0,001':p.toLocaleString('pt-BR',{maximumFractionDigits:3});
 }
 export function buildScientificReading(result, {fmt, pct, date}) {
   if (!result) return '';
