@@ -12,19 +12,29 @@ export function buildConclusion(result, series=[]) {
   if(!result)return '';
   const primary=series[0], x=primary&&result.series?.[primary.key], relations=result.relations||[], model=result.explanatoryModel;
   const findings=[];
-  if(x&&Number.isFinite(x.total)) findings.push('No período, '+esc(primary.symbol)+' teve retorno acumulado de <b>'+p(x.total)+'</b>. '+(x.total>0?'O preço terminou acima do início; isso não significa que a trajetória tenha sido estável.':x.total<0?'O preço terminou abaixo do início.':'O preço terminou praticamente no nível inicial.'));
-  if(x&&Number.isFinite(x.vol)) findings.push('A volatilidade anualizada estimada foi <b>'+p(x.vol)+'</b>. Ela resume a dispersão dos retornos e não prevê o tamanho do próximo movimento.');
-  if(x&&Number.isFinite(x.drawdown)) findings.push('A maior queda de um pico até um vale foi <b>'+p(Math.abs(x.drawdown))+'</b>. É uma medida histórica de perda, não um limite máximo para perdas futuras.');
-  if(relations.length){const strongest=relations.filter(r=>Number.isFinite(r.correlation)).sort((a,b)=>Math.abs(b.correlation)-Math.abs(a.correlation))[0];if(strongest)findings.push('Entre os pares testados, a associação mais forte em valor absoluto foi <b>'+esc(strongest.primary)+' × '+esc(strongest.target)+': '+n(strongest.correlation)+'</b> ('+strength(strongest.correlation)+'). Correlação não prova causa nem garante que a relação continue igual.')}
-  if(model?.available) findings.push('O modelo linear teve R² de <b>'+p(model.r2)+'</b>: descreve quanto da variação do alvo foi ajustada dentro desta amostra. Não significa a mesma percentagem de acertos nem garante previsão fora dela.');
+  if(x&&Number.isFinite(x.total)){
+    let headline='No período analisado, <b>'+esc(primary.symbol)+'</b> teve retorno acumulado de <b>'+p(x.total)+'</b>. ';
+    headline+=x.total>0?'Terminou acima do início da janela; isso não significa que a trajetória tenha sido estável.':x.total<0?'Terminou abaixo do início da janela.':'Terminou praticamente no nível inicial.';
+    if(Number.isFinite(x.drawdown))headline+=' A maior queda histórica de pico a vale foi <b>'+p(Math.abs(x.drawdown))+'</b>; ela não limita perdas futuras.';
+    findings.push(headline);
+  }
+  const strongest=relations.filter(r=>Number.isFinite(r.correlation)).sort((a,b)=>Math.abs(b.correlation)-Math.abs(a.correlation))[0];
+  if(strongest) findings.push('Entre os pares avaliados, a maior correlação em valor absoluto foi <b>'+esc(strongest.primary)+' × '+esc(strongest.target)+': '+n(strongest.correlation)+'</b> ('+strength(strongest.correlation)+'). É uma associação observada nesta amostra, não evidência de causalidade nem garantia de estabilidade.');
+  if(model?.available&&Number.isFinite(model.r2)) findings.push('O modelo multivariado ajustou <b>'+p(model.r2)+'</b> da variação do alvo dentro da amostra. R² não é percentual de acerto e não demonstra desempenho preditivo fora dela.');
   const tests=result.modelDiagnostics?.heteroskedasticity?.tests||[];
   const valid=tests.filter(t=>t?.available&&Number.isFinite(t.pValue)&&t.pValue>=0&&t.pValue<=1);
-  const flagged=valid.filter(t=>t.pValue<(result.modelDiagnostics?.heteroskedasticity?.alpha??.05));
-  if(valid.length) findings.push(flagged.length ? '<b>Atenção à inferência:</b> '+flagged.length+' de '+valid.length+' testes de variância detectaram evidência contra suas hipóteses nulas específicas. Isso não invalida automaticamente os coeficientes, mas recomenda cautela com erros-padrão e pressupostos.' : 'Os testes disponíveis não detectaram evidência forte contra suas hipóteses nulas ao nível escolhido. Isso não prova que a variância seja constante.');
+  const alpha=result.modelDiagnostics?.heteroskedasticity?.alpha??.05;
+  const flagged=valid.filter(t=>t.pValue<alpha);
+  if(flagged.length) findings.push('<b>Atenção à inferência:</b> '+flagged.length+' de '+valid.length+' testes de variância encontraram evidência contra suas hipóteses nulas específicas. Isso não invalida automaticamente o modelo, mas pede cautela com erros-padrão e pressupostos.');
+  else if(valid.length) findings.push('Os testes de variância disponíveis não detectaram evidência forte contra suas hipóteses nulas no nível escolhido; isso não prova variância constante.');
   const validation=result.modelValidation;
-  findings.push(validation?.status==='BOTH_PATHS_AGREE' ? 'A conferência numérica indica concordância entre os dois caminhos de cálculo avaliados. Isso confirma consistência aritmética nesses itens, não a qualidade dos dados ou a validade econômica do modelo.' : validation?.status==='ALERT' ? '<b>Revisão necessária:</b> os caminhos de cálculo divergiram em uma ou mais verificações.' : 'A conferência independente ainda não confirma todos os cálculos; trate os resultados como provisórios até validar.');
+  const validationText=validation?.status==='BOTH_PATHS_AGREE'
+    ? 'Conferência numérica: os caminhos de cálculo avaliados concordaram. Isso não valida os dados de origem nem a interpretação econômica.'
+    : validation?.status==='ALERT'
+      ? '<b>Revisão necessária:</b> os caminhos de cálculo divergiram em uma ou mais verificações.'
+      : 'Conferência numérica pendente: trate a leitura como provisória até validar os cálculos.';
   const status=validation?.status==='ALERT'||flagged.length?'ATENÇÃO AOS LIMITES':validation?.status==='BOTH_PATHS_AGREE'?'LEITURA COM RESSALVAS':'RESULTADO PROVISÓRIO';
-  return '<section class="analysis-conclusion"><div class="conclusion-eyebrow">EM POUCAS PALAVRAS</div><h3>Conclusão desta investigação</h3><p class="conclusion-status">'+status+'</p><ul>'+findings.map(t=>'<li>'+t+'</li>').join('')+'</ul><p class="conclusion-foot">“Bom” ou “ruim” depende da pergunta, do risco aceito e do período. Não existe um único valor universalmente bom para correlação, beta, volatilidade ou R².</p></section>';
+  return '<section class="analysis-conclusion"><div class="conclusion-eyebrow">EM POUCAS PALAVRAS</div><h3>Conclusão desta investigação</h3><p class="conclusion-status">'+status+'</p><ul>'+findings.map(t=>'<li>'+t+'</li>').join('')+'</ul><p class="conclusion-foot">'+validationText+'</p><p class="conclusion-foot">“Bom” ou “ruim” depende da pergunta, do risco aceito e do período. Não existe um único valor universalmente bom para correlação, beta, volatilidade ou R².</p></section>';
 }
 export function buildMetricEducation(result, series=[]) {
   const primary=series[0], x=primary&&result?.series?.[primary.key];
