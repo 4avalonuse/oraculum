@@ -67,3 +67,6 @@
 .scientific-reading-layer .science-caution .science-level{color:#e7c36e}
 .scientific-reading-layer .science-evidence{border-color:rgba(114,206,255,.18)}
 @media(max-width:650px){.scientific-reading-layer .science-cards{grid-template-columns:1fr}.scientific-reading-layer>summary{min-height:68px}.scientific-reading-layer .science-card{padding:11px}}
+
+.scientific-reading-layer .science-next-step{margin:10px 0 0;padding-top:9px;border-top:1px solid #263d51;color:#c5d8e8;font-size:11px;line-height:1.65}
+.scientific-reading-layer .science-next-step b{color:#72ceff;font-weight:700}
