@@ -28,6 +28,9 @@ test('contextual reading identifies investigation, beta direction and irregular 
   assert.match(html,/Próximo passo sugerido/);
   assert.match(html,/compare a correlação móvel em janelas diferentes/);
   assert.match(html,/confira o calendário dos candles/);
+  assert.match(html,/id="science-residual-timing"/);
+  assert.match(html,/id="science-relation-btc-sol"/);
+  assert.match(html,/id="science-residual-diagnostics"/);
 });
 
 test('contextual reading explains unavailable models without inventing estimates',()=>{
