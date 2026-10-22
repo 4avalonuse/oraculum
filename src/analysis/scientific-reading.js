@@ -8,8 +8,8 @@ function esc(value) {
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 }
-function card(title, level, body, detail='') {
-  return '<article class="science-card science-'+level+'"><span class="science-level">'+esc(level==='evidence'?'EVIDÊNCIA':level==='caution'?'ATENÇÃO':'LEITURA')+'</span><h4>'+esc(title)+'</h4><p>'+body+'</p>'+(detail?'<details><summary>Aprofundar</summary><div>'+detail+'</div></details>':'')+'</article>';
+function card(title, level, body, detail='', id='') {
+  return '<article'+(id?' id="'+esc(id)+'"':'')+' class="science-card science-'+level+'"><span class="science-level">'+esc(level==='evidence'?'EVIDÊNCIA':level==='caution'?'ATENÇÃO':'LEITURA')+'</span><h4>'+esc(title)+'</h4><p>'+body+'</p>'+(detail?'<details><summary>Aprofundar</summary><div>'+detail+'</div></details>':'')+'</article>';
 }
 function strength(value) {
   if (!Number.isFinite(value)) return 'não estimada';
@@ -30,7 +30,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
   if (gaps>0) {
     cards.push(card('A amostra tem intervalos temporais irregulares','caution',
       'Foram identificadas <b>'+fmt(gaps,0)+' lacunas acima de 1,5 dia</b> em '+fmt(shared,0)+' buckets comuns. Um retorno entre dois fechamentos observados pode acumular mais de um dia de mercado/calendário; não o interprete automaticamente como retorno diário de 24 horas.',
-      'As relações são calculadas sobre buckets de calendário compartilhados. Isso evita comparar datas diferentes, mas não garante que os preços representem fechamentos simultâneos. A anualização e testes que pressupõem intervalos iguais precisam dessa ressalva.'));
+      'As relações são calculadas sobre buckets de calendário compartilhados. Isso evita comparar datas diferentes, mas não garante que os preços representem fechamentos simultâneos. A anualização e testes que pressupõem intervalos iguais precisam dessa ressalva.', 'science-residual-timing'));
   } else {
     cards.push(card('Como o tempo entra nos cálculos','reading',
       'As relações entre ativos usam buckets de calendário comuns. A ausência de lacunas detectadas não prova que os horários de fechamento dos mercados sejam economicamente simultâneos.',
@@ -49,7 +49,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
         ?'Próximo passo: verifique se a associação se mantém em subperíodos e em cenários de estresse antes de usá-la como hipótese de diversificação.'
         :'Próximo passo: trate a relação como exploratória e compare-a com outros períodos e com a pergunta econômica que deseja investigar.';
     cards.push(card(rel.primary+' × '+rel.target,'evidence',reading,
-      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.')+'<p class="science-next-step"><b>Próximo passo sugerido:</b> '+esc(relationAction)+'</p>'));
+      detail+(Number.isFinite(rollDiff)&&rollDiff>=.25?' <br><br>A correlação móvel final ('+fmt(rolling,3)+') difere visivelmente da correlação da amostra ('+fmt(corr,3)+'). Isso sugere que a associação pode variar no tempo; a janela móvel é exploratória e não prova mudança estrutural.':' A correlação móvel final é '+fmt(rolling,3)+'.')+'<p class="science-next-step"><b>Próximo passo sugerido:</b> '+esc(relationAction)+'</p>', 'science-relation-'+String(rel.primary+'-'+rel.target).toLowerCase().replace(/[^a-z0-9-]+/g,'-')));
   }
   if (model?.available) {
     const tests=diag?.heteroskedasticity?.tests||[];
@@ -61,7 +61,7 @@ export function buildScientificReading(result, {fmt, pct, date}) {
     if (tests.length) cards.push(buildHeteroskedasticityReading(diag, {fmt}));
     if (irregular) cards.push(card('Diagnósticos residuais: números válidos, inferência limitada','caution',
       'O espaçamento dos resíduos foi classificado como irregular. DW e Ljung–Box podem ser reproduzidos numericamente, mas seus valores-p convencionais pressupõem condições temporais que esta amostra não garante.',
-      'Use os resultados como descrição exploratória, não como veredito formal sobre autocorrelação. A concordância entre duas implementações confirma consistência aritmética, não validade dos pressupostos.<p class="science-next-step"><b>Próximo passo sugerido:</b> confira o calendário dos candles, os intervalos ausentes e a ordenação temporal; evite tratar p-valores convencionais como decisivos enquanto o espaçamento for irregular.</p>'));
+      'Use os resultados como descrição exploratória, não como veredito formal sobre autocorrelação. A concordância entre duas implementações confirma consistência aritmética, não validade dos pressupostos.<p class="science-next-step"><b>Próximo passo sugerido:</b> confira o calendário dos candles, os intervalos ausentes e a ordenação temporal; evite tratar p-valores convencionais como decisivos enquanto o espaçamento for irregular.</p>', 'science-residual-diagnostics'));
   } else {
     cards.push(card('O modelo multivariado não foi estimado','caution',
       esc(model?.reason||'Selecione variáveis explicativas e verifique se há observações suficientes.'),
