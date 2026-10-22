@@ -73,11 +73,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderTimelineControls=()=>{
    const host=$('#comparison-timeline-controls');
    if(!host)return;
-   const options=Object.entries(assets).map(([key,meta])=>'<option value="'+key+'">'+(meta.symbol||key)+' · '+(meta.name||key)+'</option>').join('');
-   host.innerHTML='<button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alinhar todas as timelines ao período principal">↔ Alinhar todas</button><label class="cmp-add-picker"><span>Adicionar série</span><select id="cmp-add-asset" aria-label="Selecionar ativo para adicionar"><option value="">＋ Adicionar ativo…</option>'+options+'</select></label>';
-   const picker=host.querySelector('#cmp-add-asset');
-   if(picker)picker.value='';
-   picker?.addEventListener('change',()=>{const key=picker.value;if(key)addTimeline(key);});
+   host.innerHTML='<button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alinhar todas as timelines ao período principal">↔ Alinhar todas</button>';
    host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
  };
  const renderTimelinePanel=()=>{
@@ -99,9 +95,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(1,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0"></div>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle start" data-slot="0" data-edge="start" style="left:'+left+'%" aria-label="Ajustar data inicial do ativo principal" title="Data inicial"></button><button type="button" class="cmp-timeline-handle end" data-slot="0" data-edge="end" style="left:'+right+'%" aria-label="Ajustar data final do ativo principal" title="Data final"></button>':'';
-     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong><span class="cmp-timeline-period">'+intervalLabel+'</span></div>'+(i>0?'<button type="button" class="cmp-timeline-remove" data-slot="'+i+'" aria-label="Remover linha temporal '+(i+1)+'" title="Remover">×</button>':'')+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div></section>';
+     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong><span class="cmp-timeline-period">'+intervalLabel+'</span></div>'+'</div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div></section>';
    }).join('');
-   host.querySelectorAll('.cmp-timeline-remove').forEach(button=>button.addEventListener('click',()=>removeTimeline(Number(button.dataset.slot))));
    host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
      range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot)));
      range.addEventListener('keydown',event=>{
@@ -155,33 +150,6 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
- };
- const addTimeline=async(assetKey)=>{
-   if(!state.timelineSlots.length)return;
-   const meta=assets[assetKey];if(!meta)return;
-   let asset=state.assetPool.find(x=>x.assetKey===assetKey);
-   try{
-     if(!asset){
-       const interval=meta.supportedIntervals?.includes(state.interval)?state.interval:(meta.supportedIntervals?.[0]||state.interval);
-       const loaded=await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||assetKey,kind:meta.kind||'ohlcv',interval,currency:'USD'});
-       const candles=normalizeCandles(loaded.candles);
-       if(candles.length<10)throw new Error('Poucos dados para '+(meta.symbol||assetKey)+'.');
-       asset={key:assetKey,assetKey,symbol:meta.symbol||assetKey,name:meta.name||assetKey,category:meta.category,candles};
-       state.assetPool.push(asset);
-     }
-     state.addAssetKey=assetKey;
-     const index=state.timelineSlots.length,main=state.timelineSlots[0],slot=makeSlot(asset,index),rows=timelineRowsFor(slot);
-     slot.window=startWindow(slot,main.window.start,main.window.end,10);
-     slot.window=resizeTimelineDuration(rows,slot.window,main.window.durationMs,10);
-     state.timelineSlots.push(slot);
-     renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
-   }catch(error){console.error('[ORACULUM TIMELINE ADD]',error);$('#analysis-status').textContent='ERRO AO ADICIONAR';}
- };
- const removeTimeline=index=>{
-   if(index<=0||index>=state.timelineSlots.length)return;
-   const remaining=state.timelineSlots.filter((_,i)=>i!==index);
-   state.timelineSlots=remaining.map((old,i)=>{const slot=makeSlot(state.assetPool.find(x=>x.assetKey===old.assetKey)||old,i);slot.window=old.window;return slot;});
-   renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
