@@ -17,6 +17,15 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  wireMetricHelp(document);
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false,timelineMode:'common',addAssetKey:'',prepared:false};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ const markTimelinesChanged=()=>{
+   $('#analysis-results')?.classList.add('is-hidden');
+   $('#full-analysis')?.classList.add('is-hidden');
+   const status=$('#analysis-status');
+   if(status)status.textContent='JANELAS ATUALIZADAS · ANALISE PARA CALCULAR';
+   const button=$('#analyze-assets');
+   if(button)button.textContent='ANALISAR JANELAS ↗';
+ };
+
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
  const assetColor=(assetKey,indexOverride)=>{const palette=['#3984ff','#f5a742','#35c780','#8b5cf6','#e0528d','#17a2b8','#f97316','#a3a3a3'];const found=indexOverride??state.timelineSlots.findIndex(slot=>slot.assetKey===assetKey);return palette[Math.max(0,found)%palette.length]};
  const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
@@ -69,7 +78,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
  const alignAllTimelines=()=>{
    syncComparisonDurations();
-   renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+   renderTimelinePanel();renderChart();markTimelinesChanged();
  };
  const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
  const addCatalogAsset=async(assetKey)=>{
@@ -94,7 +103,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      slot.window=startWindow(slot,primary?.window?.start??timelineRowsFor(slot)[0]?.timestamp,primary?.window?.end??timelineRowsFor(slot).at(-1)?.timestamp,10);
      state.timelineSlots.push(slot);
      syncComparisonDurations();
-     renderTimelineControls();renderTimelinePanel();renderChart();if(status)status.textContent='TIMELINES ATUALIZADAS · ANALISE QUANDO QUISER';
+     renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
    }catch(error){
      console.error('[ORACULUM ADD ASSET]',error);
      if(status)status.textContent='NÃO FOI POSSÍVEL ADICIONAR '+(meta.symbol||assetKey);
@@ -137,7 +146,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot)));
      range.addEventListener('keydown',event=>{
        if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-       event.preventDefault();shiftTimelineByPeriods(Number(range.dataset.slot),event.key==='ArrowRight'?1:-1);renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+       event.preventDefault();shiftTimelineByPeriods(Number(range.dataset.slot),event.key==='ArrowRight'?1:-1);renderTimelinePanel();renderChart();markTimelinesChanged();
      });
    });
    host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>{
@@ -163,7 +172,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
      renderTimelinePanel();renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
  const beginTimelineResize=(event,edge)=>{
