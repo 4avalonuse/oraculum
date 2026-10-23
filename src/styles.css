@@ -704,3 +704,8 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .cmp-add-option .cmp-add-series{flex:0 0 30px;min-width:30px;width:30px;height:30px;min-height:30px;padding:0;font-size:18px}
 .cmp-add-option .cmp-add-series:hover{border-color:#3984ff;color:#fff;background:#152b43}
 @media(max-width:480px){.cmp-add-menu{padding:8px}.cmp-add-category-list{grid-template-columns:1fr}.cmp-add-option{padding:6px 7px}}
+
+.investigation-asset-intro{margin:10px 0 4px;padding:12px 13px;border:1px solid #1e3042;border-radius:9px;background:rgba(12,22,35,.55)}
+.investigation-asset-intro strong{display:block;color:#cbd9e7;font-size:12px;font-weight:650}
+.investigation-asset-intro p{margin:5px 0 0;color:#8296aa;font-size:11px;line-height:1.55}
+.investigation-asset-intro b{color:#a9c8e6;font-weight:600}
