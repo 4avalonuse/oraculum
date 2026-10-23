@@ -23,6 +23,7 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
   let timelineEvents=[];
   let activeEventCategory='ALL';
   let selectedEventIds=new Set();
+  let eventMenuOpen=false;
 
   function eventAppliesToAsset(event,symbol){
     const ids=Array.isArray(event?.assetIds)?event.assetIds:[];
@@ -78,8 +79,13 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
     const selectedVisible=[...selectedEventIds].filter(id=>scopedEvents.some(event=>String(event.id)===id)).length;
     const activeSymbol=getActiveSymbol?.();
     const scopeLabel=activeSymbol&&activeSymbol!=='BTC-USD'?'EVENTOS BTC + ATIVO':'EVENTOS BTC';
-    head.innerHTML='<span>'+scopeLabel+'</span><span class="event-menu-count">'+selectedVisible+'/'+scopedEvents.length+'</span>';
+    head.innerHTML='<button type="button" class="event-menu-toggle" aria-expanded="'+String(eventMenuOpen)+'"><span class="event-menu-title"><strong>'+scopeLabel+'</strong><small>'+selectedVisible+' de '+scopedEvents.length+' selecionados</small></span><span class="event-menu-count">'+scopedEvents.length+' eventos <b aria-hidden="true">'+(eventMenuOpen?'−':'+')+'</b></span></button>';
+    head.querySelector('.event-menu-toggle').addEventListener('click',()=>{eventMenuOpen=!eventMenuOpen;renderEventMenu();});
     menu.appendChild(head);
+    const content=document.createElement('div');
+    content.className='event-menu-content';
+    content.hidden=!eventMenuOpen;
+    menu.appendChild(content);
     const filters=document.createElement('div');
     filters.className='event-menu-filters';
     const allButton=document.createElement('button');
@@ -95,7 +101,7 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
       button.addEventListener('click',()=>{activeEventCategory=category;renderEventMenu();});
       filters.appendChild(button);
     });
-    menu.appendChild(filters);
+    content.appendChild(filters);
     const list=document.createElement('div');
     list.className='event-menu-list';
     visibleEvents.forEach(event=>{
@@ -114,7 +120,7 @@ export function attachTimeline({dataClient,getActive,getActiveSymbol}){
       });
       list.appendChild(row);
     });
-    menu.appendChild(list);
+    content.appendChild(list);
   }
 
   async function loadEvents(){

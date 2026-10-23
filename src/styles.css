@@ -791,3 +791,31 @@ button{transition:background-color .15s,border-color .15s,color .15s}
   .investigation-next{align-items:flex-start;flex-direction:column}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Compact event navigator: keep the chart visible and expand details on demand. */
+.event-menu{padding:0!important;border-top:1px solid var(--ui-border,#233244);background:var(--ui-surface,#0d1520)}
+.event-menu-head{margin:0!important;display:block}
+.event-menu-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:8px 13px;border:0;border-radius:0;background:transparent;color:var(--ui-text,#e6edf5);text-align:left}
+.event-menu-toggle:hover{background:rgba(255,255,255,.025)}
+.event-menu-title{display:flex;align-items:center;gap:10px;min-width:0}
+.event-menu-title strong{font-size:10px;letter-spacing:.08em;font-weight:650;color:#c9d8e7}
+.event-menu-title small{font-size:10px;letter-spacing:0;color:var(--ui-muted,#91a2b5);white-space:nowrap}
+.event-menu-count{display:flex;align-items:center;gap:8px;flex:0 0 auto;color:#89a2bb;font-size:10px;letter-spacing:0}
+.event-menu-count b{display:grid;place-items:center;width:22px;height:22px;border:1px solid #2a4057;border-radius:6px;color:#9bcaff;font-size:15px;font-weight:500}
+.event-menu-content[hidden]{display:none!important}
+.event-menu-content{padding:9px 12px 12px;border-top:1px solid rgba(35,50,68,.65)}
+.event-menu-filters{gap:5px;margin:0 0 8px}
+.event-filter{min-height:28px;padding:5px 8px;border-radius:7px;font-size:9px}
+.event-menu-list{max-height:210px;overflow-y:auto;overscroll-behavior:contain;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding-right:3px}
+.event-row{min-height:34px;padding:6px 8px;border-radius:7px;grid-template-columns:6px auto minmax(0,1fr) auto;gap:7px}
+.event-row strong{min-width:0}
+@media(max-width:700px){
+  .event-menu-toggle{min-height:42px;padding:7px 10px}
+  .event-menu-title{align-items:flex-start;flex-direction:column;gap:2px}
+  .event-menu-title strong{font-size:9px}
+  .event-menu-title small{font-size:9px}
+  .event-menu-content{padding:8px}
+  .event-menu-list{max-height:190px;grid-template-columns:1fr}
+  .event-row{min-height:36px;padding:7px;grid-template-columns:6px auto minmax(0,1fr) auto}
+}
