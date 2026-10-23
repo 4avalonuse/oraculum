@@ -71,11 +71,46 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    syncComparisonDurations();
    renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
  };
+ const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
+ const addCatalogAsset=async(assetKey)=>{
+   const meta=assets[assetKey];if(!meta)return;
+   const status=$('#analysis-status');
+   try{
+     let asset=state.assetPool.find(item=>item.assetKey===assetKey);
+     if(!asset){
+       if(meta.supportedIntervals?.length&&!meta.supportedIntervals.includes(state.interval)){
+         if(status)status.textContent='ESTE ATIVO USA DADOS DIÁRIOS — execute novamente a análise em D1 para adicioná-lo.';
+         return;
+       }
+       if(status)status.textContent='CARREGANDO '+(meta.symbol||assetKey);
+       const loaded=await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||assetKey,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(state.interval)?state.interval:(meta.supportedIntervals?.[0]||state.interval),currency:'USD'});
+       const candles=normalizeCandles(loaded.candles);
+       if(candles.length<10)throw new Error('Poucos dados disponíveis para '+(meta.symbol||assetKey)+'.');
+       asset={key:assetKey,assetKey,symbol:meta.symbol||assetKey,name:meta.name||assetKey,category:meta.category,candles};
+       state.assetPool.push(asset);
+     }
+     const slot=makeSlot(asset,state.timelineSlots.length);
+     const primary=state.timelineSlots[0];
+     slot.window=startWindow(slot,primary?.window?.start??timelineRowsFor(slot)[0]?.timestamp,primary?.window?.end??timelineRowsFor(slot).at(-1)?.timestamp,10);
+     state.timelineSlots.push(slot);
+     syncComparisonDurations();
+     renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+   }catch(error){
+     console.error('[ORACULUM ADD ASSET]',error);
+     if(status)status.textContent='NÃO FOI POSSÍVEL ADICIONAR '+(meta.symbol||assetKey);
+   }
+ };
  const renderTimelineControls=()=>{
    const host=$('#comparison-timeline-controls');
    if(!host)return;
-   host.innerHTML='<button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alinhar todas as timelines ao período principal">↔ Alinhar todas</button>';
+   const categories={};
+   state.assetCatalog.forEach(asset=>{const category=asset.category||'other';(categories[category]||(categories[category]=[])).push(asset)});
+   const menu=Object.entries(categories).map(([category,list])=>'<details class="cmp-add-category"><summary>'+ (categoryLabels[category]||category) +'<span>'+list.length+'</span></summary><div class="cmp-add-category-list">'+list.map(asset=>'<div class="cmp-add-option"><span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span><button type="button" class="cmp-add-series" data-add-asset="'+asset.assetKey+'" aria-label="Adicionar '+asset.symbol+'" title="Adicionar '+asset.name+'">+</button></div>').join('')+'</div></details>').join('');
+   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alinhar todas as timelines ao período principal">↔ Alinhar todas</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
+   const toggle=host.querySelector('#cmp-add-toggle'),panel=host.querySelector('#cmp-add-menu');
+   toggle?.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});
    host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
+   host.querySelectorAll('[data-add-asset]').forEach(button=>button.addEventListener('click',()=>addCatalogAsset(button.dataset.addAsset)));
  };
  const renderTimelinePanel=()=>{
    const host=$('#comparison-timelines');
