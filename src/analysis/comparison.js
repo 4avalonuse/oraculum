@@ -223,7 +223,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(hasCommon){
      result=commonResult;
      result.relations=commonResult.relations;
-     result.explanatoryModel=runExplanatoryModel(commonRows,windowedSeries,{returnMode});
+     result.explanatoryModel=runExplanatoryModel(commonRows,modelSeries,{returnMode});
      result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);
      state.rows=commonRows;state.commonSeries=modelSeries;state.independentTimelines=!sameWindowDates(slots);
    }else{
