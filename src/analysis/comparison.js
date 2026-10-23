@@ -136,7 +136,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const right=clamp(Math.max(frameStart,frameEnd)/commonSpan*100,0,100);
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
-     const label=slot.symbol||slot.name||slot.assetKey;
+     const label=(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(i+1);
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(1,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0"></div>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
@@ -207,7 +207,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const line=values=>values.map((v,i)=>{const x=p.l+(i/Math.max(1,values.length-1))*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
    const polylines=normalized.map(x=>'<polyline points="'+line(x.values)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey,x.slot.slotIndex)+'"/>').join('');
    host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação normalizada por tempo relativo; cada janela começa em base 100"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">Início relativo</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">Fim relativo</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">100 = início de cada janela</text></svg>';
-   const legend=$('#comparison-legend');if(legend)legend.innerHTML='';
+   const legend=$('#comparison-legend');if(legend)legend.innerHTML=normalized.map(({slot,rows})=>'<span class="cmp-series-label"><span aria-hidden="true" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+assetColor(slot.assetKey,slot.slotIndex)+';margin-right:6px"></span>'+(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(slot.slotIndex+1)+' ('+date(rows[0].timestamp)+' → '+date(rows.at(-1).timestamp)+')</span>').join(' · ');
  };
  const sameWindowDates=slots=>slots.every(slot=>{
    const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1),main=rowsInWindow(slots[0]);
