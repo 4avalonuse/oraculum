@@ -15,7 +15,7 @@ import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWi
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
- const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false,timelineMode:'common',addAssetKey:''};
+ const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false,timelineMode:'common',addAssetKey:'',prepared:false};
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
  const assetColor=(assetKey,indexOverride)=>{const palette=['#3984ff','#f5a742','#35c780','#8b5cf6','#e0528d','#17a2b8','#f97316','#a3a3a3'];const found=indexOverride??state.timelineSlots.findIndex(slot=>slot.assetKey===assetKey);return palette[Math.max(0,found)%palette.length]};
@@ -94,7 +94,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      slot.window=startWindow(slot,primary?.window?.start??timelineRowsFor(slot)[0]?.timestamp,primary?.window?.end??timelineRowsFor(slot).at(-1)?.timestamp,10);
      state.timelineSlots.push(slot);
      syncComparisonDurations();
-     renderTimelineControls();renderTimelinePanel();renderChart();recomputeTimelineAnalysis();
+     renderTimelineControls();renderTimelinePanel();renderChart();if(status)status.textContent='TIMELINES ATUALIZADAS · ANALISE QUANDO QUISER';
    }catch(error){
      console.error('[ORACULUM ADD ASSET]',error);
      if(status)status.textContent='NÃO FOI POSSÍVEL ADICIONAR '+(meta.symbol||assetKey);
@@ -453,25 +453,34 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
 
  async function run(){
-   const activeSymbol=getActiveSymbol(),reference=document.querySelector('#analysis-reference')?.value||activeSymbol,checked=[...document.querySelectorAll('.analysis-asset:checked')].map(x=>x.value),symbols=[...new Set([reference,...checked])];
-   $('#analysis-status').textContent='ANALISANDO';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#comparison-panel').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
+   if(state.prepared){
+     $('#analysis-status').textContent='ANALISANDO JANELAS';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
+     try{
+       recomputeTimelineAnalysis();
+       const depth=$('#analysis-depth')?.value||'key';
+       if(state.result&&depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});
+       else if(state.result&&depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});
+     }catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
+     return;
+   }
+   const activeSymbol=getActiveSymbol(),reference=document.querySelector('#analysis-reference')?.value||activeSymbol,symbols=[reference];
+   $('#analysis-status').textContent='PREPARANDO TIMELINES';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
    try{
-     const requestedInterval=getInterval()||'1d',hasDailySeries=symbols.some(key=>assets[key]?.supportedIntervals),interval=hasDailySeries?'1d':requestedInterval,period=$('#analysis-period')?.value||'full',pool=[];
-     for(const key of symbols){
-       const meta=assets[key];if(!meta)continue;
-       const sameLoadedAsset=key===activeSymbol&&interval===requestedInterval;
-       const loaded=sameLoadedAsset?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||key,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
-       const candles=normalizeCandles(loaded.candles);
-       if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');
-       pool.push({key,assetKey:key,symbol:meta.symbol,name:meta.name,category:meta.category,candles});
-     }
-     if(!pool.some(x=>x.assetKey===reference))throw new Error('Não foi possível carregar o ativo principal.');
+     const requestedInterval=getInterval()||'1d',meta=assets[reference],interval=meta?.supportedIntervals?.length?meta.supportedIntervals[0]:requestedInterval,period=$('#analysis-period')?.value||'full',pool=[];
+     if(!meta)throw new Error('Ativo principal não encontrado no catálogo.');
+     const sameLoadedAsset=reference===activeSymbol&&interval===requestedInterval;
+     const loaded=sameLoadedAsset?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||reference,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
+     const candles=normalizeCandles(loaded.candles);
+     if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');
+     pool.push({key:reference,assetKey:reference,symbol:meta.symbol,name:meta.name,category:meta.category,candles});
      initializeTimelineSlots(pool,reference,interval,period);
-     recomputeTimelineAnalysis();
-     const depth=$('#analysis-depth')?.value||'key';
-     if(state.result&&depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});
-     else if(state.result&&depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});
-   }catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
+     state.prepared=true;
+     $('#comparison-panel').classList.remove('is-hidden');
+     $('#comparison-chart').innerHTML='';
+     renderChart();
+     $('#analysis-status').textContent='TIMELINES PRONTAS';
+     $('#analyze-assets').textContent='ANALISAR JANELAS ↗';
+   }catch(error){console.error('[ORACULUM PREPARE]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
  }
  const button=$('#analyze-assets');button?.addEventListener('click',run);$('#full-analysis')?.addEventListener('click',()=>openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date}));
  const onResize=()=>{if(state.timelineSlots?.length){renderChart();renderTimelinePanel()}};window.addEventListener('resize',onResize);return{run,destroy(){window.removeEventListener('resize',onResize)}};
