@@ -74,33 +74,10 @@
         <section class="analysis-step analysis-step-primary" aria-labelledby="step-question-title">
           <div class="step-heading"><div><span class="step-number">1</span><div><h2 id="step-question-title">O que você quer investigar?</h2><p>Comece pelo ativo principal. O restante pode ficar como está.</p></div></div><button class="section-help" type="button" data-topic="MÉTODO" aria-label="Ajuda sobre a investigação">?</button></div>
           <div class="reference-control analysis-target-card" aria-live="polite"><span>ATIVO INVESTIGADO</span><strong id="analysis-target-label">BTC · Bitcoin</strong><small>Este é o ativo do gráfico e o foco da análise. Para mudar o foco, use o seletor de ativo no topo. Depois, adicione outros ativos em “Compare com”.</small><select id="analysis-reference" aria-label="Ativo investigado" hidden tabindex="-1" aria-hidden="true"></select></div>
-          <div class="step-subheading"><h3>Compare com</h3><button class="section-help" type="button" data-topic="CORR." aria-label="Ajuda sobre comparar ativos">?</button></div>
-          <div class="asset-picks common-picks">
-            <label class="asset-pick"><input class="analysis-asset" value="BTC-USD" type="checkbox"><span>BTC</span><small>CRIPTO</small></label>
-            <label class="asset-pick"><input class="analysis-asset" value="SOL-USD" type="checkbox"><span>SOL</span><small>CRIPTO</small></label>
-            <label class="asset-pick"><input class="analysis-asset" value="RENDER-USD" type="checkbox"><span>RENDER</span><small>CRIPTO</small></label>
-            <label class="asset-pick"><input class="analysis-asset" value="JUP-USD" type="checkbox"><span>JUP</span><small>CRIPTO</small></label>
-            <label class="asset-pick"><input class="analysis-asset" value="ONDO-USD" type="checkbox"><span>ONDO</span><small>CRIPTO</small></label>
+          <div class="investigation-asset-intro">
+            <strong>Monte sua investigação</strong>
+            <p>Prepare as timelines primeiro. Depois, use <b>＋ Adicionar ativo</b> para incluir quantas séries precisar — inclusive o mesmo ativo mais de uma vez.</p>
           </div>
-          <details class="analysis-disclosure">
-            <summary><span>Adicionar variáveis de mercado</span><small>Ouro, petróleo, ações, dólar e juros</small></summary>
-            <div class="asset-picks context-picks">
-              <label class="asset-pick"><input class="analysis-asset" value="GOLD-SPOT" type="checkbox"><span>OURO SPOT</span><small>COMMODITY</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="WTI-SPOT" type="checkbox"><span>WTI SPOT</span><small>COMMODITY</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="^GSPC" type="checkbox"><span>S&amp;P 500</span><small>ÍNDICE</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="DX-Y.NYB" type="checkbox"><span>DÓLAR · DXY</span><small>MACRO</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="^TNX" type="checkbox"><span>JUROS · US 10Y</span><small>MACRO</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="^VIX" type="checkbox"><span>VIX</span><small>RISCO</small></label>
-            </div>
-          </details>
-          <details class="analysis-disclosure">
-            <summary><span>Ativar séries de validação</span><small>TEST-A, TEST-B e TEST-C</small></summary>
-            <div class="asset-picks">
-              <label class="asset-pick"><input class="analysis-asset" value="TEST-A" type="checkbox"><span>TEST-A</span><small>TESTE</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="TEST-B" type="checkbox"><span>TEST-B</span><small>TESTE</small></label>
-              <label class="asset-pick"><input class="analysis-asset" value="TEST-C" type="checkbox"><span>TEST-C</span><small>TESTE</small></label>
-            </div>
-          </details>
         </section>
         <section class="analysis-step" aria-labelledby="step-period-title">
           <div class="step-heading"><div><span class="step-number">2</span><div><h2 id="step-period-title">Qual período?</h2><p>Escolha quantos períodos observar. Arraste as timelines para deslocar a janela sem alterar a quantidade de candles.</p></div></div><button class="section-help" type="button" data-topic="PERÍODO DA ANÁLISE" aria-label="Ajuda sobre período">?</button></div>
@@ -119,7 +96,7 @@
         </section>
         <div class="analysis-actions">
           <div><strong>Pronto para investigar?</strong><span>Os cálculos só rodam quando você tocar no botão.</span></div>
-          <button id="analyze-assets">ANALISAR ↗</button>
+          <button id="analyze-assets">PREPARAR TIMELINES ↗</button>
         </div>
       </div>
       <div id="analysis-context" class="analysis-context is-hidden"></div><div id="comparison-panel" class="comparison-panel">
