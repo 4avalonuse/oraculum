@@ -709,3 +709,85 @@ body{font-size:16px}.analysis-head strong,.comparison-head strong,.chart-head st
 .investigation-asset-intro strong{display:block;color:#cbd9e7;font-size:12px;font-weight:650}
 .investigation-asset-intro p{margin:5px 0 0;color:#8296aa;font-size:11px;line-height:1.55}
 .investigation-asset-intro b{color:#a9c8e6;font-weight:600}
+
+
+/* Oraculum UX refresh — calmer hierarchy, consistent spacing, clearer controls. */
+:root{
+  --ui-bg:#080d14;
+  --ui-surface:#0d1520;
+  --ui-surface-raised:#111c29;
+  --ui-border:#233244;
+  --ui-muted:#91a2b5;
+  --ui-text:#e6edf5;
+  --ui-accent:#60a5fa;
+}
+body{background:var(--ui-bg);color:var(--ui-text);line-height:1.45}
+#app{width:min(100%,1600px);margin:0 auto}
+.topbar{position:sticky;top:0;z-index:20;height:58px;padding:0 clamp(12px,2.5vw,28px);gap:14px;background:rgba(8,13,20,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--ui-border)}
+.brand{font-size:13px;letter-spacing:.18em;color:#f1f6fc}
+.asset-picker-toggle{min-height:38px;border-color:var(--ui-border);border-radius:9px;background:var(--ui-surface);padding:6px 10px}
+.asset-picker-kicker{font-size:9px;color:var(--ui-muted)}
+.asset-picker-menu,.test-battery-panel{border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);box-shadow:0 18px 50px #0008}
+.status{font-variant-numeric:tabular-nums;letter-spacing:.05em}
+.oraculum{display:grid;gap:16px;padding:clamp(10px,2vw,24px)}
+.chart-card,.analysis-card,.btc-event-study,.investigation-next{min-width:0;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-surface);overflow:hidden}
+.chart-head{height:54px;padding:0 15px;border-bottom-color:var(--ui-border)}
+.chart-head strong{font-size:14px;letter-spacing:.01em}
+.chart-head small,.chart-foot{color:var(--ui-muted)}
+.chart-wrap{height:min(62vh,620px);min-height:300px}
+.chart-foot{padding:9px 14px;border-top-color:var(--ui-border)}
+.analysis-card{margin-top:0}
+.analysis-head,.comparison-head{padding:15px 17px;border-bottom-color:var(--ui-border)}
+.analysis-head strong,.comparison-head strong{font-size:11px;letter-spacing:.12em}
+.analysis-head small,.comparison-head small{font-size:11px;line-height:1.5;color:var(--ui-muted)}
+.analysis-block{padding:clamp(12px,2vw,22px)}
+.analysis-step{padding:clamp(12px,1.7vw,20px);border:1px solid #26374a;border-radius:12px;background:rgba(255,255,255,.015)}
+.analysis-step+.analysis-step{margin-top:12px}
+.step-heading h2{font-size:clamp(15px,2vw,18px);letter-spacing:-.02em}
+.step-heading p,.investigation-asset-intro p{font-size:12px;line-height:1.65;color:var(--ui-muted)}
+.step-number{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#172b40;color:#9bcaff;font-size:12px}
+.analysis-target-card{border-radius:10px;background:#0a111b;border-color:#25384c}
+.analysis-target-card>span{color:#8297ad;font-size:10px;letter-spacing:.09em}
+.analysis-target-card>strong{font-size:clamp(17px,2vw,21px);letter-spacing:-.02em}
+.investigation-asset-intro{border:1px dashed #2c455d;border-radius:10px;background:rgba(12,22,35,.3)}
+.analysis-disclosure{border-color:#26374a;border-radius:10px}
+.analysis-disclosure summary{padding:13px 14px}
+.investigation-controls select,.cmp-add-picker select,.cmp-timeline-head select{border:1px solid #2b3c50;border-radius:8px;background:#0a111b;color:var(--ui-text);min-height:40px}
+.analysis-actions{margin-top:14px;padding:14px;border:1px solid #2a4057;border-radius:12px;background:linear-gradient(120deg,#102237,#0c1724 70%)}
+.analysis-actions>div strong{font-size:13px}
+.analysis-actions>div span{display:block;margin-top:3px;color:var(--ui-muted);font-size:11px;line-height:1.5}
+#analyze-assets{min-height:42px;padding:10px 16px;border:1px solid #5a9fe8;border-radius:9px;background:#245b91;color:#fff;font-weight:700;letter-spacing:.015em}
+#analyze-assets:hover{background:#2d6eaa}
+.comparison-panel{padding:0 14px 14px}
+.comparison-chart{height:clamp(220px,35vw,360px);padding:10px 0}
+.comparison-chart svg{border:1px solid #1e2d3d;border-radius:10px;background:#09111a}
+.comparison-timeline-controls{padding:10px 0 2px}
+#comparison-timelines .cmp-timeline-row{padding:9px 8px 7px}
+#comparison-timelines .cmp-timeline-title strong{font-size:12px}
+#comparison-timelines .cmp-timeline-dates{font-size:10px}
+.cmp-add-menu{border-color:#2b4056;border-radius:12px;background:#0a111b}
+.cmp-add-category>summary{padding:12px 4px;font-size:12px}
+.cmp-add-option{border-color:#223448;border-radius:8px;background:#0e1926}
+.cmp-add-option strong{font-size:12px}
+button,a,select,summary{outline-offset:3px}
+button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #70b7ff}
+button{transition:background-color .15s,border-color .15s,color .15s}
+.btc-event-study{padding:clamp(14px,2vw,22px)}
+.btc-event-head h2{font-size:clamp(18px,2.5vw,24px);letter-spacing:-.025em}
+.btc-event-head p,.btc-event-context,.btc-event-actions{font-size:12px;line-height:1.65}
+.btc-event-context{border-radius:10px}
+.investigation-next{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.investigation-next strong{letter-spacing:.1em}
+@media(max-width:700px){
+  .topbar{gap:8px;padding:0 10px}
+  .brand{font-size:11px}
+  .oraculum{gap:12px;padding:10px}
+  .chart-wrap{height:54vh;min-height:280px}
+  .analysis-head,.comparison-head{padding:13px}
+  .analysis-block{padding:10px}
+  .analysis-actions{align-items:stretch;flex-direction:column;gap:12px}
+  #analyze-assets{width:100%;min-height:44px}
+  .comparison-panel{padding:0 10px 12px}
+  .investigation-next{align-items:flex-start;flex-direction:column}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
