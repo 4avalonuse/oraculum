@@ -65,6 +65,18 @@
     <div class="chart-foot"><span id="range-label">—</span><span id="count">—</span></div>
   </section>
 
+  <div id="comparison-panel" class="comparison-panel">
+        <div class="comparison-head">
+          <div><strong>COMPARAÇÃO</strong><small>Base 100 por janela · escala logarítmica · eixo horizontal = tempo relativo</small></div>
+          <span id="comparison-period">—</span>
+        </div>
+        <div id="comparison-chart" class="comparison-chart" aria-label="Comparação normalizada das séries selecionadas"></div>
+        <div id="comparison-timeline-controls" class="comparison-timeline-controls"></div>
+        <div id="comparison-timelines" class="comparison-timelines" aria-label="Timelines das séries selecionadas"></div>
+        <div class="comparison-timeline-help">Ajustar a duração na timeline principal sincroniza todas. Arraste qualquer barra para explorar outras datas sem mover as demais. Use “Alinhar todas” para voltar ao mesmo período.</div>
+        <div id="comparison-legend" class="comparison-legend"></div>
+      </div>
+
     <section class="analysis-card" id="asset-analysis">
       <div class="analysis-head">
         <div><strong>ANÁLISE</strong><small>Selecione as séries e execute conscientemente os cálculos.</small></div>
@@ -96,21 +108,10 @@
         </section>
         <div class="analysis-actions">
           <div><strong>Pronto para investigar?</strong><span>Os cálculos só rodam quando você tocar no botão.</span></div>
-          <button id="analyze-assets">PREPARAR TIMELINES ↗</button>
+          <button id="analyze-assets">ANALISAR JANELAS ↗</button>
         </div>
       </div>
-      <div id="analysis-context" class="analysis-context is-hidden"></div><div id="comparison-panel" class="comparison-panel">
-        <div class="comparison-head">
-          <div><strong>COMPARAÇÃO</strong><small>Base 100 por janela · escala logarítmica · eixo horizontal = tempo relativo</small></div>
-          <span id="comparison-period">—</span>
-        </div>
-        <div id="comparison-chart" class="comparison-chart" aria-label="Comparação normalizada das séries selecionadas"></div>
-        <div id="comparison-timeline-controls" class="comparison-timeline-controls"></div>
-        <div id="comparison-timelines" class="comparison-timelines" aria-label="Timelines das séries selecionadas"></div>
-        <div class="comparison-timeline-help">Ajustar a duração na timeline principal sincroniza todas. Arraste qualquer barra para explorar outras datas sem mover as demais. Use “Alinhar todas” para voltar ao mesmo período.</div>
-        <div id="comparison-legend" class="comparison-legend"></div>
-      </div>
-      <div id="analysis-results" class="analysis-results is-hidden"></div>
+      <div id="analysis-context" class="analysis-context is-hidden"></div>      <div id="analysis-results" class="analysis-results is-hidden"></div>
       <button id="full-analysis" class="full-analysis is-hidden">ANÁLISE COMPLETA ↗</button>
     </section>
   </section>

@@ -461,36 +461,54 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');$('#analysis-results').querySelectorAll('[data-science-target]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer'),target=$('#'+link.dataset.scienceTarget);if(layer)layer.open=true;target?.scrollIntoView({behavior:'smooth',block:'start'});if(target){target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}}));$('#analysis-results').querySelectorAll('a[href="#scientific-reading-layer"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer');if(layer){layer.open=true;layer.scrollIntoView({behavior:'smooth',block:'start'});}}));wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context'),auditText:()=>buildAuditReport(state.result,state.series,state.rows,state.markers)});wireReportButtons($('#analysis-results'),state.result,state.series);$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>{const tableAssets={...assets};for(const slot of state.commonSeries||[])tableAssets[slot.key]=assets[slot.assetKey]||slot;openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:(state.commonSeries||[]).map(slot=>slot.key),assets:tableAssets,fmt,date})});document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
  };
 
- async function run(){
-   if(state.prepared){
-     $('#analysis-status').textContent='ANALISANDO JANELAS';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
-     try{
-       recomputeTimelineAnalysis();
-       const depth=$('#analysis-depth')?.value||'key';
-       if(state.result&&depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});
-       else if(state.result&&depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});
-     }catch(error){console.error('[ORACULUM ANALYSIS]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
-     return;
-   }
-   const activeSymbol=getActiveSymbol(),reference=document.querySelector('#analysis-reference')?.value||activeSymbol,symbols=[reference];
-   $('#analysis-status').textContent='PREPARANDO TIMELINES';$('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
-   try{
-     const requestedInterval=getInterval()||'1d',meta=assets[reference],interval=meta?.supportedIntervals?.length?meta.supportedIntervals[0]:requestedInterval,period=$('#analysis-period')?.value||'full',pool=[];
-     if(!meta)throw new Error('Ativo principal não encontrado no catálogo.');
-     const sameLoadedAsset=reference===activeSymbol&&interval===requestedInterval;
-     const loaded=sameLoadedAsset?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||reference,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
-     const candles=normalizeCandles(loaded.candles);
-     if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');
-     pool.push({key:reference,assetKey:reference,symbol:meta.symbol,name:meta.name,category:meta.category,candles});
-     initializeTimelineSlots(pool,reference,interval,period);
-     state.prepared=true;
-     $('#comparison-panel').classList.remove('is-hidden');
-     $('#comparison-chart').innerHTML='';
-     renderChart();
-     $('#analysis-status').textContent='TIMELINES PRONTAS';
-     $('#analyze-assets').textContent='ANALISAR JANELAS ↗';
-   }catch(error){console.error('[ORACULUM PREPARE]',error);$('#analysis-status').textContent='ERRO';$('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';$('#analysis-results').classList.remove('is-hidden')}
- }
+  async function prepare(){
+    if(state.prepared)return true;
+    const activeSymbol=getActiveSymbol(),reference=document.querySelector('#analysis-reference')?.value||activeSymbol;
+    $('#analysis-status').textContent='PREPARANDO TIMELINES';
+    $('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
+    try{
+      const requestedInterval=getInterval()||'1d',meta=assets[reference],interval=meta?.supportedIntervals?.length?meta.supportedIntervals[0]:requestedInterval,period=$('#analysis-period')?.value||'full',pool=[];
+      if(!meta)throw new Error('Ativo principal não encontrado no catálogo.');
+      const sameLoadedAsset=reference===activeSymbol&&interval===requestedInterval;
+      const loaded=sameLoadedAsset?{candles:getCandles()}:await dataClient.loadOrPopulate({provider:meta.provider,symbol:meta.providerSymbol||reference,kind:meta.kind||'ohlcv',interval:meta.supportedIntervals?.includes(interval)?interval:(meta.supportedIntervals?.[0]||interval),currency:'USD'});
+      const candles=normalizeCandles(loaded.candles);
+      if(candles.length<10)throw new Error('Poucos dados para '+meta.symbol+'.');
+      pool.push({key:reference,assetKey:reference,symbol:meta.symbol,name:meta.name,category:meta.category,candles});
+      initializeTimelineSlots(pool,reference,interval,period);
+      state.prepared=true;
+      $('#comparison-panel').classList.remove('is-hidden');
+      $('#comparison-period').textContent=date(state.timelineSlots[0]?.window?.start)+' → '+date(state.timelineSlots[0]?.window?.end);
+      renderChart();
+      $('#analysis-status').textContent='TIMELINES PRONTAS';
+      $('#analyze-assets').textContent='ANALISAR JANELAS ↗';
+      return true;
+    }catch(error){
+      console.error('[ORACULUM PREPARE]',error);
+      $('#analysis-status').textContent='ERRO AO PREPARAR';
+      $('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';
+      $('#analysis-results').classList.remove('is-hidden');
+      return false;
+    }
+  }
+  async function run(){
+    if(!state.prepared){
+      await prepare();
+      return;
+    }
+    $('#analysis-status').textContent='ANALISANDO JANELAS';
+    $('#analysis-results').classList.add('is-hidden');$('#full-analysis').classList.add('is-hidden');$('#analysis-context').classList.add('is-hidden');
+    try{
+      recomputeTimelineAnalysis();
+      const depth=$('#analysis-depth')?.value||'key';
+      if(state.result&&depth==='full')openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date});
+      else if(state.result&&depth==='advanced')openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});
+    }catch(error){
+      console.error('[ORACULUM ANALYSIS]',error);
+      $('#analysis-status').textContent='ERRO';
+      $('#analysis-results').innerHTML='<div class="analysis-diagnostics"><p>'+error.message+'</p></div>';
+      $('#analysis-results').classList.remove('is-hidden');
+    }
+  }
  const button=$('#analyze-assets');button?.addEventListener('click',run);$('#full-analysis')?.addEventListener('click',()=>openModal({focusAdvanced:false,result:state.result,metric,statBlock,pct,fmt,date}));
- const onResize=()=>{if(state.timelineSlots?.length){renderChart();renderTimelinePanel()}};window.addEventListener('resize',onResize);return{run,destroy(){window.removeEventListener('resize',onResize)}};
+ const onResize=()=>{if(state.timelineSlots?.length){renderChart();renderTimelinePanel()}};window.addEventListener('resize',onResize);return{run,prepare,destroy(){window.removeEventListener('resize',onResize)}};
 }
