@@ -193,7 +193,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      syncComparisonDurations();
      renderTimelinePanel();renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);recomputeTimelineAnalysis()};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
  const renderChart=()=>{
