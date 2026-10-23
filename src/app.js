@@ -17,6 +17,8 @@ const intervals={ '1h':'1h','1d':'1d','1w':'1w','1M':'1M' };
 let active=null;
 let activeSymbol=DEFAULT_ASSET;
 let activeInterval='1d';
+let comparisonAnalysis=null;
+let comparisonAutoPrepared=false;
 const $=s=>document.querySelector(s);
 
 function boundsFor(c){
@@ -123,6 +125,10 @@ async function load(interval='1d'){
     $('#status').textContent='OK';
     host.classList.remove('is-loading');
     timeline.renderTimeline(candles,viewport);
+    if(!comparisonAutoPrepared&&comparisonAnalysis){
+      comparisonAutoPrepared=true;
+      await comparisonAnalysis.prepare();
+    }
   }catch(error){
     console.error('[ORACULUM]',error);
     $('#status').textContent='ERRO';
@@ -184,7 +190,6 @@ $('#refresh-toggle')?.addEventListener('click',async()=>{
 
 const timeline=attachTimeline({dataClient,getActive:()=>active,getActiveSymbol:()=>activeSymbol});
 syncAnalysisTarget(activeSymbol);
-load('1d');
 
 attachDiagnosticCopy({
   getState:()=>({
@@ -195,7 +200,7 @@ attachDiagnosticCopy({
   })
 });
 
-attachComparisonAnalysis({
+comparisonAnalysis=attachComparisonAnalysis({
   dataClient,
   normalizeCandles,
   getCandles:()=>active?.candles||[],
@@ -205,3 +210,4 @@ attachComparisonAnalysis({
 });
 
 attachBtcEventStudy({dataClient,normalizeCandles});
+load('1d');
