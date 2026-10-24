@@ -12,6 +12,7 @@ import {wireSummaryCopy} from './view/copy-results.js';
 import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpretation.js';
 import {buildScientificReading} from './scientific-reading.js';
 import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
+import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './validation/sample-quality.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -217,14 +218,18 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!state.timelineSlots.length)return;
    const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=state.timelineSlots;
    const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
-   if(slots.some(slot=>timelineRows[slot.key].length<10)){
-     $('#analysis-status').textContent='AMOSTRA INSUFICIENTE';return;
+   const sampleCheck=inspectWindowSamples(slots.map(slot=>timelineRows[slot.key]));
+   if(sampleCheck.status===ScientificStatus.BLOCKED){
+     const issue=sampleCheck.issues[0];
+     const messages={INSUFFICIENT_SAMPLE:'AMOSTRA INSUFICIENTE',FRAME_COUNT_MISMATCH:'FRAMES DESIGUAIS · AJUSTE AS JANELAS',INVALID_TIME_ORDER:'DATAS INVÁLIDAS · REVISE OS DADOS',NO_WINDOWS:'NENHUMA JANELA SELECIONADA'};
+     $('#analysis-status').textContent=messages[issue?.code]||'AMOSTRA INVÁLIDA';
+     return;
    }
    state.timelineRows=timelineRows;state.series=slots;state.selected=slots.map(slot=>slot.key);
    const windowedSeries=slots.map(slot=>({...slot,candles:slot.candles.filter(c=>Number(c.timestamp)>=slot.window.start&&Number(c.timestamp)<=slot.window.end)}));
    // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
    const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
-   const commonRows=alignSeries(modelSeries,interval),hasCommon=modelSeries.length>=2&&commonRows.length>=10;
+   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=calendarCheck.status===ScientificStatus.APPROVED;
    const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
    const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
    const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
