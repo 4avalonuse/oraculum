@@ -139,7 +139,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const label=(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(i+1);
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(1,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0"></div>';
-     const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
+     const handles='<button type="button" class="cmp-timeline-handle handle-start" data-slot="'+i+'" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar início da janela '+(i+1)+'" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="'+i+'" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar fim da janela '+(i+1)+'" title="Arraste para ajustar o fim"></button>';
      return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
    }).join('');
    host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
@@ -150,7 +150,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      });
    });
    host.querySelectorAll('.cmp-timeline-handle').forEach(handle=>{
-     handle.addEventListener('pointerdown',event=>beginTimelineResize(event,handle.dataset.edge));
+     handle.addEventListener('pointerdown',event=>beginTimelineResize(event,Number(handle.dataset.slot),handle.dataset.edge));
    });
  };
  const shiftTimelineByPeriods=(index,steps)=>{
@@ -175,9 +175,9 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
- const beginTimelineResize=(event,edge)=>{
+ const beginTimelineResize=(event,index,edge)=>{
    event.preventDefault();event.stopPropagation();
-   const slot=state.timelineSlots[0],common=sharedRows();if(!slot?.window?.valid||common.length<10)return;
+   const slot=state.timelineSlots[index],common=sharedRows();if(!slot?.window?.valid||common.length<10)return;
    const rows=timelineRowsFor(slot),original=slot.window;
    const track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),startX=event.clientX;
    const baseStart=nearestTimelineIndex(common,original.start),baseEnd=nearestTimelineIndex(common,original.end);
@@ -190,7 +190,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(b-a+1<minFrames){if(edge==='start')a=Math.max(0,b-minFrames+1);else b=Math.min(common.length-1,a+minFrames-1);}
      const from=nearestTimelineIndex(rows,common[a].timestamp),to=nearestTimelineIndex(rows,common[b].timestamp);
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
-     syncComparisonDurations();
+     if(index===0)syncComparisonDurations();
      renderTimelinePanel();renderChart();
    };
    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
