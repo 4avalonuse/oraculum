@@ -144,3 +144,29 @@ Separar `window-constructor` (políticas de janelas), `comparison-context` (infe
 Cobrir instâncias repetidas, movimento independente, redimensionamento compartilhado quando aplicável, fronteiras sequenciais, ciclos por eventos e ciclos incompletos, limites de dados, frequências divergentes, amostras desiguais, alinhamento temporal, mudanças de elegibilidade, preservação de resultados anteriores e justificativas dos bloqueios. Testar a interface progressiva no GitHub Pages.
 
 **Estado:** decisão de produto e requisitos documentados; não declarar esses novos modos ou o motor de elegibilidade como já implementados.
+
+
+## 14. Fluxo de tela da investigação — decisão de UX (25/10/2026)
+
+**Objetivo:** uma experiência intuitiva, discreta e progressiva: começar pela exploração visual e revelar apenas as ações científicas pertinentes ao contexto atual. Não exigir que o pesquisador configure uma análise completa antes de começar.
+
+### Ordem visual e interação
+1. **Gráfico do ativo e contexto histórico:** ponto de entrada familiar (ex.: preço do Bitcoin), com eventos históricos acessíveis sem que a seção de eventos se torne uma segunda interface dominante.
+2. **Mesa de timelines:** adicionar livremente ativos e instâncias repetidas; deslocar janelas, alterar períodos e escolher quais instâncias participarão da análise. Timelines **ativas** ficam destacadas; timelines **inativas** permanecem visíveis em estado discreto, “fantasma”, como referências. Ativar ou desativar deve ser simples e reversível.
+3. **Ferramentas científicas contextuais:** o motor interpreta somente as timelines ativas para montar a comparação e determinar elegibilidade; as inativas não contaminam cálculos nem critérios amostrais. Sugestões e opções aparecem conforme seleção, sobreposição temporal, frequência, qualidade e pergunta de pesquisa, sem abrir painéis excessivos. Métodos inadequados ficam fora do fluxo principal, mas consultáveis com justificativa.
+4. **Resultados abaixo das timelines, em camadas progressivas:**
+   - **O que encontramos:** síntese factual, incluindo resultados negativos e inconclusivos, sem linguagem causal ou certeza indevida.
+   - **Evidências:** métricas, gráficos, testes, intervalos de incerteza, pressupostos e limitações.
+   - **Entender o resultado:** explicação sob demanda dos cálculos, método, adequação científica, fontes e transformações; permitir aprofundamento sem trocar de ambiente.
+
+### Comportamento de estado
+- Adicionar, remover, mover, redimensionar, ativar ou desativar uma timeline atualiza o **contexto e as ferramentas elegíveis**, mas não executa silenciosamente testes pesados nem reescreve conclusões.
+- Resultados produzidos com seleção anterior permanecem no histórico com indicação clara de **seleção anterior / desatualizado**, sem serem apresentados como resultados da configuração atual.
+- Timelines inativas continuam na tela, podem ser reativadas com um clique e não são apagadas, descartadas ou confundidas com dados ausentes.
+- Comparações lógicas podem envolver subconjuntos de timelines; não exigir criação ou gerenciamento explícito de “grupos” na UI.
+- Uma sugestão do sistema é uma **possibilidade de investigação**, nunca uma descoberta comprovada nem uma alteração automática da seleção.
+
+### Critérios de aceitação de UX
+Um usuário deve conseguir: abrir o gráfico; adicionar BTC, ETH ou BTC repetido; montar períodos; ativar somente algumas timelines; visualizar outras como referência; entender quais métodos são permitidos e por quê; executar análise; ler síntese, evidências e explicação; modificar seleção sem perder resultados anteriores. Validar o fluxo manualmente no GitHub Pages e com testes de estado/elegibilidade antes de ampliar a quantidade de controles.
+
+**Estado:** fluxo e comportamento especificados; ainda não implementados integralmente.
