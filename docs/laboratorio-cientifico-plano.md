@@ -196,3 +196,8 @@ Na experiência atual, eventos aparecem previamente marcados e os grupos carecem
 Ao abrir uma investigação, nenhum evento participa de análises sem ação explícita. O pesquisador pode exibir/ocultar eventos por grupo, limpar e selecionar todos para **visualização** sem afetar o conjunto analítico, ativar eventos específicos para investigação e vê-los contextualizados no segundo gráfico quando pertinente. As escolhas persistem durante mudanças de timeline, sem reativação silenciosa.
 
 **Estado:** requisitos documentados; não representam comportamento já implementado.
+
+
+## Nota de escopo: Spacework (conceito separado)
+
+O **Spacework** é uma proposta ainda exploratória de ambiente de investigação visual e sistêmica, distinta do laboratório científico do Oraculum. As ideias de prancheta 2D, gráficos independentes/sobrepostos, sincronização temporal flexível, eventos compartilhados e futuras camadas de relações estão registradas em [Spacework — conceito exploratório](spacework-conceito-exploratorio.md). **Não considerar esta referência autorização para implementar o Spacework ou ampliar automaticamente o escopo do Oraculum.**
