@@ -101,3 +101,46 @@ Um usuário consegue iniciar uma investigação, comparar períodos e variáveis
 - Qual infraestrutura de persistência pode ser reaproveitada sem comprometer a reprodutibilidade?
 
 **Status:** visão acordada; implementação da nova experiência ainda não iniciada neste documento.
+
+
+## 13. Timelines inteligentes e elegibilidade científica — decisão de produto (25/10/2026)
+
+**Princípio de UX:** a complexidade deve residir no motor, não na quantidade de controles. A timeline é o principal instrumento de construção da investigação. A interface permanece discreta, progressiva, intuitiva e poderosa; o sistema infere apenas o que os dados e as ações permitem inferir, sem presumir hipóteses ou modificar períodos sem consentimento.
+
+### Fluxo da experiência
+1. O pesquisador entra no gráfico de um ativo (por exemplo, BTC), com eventos históricos consultáveis, e adiciona quantas instâncias desejar, inclusive o mesmo ativo repetido em períodos diferentes.
+2. A cada inclusão, remoção, seleção ou movimento de timeline, o sistema reavalia silenciosamente o contexto: identidade dos ativos e das instâncias, intervalos efetivos, interseção temporal, frequência, calendários, observações disponíveis, faltantes, qualidade e transformações.
+3. A interface revela somente as ações pertinentes ao contexto. Selecionar timelines e acionar **Comparar selecionadas** cria uma comparação lógica sem obrigar o usuário a gerenciar “grupos” visíveis; uma timeline pode integrar várias comparações sem duplicar dados.
+4. Sugestões discretas e opcionais podem propor “Comparar períodos históricos?”, “Comparar trajetórias?” ou “Organizar por ciclos de halving?” quando houver evidências contextuais. Reconhecimento de eventos é hipótese/sugestão, não inferência certa sobre a intenção.
+5. O sistema não altera automaticamente datas, limites, duração, agrupamento ou transformação dos dados por ter inferido uma intenção. Ações que modificam a seleção exigem escolha explícita.
+
+### Construtor de períodos e comportamento
+- **Livre:** arrastar uma timeline desloca apenas sua janela, preservando o tamanho definido e respeitando os limites dos dados.
+- **Janelas equivalentes:** permitir igualdade explícita por tempo de calendário ou por número de observações/frames, sem confundir os critérios. Para frequências diferentes, exigir política de alinhamento/reamostragem justificável ou sinalizar incompatibilidade.
+- **Sequencial:** janelas adjacentes, sem lacunas ou sobreposições não intencionais; fronteiras compartilhadas têm regras de ajuste consistentes.
+- **Por eventos:** fronteiras determinadas por eventos datados e documentados, como os halvings do Bitcoin. Ciclos ainda abertos são identificados como incompletos.
+- **Trechos relativos:** comparar, por exemplo, os primeiros 180 ou 365 dias de cada ciclo; visualização em percentual de progresso do ciclo é transformação explícita e não substitui dados brutos.
+- No modo livre/equivalente padrão, a primeira timeline pode controlar o redimensionamento das demais enquanto cada uma mantém seu posicionamento histórico, quando viável. Modos sequencial e por eventos possuem políticas próprias; não forçar uma única regra global de duração.
+- Ao atingir limites, não encurtar amostras, completar observações fictícias ou deslocar silenciosamente outras janelas. Informar insuficiência de dados e as consequências.
+
+### Motor de Elegibilidade Científica (independente da UI)
+**Entrada:** estado das instâncias/timelines, comparação selecionada, metadados das séries, políticas de alinhamento, transformações, qualidade dos dados e requisitos explícitos de cada método.
+
+**Saída por método:** `adequado`, `adequado_com_ressalvas` ou `inadequado`, com justificativa legível, pré-condições, ajustes possíveis e metadados para auditoria.
+
+- Mesmo ativo em épocas distintas: comparação histórica de padrões, retornos, volatilidade e regimes conforme os pressupostos; não tratar janelas separadas como observações contemporâneas.
+- Ativos diferentes no mesmo período: permitir associação contemporânea e modelos apropriados somente com alinhamento, tamanho amostral, dependência temporal e demais pressupostos verificados.
+- Ativos diferentes em épocas distintas: permitir comparação de trajetórias/distribuições quando defensável; não apresentar correlação contemporânea sem sobreposição temporal.
+- Tamanhos de amostra diferentes **não** invalidam toda estatística: a elegibilidade é específica do método. Comparação ponto a ponto requer correspondência explícita.
+- Distinguir inviabilidade, condição corrigível e ressalva; não declarar causalidade a partir de correlação, nem selecionar métodos pelo resultado estatisticamente significativo.
+- Métodos adequados aparecem no fluxo principal; condicionais mostram a exigência; inadequados não são oferecidos como ação principal, mas permanecem consultáveis com motivo e orientação para ajustar a seleção. Não ocultar evidências negativas.
+- Mudanças nas timelines invalidam a atualidade dos resultados dependentes sem apagá-los do histórico. Visualizações leves podem acompanhar o arraste; testes pesados são executados por solicitação (ex.: **Analisar janelas**).
+- Cada resultado registra instâncias, intervalos efetivos, frequência, contagens, política de alinhamento, transformações, método, versão e limitações para reprodução.
+
+### Arquitetura modular sugerida
+Separar `window-constructor` (políticas de janelas), `comparison-context` (inferência descritiva), `method-eligibility` (regras científicas testáveis), `method-catalog` (requisitos declarativos) e `timeline-suggestions` (UX contextual). Evitar acoplar essas responsabilidades ao atual `src/analysis/comparison.js`; nomes de módulos são provisórios.
+
+### Testes e critérios de aceitação
+Cobrir instâncias repetidas, movimento independente, redimensionamento compartilhado quando aplicável, fronteiras sequenciais, ciclos por eventos e ciclos incompletos, limites de dados, frequências divergentes, amostras desiguais, alinhamento temporal, mudanças de elegibilidade, preservação de resultados anteriores e justificativas dos bloqueios. Testar a interface progressiva no GitHub Pages.
+
+**Estado:** decisão de produto e requisitos documentados; não declarar esses novos modos ou o motor de elegibilidade como já implementados.
