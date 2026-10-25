@@ -170,3 +170,29 @@ Cobrir instâncias repetidas, movimento independente, redimensionamento comparti
 Um usuário deve conseguir: abrir o gráfico; adicionar BTC, ETH ou BTC repetido; montar períodos; ativar somente algumas timelines; visualizar outras como referência; entender quais métodos são permitidos e por quê; executar análise; ler síntese, evidências e explicação; modificar seleção sem perder resultados anteriores. Validar o fluxo manualmente no GitHub Pages e com testes de estado/elegibilidade antes de ampliar a quantidade de controles.
 
 **Estado:** fluxo e comportamento especificados; ainda não implementados integralmente.
+
+
+## 15. Eventos históricos — controle explícito e camada compartilhada (25/10/2026)
+
+### Problema identificado
+Na experiência atual, eventos aparecem previamente marcados e os grupos carecem de controles práticos de seleção em massa. Isso causa sobretudo a sensação de que há coisas **ativas sem solicitação**, além de poluição visual. Não confundir marcador visível com participação efetiva em cálculo.
+
+### Decisões de interação
+- **Nenhum evento inicia ativo para análise** por padrão. Participação científica requer escolha explícita e reversível do pesquisador.
+- Separar dois estados independentes: **visibilidade no gráfico** e **inclusão na análise**. “Selecionar todos” para visualização nunca seleciona eventos para cálculos.
+- Manter a organização por categorias/grupos existentes, aprimorando-a com **Selecionar todos**, **Limpar seleção** e seleção individual; ações deixam claro se afetam visibilidade ou participação analítica.
+- O clique no marcador do gráfico é a interação principal para inspecionar nome, data, fonte e contexto, com opção explícita de usar o evento na investigação. Um filtro de categorias pode ficar recolhido por padrão para não sobrecarregar a interface.
+- Preservar as escolhas do usuário durante a investigação; alterar período, adicionar ativo ou mover timeline não reativa eventos que foram desativados. Quando um evento deixa de estar no período, manter a preferência sem considerá-lo elegível naquela janela.
+- Representar discretamente três situações: evento disponível/visível como contexto, evento escolhido como candidato à investigação e evento efetivamente usado por uma análise executada. Os estados não são equivalentes.
+
+### Integração dos gráficos e rigor científico
+- Eventos formam uma **camada temporal compartilhada**, não uma função exclusiva do gráfico principal. O gráfico comparativo pode mostrar referências discretas nas timelines pertinentes, especialmente para eventos escolhidos, evitando replicar todos os marcadores indiscriminadamente.
+- Distinguir eventos pontuais e intervalos prolongados; quando relevante, separar data de anúncio, implementação e disponibilidade da informação ao mercado.
+- A escolha do evento não determina automaticamente o método: permitir perguntas distintas, como janela antes/depois, ciclos entre eventos e alinhamento relativo a eventos, sob verificação do motor de elegibilidade.
+- Validar cobertura e amostras antes/depois, sobreposição entre eventos, vieses temporais, múltiplos testes e fatores concorrentes. Não interpretar reação posterior como prova de causalidade.
+- Regras de seleção e metadados de eventos devem ser independentes dos componentes visuais e cobertos por testes.
+
+### Aceitação
+Ao abrir uma investigação, nenhum evento participa de análises sem ação explícita. O pesquisador pode exibir/ocultar eventos por grupo, limpar e selecionar todos para **visualização** sem afetar o conjunto analítico, ativar eventos específicos para investigação e vê-los contextualizados no segundo gráfico quando pertinente. As escolhas persistem durante mudanças de timeline, sem reativação silenciosa.
+
+**Estado:** requisitos documentados; não representam comportamento já implementado.
