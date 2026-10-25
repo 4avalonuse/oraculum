@@ -13,6 +13,7 @@ import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpre
 import {buildScientificReading} from './scientific-reading.js';
 import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
 import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './validation/sample-quality.js';
+import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -38,7 +39,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  };
  const periodKeyFor=row=>row?.__periodKey||row?.timestamp;
  const makeSlot=(asset,index)=>{
-   const slot={...asset,key:'timeline-'+index,assetKey:asset.assetKey||asset.key,slotIndex:index};
+   const slot={...asset,key:'timeline-'+index,assetKey:asset.assetKey||asset.key,slotIndex:index,active:true};
    slot.timelineRows=alignSeries([slot],state.interval);
    return slot;
  };
@@ -141,8 +142,13 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(1,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0"></div>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
-     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
+     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+';opacity:'+(slot.active===false?'0.45':'1')+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div><button type="button" class="cmp-mode-toggle cmp-timeline-active" data-active-slot="'+i+'" aria-pressed="'+(slot.active!==false)+'" '+(i===0?'disabled title="A referência principal permanece ativa"':'title="Alternar participação desta timeline na análise"')+'>'+(slot.active===false?'○ Referência':'● Ativa')+'</button></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
    }).join('');
+   host.querySelectorAll('[data-active-slot]').forEach(button=>button.addEventListener('click',()=>{
+     const index=Number(button.dataset.activeSlot);
+     state.timelineSlots=toggleTimelineActive(state.timelineSlots,index);
+     renderTimelinePanel();renderChart();markTimelinesChanged();
+   }));
    host.querySelectorAll('.cmp-timeline-range').forEach(range=>{
      range.addEventListener('pointerdown',event=>beginTimelineDrag(event,Number(range.dataset.slot)));
      range.addEventListener('keydown',event=>{
@@ -200,7 +206,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
    const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:20,b:34};
-   const plotted=state.timelineSlots.map(slot=>({slot,rows:rowsInWindow(slot)})).filter(x=>x.rows.length>=2);
+   const plotted=activeTimelineSlots(state.timelineSlots).map(slot=>({slot,rows:rowsInWindow(slot)})).filter(x=>x.rows.length>=2);
    if(!plotted.length){host.innerHTML='<p class="analysis-layer-note">Não há observações suficientes para desenhar a comparação.</p>';return}
    const normalized=plotted.map(({slot,rows})=>({slot,rows,values:rows.map(r=>100*Number(r[slot.key])/Number(rows[0][slot.key]))})).filter(x=>x.values.every(v=>Number.isFinite(v)&&v>0));
    const all=normalized.flatMap(x=>x.values);if(!all.length){host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';return}
@@ -216,7 +222,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  });
  const recomputeTimelineAnalysis=()=>{
    if(!state.timelineSlots.length)return;
-   const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=state.timelineSlots;
+   const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=activeTimelineSlots(state.timelineSlots);
    const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
    const sampleCheck=inspectWindowSamples(slots.map(slot=>timelineRows[slot.key]));
    if(sampleCheck.status===ScientificStatus.BLOCKED){
