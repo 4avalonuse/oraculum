@@ -8,6 +8,7 @@ import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from '../
 import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
 import {renderComparisonPlot} from '../src/analysis/timeline-chart-view.js';
+import {timelineRowsMarkup} from '../src/analysis/timeline-rows-view.js';
 import {createTimelinePointerHandlers} from '../src/analysis/timeline-pointer-interactions.js';
 
 const rows=Array.from({length:40},(_,i)=>({timestamp:i*86400000,btc:100+i,other:10+i}));
@@ -126,4 +127,17 @@ test('pointer module handles drag and completes without global listeners',()=>{
  listeners.get('pointerup')({pointerId:3});
  assert.equal(completed,1);
  assert.equal(listeners.size,0);
+});
+
+test('timeline view renders header and clipped navigation without mutating window',()=>{
+ const slot={key:'timeline-0',assetKey:'BTC',symbol:'BTC',active:true,window:timelineWindow(rows,5,14,10)};
+ const original={...slot.window};
+ const html=timelineRowsMarkup({
+   slots:[slot],layouts:[{position:0,visibleCount:5,hiddenCount:5,incomplete:true,capacity:10}],
+   assetColor:()=>'#123456',date:String
+ });
+ assert.match(html,/cmp-timeline-head/);
+ assert.match(html,/frames fora da escala/);
+ assert.match(html,/data-duplicate-slot="0"/);
+ assert.deepEqual(slot.window,original);
 });
