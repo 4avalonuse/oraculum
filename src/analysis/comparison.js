@@ -16,6 +16,7 @@ import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
 import {renderComparisonPlot} from './timeline-chart-view.js';
 import {timelineRowsMarkup} from './timeline-rows-view.js';
+import {renderTimelineToolbar} from './timeline-toolbar-view.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {createSequentialViewport} from './timeline-viewport.js';
@@ -80,7 +81,6 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
  };
  const visibleTimelineLayout=()=>timelineLayout(state.timelineSlots,rowsInWindow,viewModes.alignment,viewport.start(state.timelineSlots,rowsInWindow));
- const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
  const addCatalogAsset=async(assetKey)=>{
    const meta=assets[assetKey];if(!meta)return;
    const status=$('#analysis-status');
@@ -109,21 +109,15 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(status)status.textContent='NÃO FOI POSSÍVEL ADICIONAR '+(meta.symbol||assetKey);
    }
  };
- const renderTimelineControls=()=>{
-   const host=$('#comparison-timeline-controls');
-   if(!host)return;
-   const categories={};
-   state.assetCatalog.forEach(asset=>{const category=asset.category||'other';(categories[category]||(categories[category]=[])).push(asset)});
-   const menu=Object.entries(categories).map(([category,list])=>'<details class="cmp-add-category"><summary>'+ (categoryLabels[category]||category) +'<span>'+list.length+'</span></summary><div class="cmp-add-category-list">'+list.map(asset=>'<div class="cmp-add-option"><span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span><button type="button" class="cmp-add-series" data-add-asset="'+asset.assetKey+'" aria-label="Adicionar '+asset.symbol+'" title="Adicionar '+asset.name+'">+</button></div>').join('')+'</div></details>').join('');
-   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-chart-mode" class="cmp-mode-toggle">▤ '+(viewModes.chart==='relative'?'Comparação relativa':'Calendário')+'</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle">↔ '+(viewModes.alignment==='start'?'Mesmo início':'Sequencial')+'</button>'+(viewModes.alignment==='sequential'?'<button type="button" id="cmp-page-prev" class="cmp-mode-toggle" '+(viewport.page===0?'disabled':'')+'>← Anterior</button><button type="button" id="cmp-page-next" class="cmp-mode-toggle" '+(viewport.page>=viewport.lastPage(state.timelineSlots,rowsInWindow)?'disabled':'')+'>Próxima →</button>':'')+'<div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
-   const toggle=host.querySelector('#cmp-add-toggle'),panel=host.querySelector('#cmp-add-menu');
-   toggle?.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});
-   host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
-   host.querySelector('#cmp-page-prev')?.addEventListener('click',()=>{viewport.previous();renderTimelineControls();renderTimelinePanel();renderChart();});
-   host.querySelector('#cmp-page-next')?.addEventListener('click',()=>{viewport.next(state.timelineSlots,rowsInWindow);renderTimelineControls();renderTimelinePanel();renderChart();});
-    host.querySelector('#cmp-chart-mode')?.addEventListener('click',()=>{viewModes.toggleChart();renderTimelineControls();renderChart();markTimelinesChanged();});
-   host.querySelectorAll('[data-add-asset]').forEach(button=>button.addEventListener('click',()=>addCatalogAsset(button.dataset.addAsset)));
- };
+ const renderTimelineControls=()=>renderTimelineToolbar({
+   host:$('#comparison-timeline-controls'),catalog:state.assetCatalog,
+   modes:viewModes,viewport,slots:state.timelineSlots,rowsInWindow,
+   onAlign:alignAllTimelines,
+   onPrevious:()=>{viewport.previous();renderTimelineControls();renderTimelinePanel();renderChart();},
+   onNext:()=>{viewport.next(state.timelineSlots,rowsInWindow);renderTimelineControls();renderTimelinePanel();renderChart();},
+   onChart:()=>{viewModes.toggleChart();renderTimelineControls();renderChart();markTimelinesChanged();},
+   onAdd:addCatalogAsset
+ });
  const renderTimelinePanel=()=>{
    const host=$('#comparison-timelines');
    if(!host||!state.timelineSlots.length)return;
