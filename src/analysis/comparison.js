@@ -144,8 +144,9 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const left=clamp(layout.position/commonSpan*100,0,100);
      const right=clamp((layout.position+layout.visibleCount)/commonSpan*100,0,100);
      const incomplete=layout.incomplete;
-     const hiddenNotice=incomplete&&visible?' · '+layout.hiddenCount+' frames fora da escala':'';
      const visible=layout.visibleCount>0;
+     const hiddenNotice=incomplete&&visible?' · '+layout.hiddenCount+' frames fora da escala':'';
+
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=(slot.symbol||slot.name||slot.assetKey)+' '+(i+1);
