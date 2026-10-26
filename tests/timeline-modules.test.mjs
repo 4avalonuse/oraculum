@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createTimelineViewModes} from '../src/analysis/timeline-view-modes.js';
 import {timelineLayout} from '../src/analysis/timeline-layout.js';
-import {moveWindowByFrames,resizeWindowByFrames} from '../src/analysis/timeline-window-movement.js';
+import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from '../src/analysis/timeline-window-movement.js';
 import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
 
@@ -48,4 +48,17 @@ test('sequential viewport reveals second timeline at unchanged frame width',()=>
  assert.equal(next[1].visibleCount,20);
  assert.equal(next[1].position,0);
  assert.equal(next[1].capacity,20);
+});
+
+test('matching frame count keeps independent historical window',()=>{
+ const primary=timelineWindow(rows,2,16,10);
+ const other=timelineWindow(rows,25,34,10);
+ const matched=matchWindowFrameCount(rows,other,primary.observations);
+ assert.equal(matched.observations,15);
+ assert.equal(matched.startIndex,25);
+ assert.equal(matched.endIndex,39);
+ assert.equal(matched.start,other.start);
+ const shorter=matchWindowFrameCount(rows,matched,10);
+ assert.equal(shorter.observations,10);
+ assert.equal(shorter.startIndex,25);
 });
