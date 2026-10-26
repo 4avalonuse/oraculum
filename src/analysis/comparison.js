@@ -15,6 +15,8 @@ import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWi
 import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
 import {comparisonPlotSeries,activePlotSeries} from './timeline-plot-series.js';
+import {createTimelineViewModes} from './timeline-view-modes.js';
+import {timelineLayout} from './timeline-layout.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -79,26 +81,12 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,Math.min(10,frameCount));
    }
  };
- const alignmentModes=['calendar','start'];
- let alignmentMode='calendar';
+ const viewModes=createTimelineViewModes();
  const alignAllTimelines=()=>{
-   alignmentMode=alignmentModes[(alignmentModes.indexOf(alignmentMode)+1)%alignmentModes.length];
+   viewModes.toggleAlignment();
    renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
  };
- const visibleTimelineLayout=()=>{
-   const common=sharedRows(),capacity=alignmentMode==='start'?Math.max(1,...state.timelineSlots.map(slot=>rowsInWindow(slot).length-1)):Math.max(1,common.length-1);
-   let offset=0;
-   return state.timelineSlots.map(slot=>{
-     const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1);
-     const start=first?Math.max(0,nearestTimelineIndex(common,first.timestamp)):0;
-     const end=last?Math.max(start,nearestTimelineIndex(common,last.timestamp)):start;
-     const duration=rows.length;
-     const position=alignmentMode==='start'?0:alignmentMode==='sequential'?offset:start;
-     if(alignmentMode==='sequential')offset+=duration;
-     const visibleCount=Math.max(0,Math.min(duration,capacity-position));
-     return {position,duration,capacity,visibleCount,rows:rows.slice(0,visibleCount),incomplete:visibleCount<duration};
-   });
- };
+ const visibleTimelineLayout=()=>timelineLayout(state.timelineSlots,rowsInWindow,viewModes.alignment);
  const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
  const addCatalogAsset=async(assetKey)=>{
    const meta=assets[assetKey];if(!meta)return;
@@ -134,10 +122,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const categories={};
    state.assetCatalog.forEach(asset=>{const category=asset.category||'other';(categories[category]||(categories[category]=[])).push(asset)});
    const menu=Object.entries(categories).map(([category,list])=>'<details class="cmp-add-category"><summary>'+ (categoryLabels[category]||category) +'<span>'+list.length+'</span></summary><div class="cmp-add-category-list">'+list.map(asset=>'<div class="cmp-add-option"><span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span><button type="button" class="cmp-add-series" data-add-asset="'+asset.assetKey+'" aria-label="Adicionar '+asset.symbol+'" title="Adicionar '+asset.name+'">+</button></div>').join('')+'</div></details>').join('');
-   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alternar entre comparação relativa e calendário">↔ '+({calendar:"Calendário",start:"Comparação relativa"}[alignmentMode])+'</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
+   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-chart-mode" class="cmp-mode-toggle">▤ '+(viewModes.chart==='relative'?'Comparação relativa':'Calendário')+'</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle">↔ '+(viewModes.alignment==='start'?'Mesmo início':'Sequencial')+'</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
    const toggle=host.querySelector('#cmp-add-toggle'),panel=host.querySelector('#cmp-add-menu');
    toggle?.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});
    host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
+    host.querySelector('#cmp-chart-mode')?.addEventListener('click',()=>{viewModes.toggleChart();renderTimelineControls();renderChart();markTimelinesChanged();});
    host.querySelectorAll('[data-add-asset]').forEach(button=>button.addEventListener('click',()=>addCatalogAsset(button.dataset.addAsset)));
  };
  const renderTimelinePanel=()=>{
@@ -275,7 +264,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const windowedSeries=slots.map(slot=>{const rows=timelineRows[slot.key];return {...slot,candles:slot.candles.filter(c=>rows.some(row=>Number(row.timestamp)===Number(c.timestamp)))};});
    // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
    const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
-   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=alignmentMode==='calendar'&&calendarCheck.status===ScientificStatus.APPROVED;
+   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=viewModes.chart==='calendar'&&calendarCheck.status===ScientificStatus.APPROVED;
    const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
    const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
    const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
@@ -300,7 +289,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      result.audit={...commonResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:commonResult.audit?.relations||[]};
    }else result.audit={...primaryResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:[]};
    result.timelineVisibility=layouts.filter(x=>x.incomplete).map((x,i)=>({visible:x.visibleCount,total:x.duration}));
-   result.timelineAlignment=alignmentMode;
+   result.timelineAlignment=viewModes.alignment;result.chartMode=viewModes.chart;
    result.interval=interval;result.returnMode=returnMode;result.rollingWindow=rollingWindow;result.observations=primaryRows.length;result.alignedObservations=hasCommon?commonRows.length:0;
    result.rowsStart=primaryRows[0].timestamp;result.rowsEnd=primaryRows.at(-1).timestamp;result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
    result.temporal={...(result.temporal||{}),method:hasCommon?'individual native-window statistics; cross-series inference on shared calendar buckets within selected windows':slots.length<2?'single selected series; no cross-series inference requested':modelSeries.length<2?'only one distinct asset; repeated periods excluded from multivariate inference':'individual selected windows; no valid shared sample for cross-series inference',sharedRows:hasCommon?commonRows.length:0};
