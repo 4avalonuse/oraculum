@@ -83,7 +83,21 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  let alignmentMode='calendar';
  const alignAllTimelines=()=>{
    alignmentMode=alignmentModes[(alignmentModes.indexOf(alignmentMode)+1)%alignmentModes.length];
-   renderTimelineControls();renderTimelinePanel();
+   renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
+ };
+ const visibleTimelineLayout=()=>{
+   const common=sharedRows(),capacity=Math.max(1,common.length-1);
+   let offset=0;
+   return state.timelineSlots.map(slot=>{
+     const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1);
+     const start=first?Math.max(0,nearestTimelineIndex(common,first.timestamp)):0;
+     const end=last?Math.max(start,nearestTimelineIndex(common,last.timestamp)):start;
+     const duration=rows.length;
+     const position=alignmentMode==='start'?0:alignmentMode==='sequential'?offset:start;
+     if(alignmentMode==='sequential')offset+=duration;
+     const visibleCount=Math.max(0,Math.min(duration,capacity-position));
+     return {position,duration,capacity,visibleCount,rows:rows.slice(0,visibleCount),incomplete:visibleCount<duration};
+   });
  };
  const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
  const addCatalogAsset=async(assetKey)=>{
@@ -131,20 +145,15 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!host||!state.timelineSlots.length)return;
    const common=sharedRows();
    const commonStart=Number(common[0]?.timestamp)||0,commonEnd=Number(common.at(-1)?.timestamp)||commonStart;
-   const commonSpan=Math.max(1,common.length-1);
+   const commonSpan=Math.max(1,common.length-1),layouts=visibleTimelineLayout();
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const w=slot.window,color=assetColor(slot.assetKey,i);
      // Each track is measured in the same shared frames, never in each asset's full native history.
-     const frameStart=w?.valid?clamp(nearestTimelineIndex(common,Number(w.start)),0,common.length-1):0;
-     const frameEnd=w?.valid?clamp(nearestTimelineIndex(common,Number(w.end)),0,common.length-1):common.length-1;
-     const duration=Math.max(1,Math.abs(frameEnd-frameStart)+1);
-     const sequentialOffset=state.timelineSlots.slice(0,i).reduce((sum,prior)=>sum+Math.max(1,Math.abs(nearestTimelineIndex(common,prior.window?.end)-nearestTimelineIndex(common,prior.window?.start))+1),0);
-     const rawStart=alignmentMode==='start'?0:alignmentMode==='sequential'?sequentialOffset:Math.min(frameStart,frameEnd);
-     const rawEnd=rawStart+duration;
-     const left=clamp(rawStart/commonSpan*100,0,100);
-     const right=clamp(rawEnd/commonSpan*100,0,100);
-     const incomplete=rawEnd>commonSpan;
-     const visible=rawStart<commonSpan;
+     const layout=layouts[i];
+     const left=clamp(layout.position/commonSpan*100,0,100);
+     const right=clamp((layout.position+layout.visibleCount)/commonSpan*100,0,100);
+     const incomplete=layout.incomplete;
+     const visible=layout.visibleCount>0;
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(i+1);
@@ -215,13 +224,14 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
    const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:20,b:34};
-   const plotted=comparisonPlotSeries(state.timelineSlots,rowsInWindow);
+   const layouts=visibleTimelineLayout();
+   const plotted=comparisonPlotSeries(state.timelineSlots,slot=>layouts[slot.slotIndex]?.rows||[]);
    if(!plotted.length){host.innerHTML='<p class="analysis-layer-note">Não há observações suficientes para desenhar a comparação.</p>';return}
-   const normalized=plotted.map(({slot,rows,reference})=>({slot,rows,reference,values:rows.map(r=>100*Number(r[slot.key])/Number(rows[0][slot.key]))})).filter(x=>x.values.every(v=>Number.isFinite(v)&&v>0));
+   const normalized=plotted.map(({slot,rows,reference})=>({slot,rows,reference,position:layouts[slot.slotIndex]?.position||0,values:rows.map(r=>100*Number(r[slot.key])/Number(rows[0][slot.key]))})).filter(x=>x.values.every(v=>Number.isFinite(v)&&v>0));
    const all=activePlotSeries(normalized).flatMap(x=>x.values);if(!all.length){host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';return}
    const lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
-   const line=values=>values.map((v,i)=>{const x=p.l+(i/Math.max(1,values.length-1))*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
-   const polylines=normalized.map(x=>'<polyline points="'+line(x.values)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey,x.slot.slotIndex)+';opacity:'+(x.reference?'0.27':'1')+';stroke-dasharray:'+(x.reference?'5 6':'none')+'"/>').join('');
+   const line=(values,position)=>values.map((v,i)=>{const x=p.l+((position+i)/Math.max(1,layouts[0]?.capacity||1))*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
+   const polylines=normalized.map(x=>'<polyline points="'+line(x.values,x.position)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey,x.slot.slotIndex)+';opacity:'+(x.reference?'0.27':'1')+';stroke-dasharray:'+(x.reference?'5 6':'none')+'"/>').join('');
    host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação normalizada por tempo relativo; cada janela começa em base 100"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">Início relativo</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">Fim relativo</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">100 = início de cada janela</text></svg>';
    const legend=$('#comparison-legend');if(legend)legend.innerHTML=normalized.map(({slot,rows})=>'<span class="cmp-series-label"><span aria-hidden="true" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+assetColor(slot.assetKey,slot.slotIndex)+';margin-right:6px"></span>'+(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(slot.slotIndex+1)+(normalized.find(x=>x.slot===slot)?.reference?' · referência (fora da análise)':' · ativa')+' ('+date(rows[0].timestamp)+' → '+date(rows.at(-1).timestamp)+')</span>').join(' · ');
  };
@@ -232,7 +242,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const recomputeTimelineAnalysis=()=>{
    if(!state.timelineSlots.length)return;
    const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=activeTimelineSlots(state.timelineSlots);
-   const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
+   const layouts=visibleTimelineLayout();
+   const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,layouts[slot.slotIndex]?.rows||[]]));
    const sampleCheck=inspectWindowSamples(slots.map(slot=>timelineRows[slot.key]));
    if(sampleCheck.status===ScientificStatus.BLOCKED){
      const issue=sampleCheck.issues[0];
@@ -241,10 +252,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      return;
    }
    state.timelineRows=timelineRows;state.series=slots;state.selected=slots.map(slot=>slot.key);
-   const windowedSeries=slots.map(slot=>({...slot,candles:slot.candles.filter(c=>Number(c.timestamp)>=slot.window.start&&Number(c.timestamp)<=slot.window.end)}));
+   const windowedSeries=slots.map(slot=>{const rows=timelineRows[slot.key];return {...slot,candles:slot.candles.filter(c=>rows.some(row=>Number(row.timestamp)===Number(c.timestamp)))};});
    // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
    const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
-   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=calendarCheck.status===ScientificStatus.APPROVED;
+   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=alignmentMode==='calendar'&&calendarCheck.status===ScientificStatus.APPROVED;
    const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
    const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
    const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
@@ -268,6 +279,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(hasCommon){
      result.audit={...commonResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:commonResult.audit?.relations||[]};
    }else result.audit={...primaryResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:[]};
+   result.timelineVisibility=layouts.filter(x=>x.incomplete).map((x,i)=>({visible:x.visibleCount,total:x.duration}));
+   result.timelineAlignment=alignmentMode;
    result.interval=interval;result.returnMode=returnMode;result.rollingWindow=rollingWindow;result.observations=primaryRows.length;result.alignedObservations=hasCommon?commonRows.length:0;
    result.rowsStart=primaryRows[0].timestamp;result.rowsEnd=primaryRows.at(-1).timestamp;result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
    result.temporal={...(result.temporal||{}),method:hasCommon?'individual native-window statistics; cross-series inference on shared calendar buckets within selected windows':slots.length<2?'single selected series; no cross-series inference requested':modelSeries.length<2?'only one distinct asset; repeated periods excluded from multivariate inference':'individual selected windows; no valid shared sample for cross-series inference',sharedRows:hasCommon?commonRows.length:0};
