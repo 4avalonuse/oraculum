@@ -261,7 +261,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const windowedSeries=slots.map(slot=>{const rows=timelineRows[slot.key];return {...slot,candles:slot.candles.filter(c=>rows.some(row=>Number(row.timestamp)===Number(c.timestamp)))};});
    // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
    const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
-   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=viewModes.chart==='calendar'&&calendarCheck.status===ScientificStatus.APPROVED;
+   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=calendarCheck.status===ScientificStatus.APPROVED;
    const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
    const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
    const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
@@ -285,7 +285,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(hasCommon){
      result.audit={...commonResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:commonResult.audit?.relations||[]};
    }else result.audit={...primaryResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:[]};
-   result.timelineVisibility=layouts.filter(x=>x.incomplete).map((x,i)=>({visible:x.visibleCount,total:x.duration}));
+   result.timelineVisibility=layouts.map((x,i)=>({slotIndex:i,visible:x.visibleCount,total:x.duration,hidden:x.hiddenCount})).filter(x=>x.hidden>0);
    result.timelineAlignment=viewModes.alignment;result.chartMode=viewModes.chart;
    result.interval=interval;result.returnMode=returnMode;result.rollingWindow=rollingWindow;result.observations=primaryRows.length;result.alignedObservations=hasCommon?commonRows.length:0;
    result.rowsStart=primaryRows[0].timestamp;result.rowsEnd=primaryRows.at(-1).timestamp;result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
