@@ -196,7 +196,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track');
    const width=Math.max(1,track.getBoundingClientRect().width);
    const move=ev=>{
-     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,rows.length-1));
+     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
      slot.window=moveWindowByFrames(rows,original,delta);
      renderChart();
    };
@@ -215,7 +215,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const track=event.currentTarget.closest('.cmp-timeline-track');
    const width=Math.max(1,track.getBoundingClientRect().width),startX=event.clientX;
    const move=ev=>{
-     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,rows.length-1));
+     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
      slot.window=resizeWindowByFrames(rows,original,edge,delta);
      syncComparisonDurations();renderChart();
    };
