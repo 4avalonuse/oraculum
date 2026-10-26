@@ -18,6 +18,7 @@ import {comparisonPlotSeries,activePlotSeries} from './timeline-plot-series.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {plotCoordinates} from './timeline-plot-coordinates.js';
+import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -184,52 +185,46 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    });
  };
  const shiftTimelineByPeriods=(index,steps)=>{
-   const slot=state.timelineSlots[index],common=sharedRows();if(!slot?.window?.valid||!common.length)return;
-   const startFrame=nearestTimelineIndex(common,slot.window.start),endFrame=nearestTimelineIndex(common,slot.window.end);
-   const count=Math.max(10,endFrame-startFrame+1),start=clamp(startFrame+steps,0,Math.max(0,common.length-count));
-   const rows=timelineRowsFor(slot),from=nearestTimelineIndex(rows,common[start].timestamp),to=nearestTimelineIndex(rows,common[Math.min(common.length-1,start+count-1)].timestamp);
-   if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
+   const slot=state.timelineSlots[index];
+   if(slot?.window?.valid)slot.window=moveWindowByFrames(timelineRowsFor(slot),slot.window,steps);
  };
  const beginTimelineDrag=(event,index)=>{
    event.preventDefault();
    const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
-   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),common=sharedRows();
-   const rows=timelineRowsFor(slot),baseStart=nearestTimelineIndex(common,slot.window.start),baseEnd=nearestTimelineIndex(common,slot.window.end);
-   const count=Math.max(10,baseEnd-baseStart+1),maxStart=Math.max(0,common.length-count);
+   const rows=timelineRowsFor(slot),original={...slot.window};
+   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track');
+   const width=Math.max(1,track.getBoundingClientRect().width);
    const move=ev=>{
-     const deltaSteps=Math.round((ev.clientX-startX)/Math.max(1,rect.width)*Math.max(1,common.length-1));
-     const start=clamp(baseStart+deltaSteps,0,maxStart),from=nearestTimelineIndex(rows,common[start].timestamp),to=nearestTimelineIndex(rows,common[Math.min(common.length-1,start+count-1)].timestamp);
-     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
-     const layout=visibleTimelineLayout()[index];
-     const range=track.querySelector('.cmp-timeline-range');
-     if(range&&layout){range.style.left=(100*layout.position/layout.capacity)+'%';range.style.width=(100*layout.visibleCount/layout.capacity)+'%';}
+     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,rows.length-1));
+     slot.window=moveWindowByFrames(rows,original,delta);
      renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);renderTimelinePanel();renderChart();markTimelinesChanged()};
-   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
+   const up=()=>{
+     window.removeEventListener('pointermove',move);
+     window.removeEventListener('pointerup',up);
+     renderTimelinePanel();renderChart();markTimelinesChanged();
+   };
+   window.addEventListener('pointermove',move);
+   window.addEventListener('pointerup',up,{once:true});
  };
  const beginTimelineResize=(event,edge)=>{
    event.preventDefault();event.stopPropagation();
-   const slot=state.timelineSlots[0],common=sharedRows();if(!slot?.window?.valid||common.length<10)return;
-   const rows=timelineRowsFor(slot),original=slot.window;
-   const track=event.currentTarget.closest('.cmp-timeline-track'),rect=track.getBoundingClientRect(),startX=event.clientX;
-   const baseStart=nearestTimelineIndex(common,original.start),baseEnd=nearestTimelineIndex(common,original.end);
+   const slot=state.timelineSlots[0];if(!slot?.window?.valid)return;
+   const rows=timelineRowsFor(slot),original={...slot.window};
+   const track=event.currentTarget.closest('.cmp-timeline-track');
+   const width=Math.max(1,track.getBoundingClientRect().width),startX=event.clientX;
    const move=ev=>{
-     const deltaFrames=Math.round(((ev.clientX-startX)/Math.max(1,rect.width))*(common.length-1));
-     const startFrame=clamp(edge==='start'?baseStart+deltaFrames:baseStart,0,common.length-1);
-     const endFrame=clamp(edge==='end'?baseEnd+deltaFrames:baseEnd,0,common.length-1);
-     const minFrames=10;
-     let a=Math.min(startFrame,endFrame),b=Math.max(startFrame,endFrame);
-     if(b-a+1<minFrames){if(edge==='start')a=Math.max(0,b-minFrames+1);else b=Math.min(common.length-1,a+minFrames-1);}
-     const from=nearestTimelineIndex(rows,common[a].timestamp),to=nearestTimelineIndex(rows,common[b].timestamp);
-     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
-     syncComparisonDurations();
-     const layout=visibleTimelineLayout()[0],range=track.querySelector('.cmp-timeline-range');
-     if(range&&layout){range.style.left=(100*layout.position/layout.capacity)+'%';range.style.width=(100*layout.visibleCount/layout.capacity)+'%';}
-     renderChart();
+     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,rows.length-1));
+     slot.window=resizeWindowByFrames(rows,original,edge,delta);
+     syncComparisonDurations();renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);renderTimelinePanel();renderChart();markTimelinesChanged()};
-   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
+   const up=()=>{
+     window.removeEventListener('pointermove',move);
+     window.removeEventListener('pointerup',up);
+     renderTimelinePanel();renderChart();markTimelinesChanged();
+   };
+   window.addEventListener('pointermove',move);
+   window.addEventListener('pointerup',up,{once:true});
  };
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
