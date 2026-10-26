@@ -23,13 +23,17 @@ test('sequential layout clips windows without changing original samples',()=>{
  assert.equal(layout[0].visibleCount,30);assert.equal(layout[1].visibleCount,0);
  assert.equal(rows.length,40);
 });
-test('disjoint calendar windows normalize independently when no shared quote exists',()=>{
+test('calendar X coordinates preserve real gaps between disjoint windows',()=>{
  const first={key:'btc1',assetKey:'BTC',slotIndex:0};
  const second={key:'btc2',assetKey:'BTC',slotIndex:1};
  const a=[{timestamp:0,btc1:100},{timestamp:86400000,btc1:120}];
- const b=[{timestamp:2*86400000,btc2:200},{timestamp:3*86400000,btc2:220}];
+ const b=[{timestamp:10*86400000,btc2:200},{timestamp:11*86400000,btc2:220}];
  const plotted=[{slot:first,rows:a},{slot:second,rows:b}];
- const output=plotCoordinates(plotted,[{capacity:4},{capacity:4}],'calendar',()=>rows,(all,t)=>all.findIndex(r=>r.timestamp===t));
- assert.equal(output.curves[0].values[0],100);
+ const output=plotCoordinates(plotted,[{capacity:2},{capacity:2}],'calendar');
+ assert.equal(output.curves[0].x[0],0);
+ assert.equal(output.curves[1].x[0],10/11);
+ assert.equal(output.curves[1].x[1],1);
  assert.equal(output.curves[1].values[0],100);
+ const relative=plotCoordinates(plotted,[{capacity:2,position:0},{capacity:2,position:0}],'relative');
+ assert.equal(relative.curves[1].x[0],0);
 });
