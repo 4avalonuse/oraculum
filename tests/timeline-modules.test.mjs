@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createTimelineViewModes} from '../src/analysis/timeline-view-modes.js';
 import {timelineLayout} from '../src/analysis/timeline-layout.js';
+import {createSequentialViewport} from '../src/analysis/timeline-viewport.js';
+import {synchronizeWindowFrameCounts} from '../src/analysis/timeline-duration-sync.js';
 import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from '../src/analysis/timeline-window-movement.js';
 import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
@@ -61,4 +63,24 @@ test('matching frame count keeps independent historical window',()=>{
  const shorter=matchWindowFrameCount(rows,matched,10);
  assert.equal(shorter.observations,10);
  assert.equal(shorter.startIndex,25);
+});
+
+test('sequential viewport stays within the number of available pages',()=>{
+ const viewport=createSequentialViewport();
+ const slots=[{id:1},{id:2}];
+ const getRows=()=>rows.slice(0,20);
+ assert.equal(viewport.lastPage(slots,getRows),1);
+ viewport.next(slots,getRows);
+ viewport.next(slots,getRows);
+ assert.equal(viewport.page,1);
+ assert.equal(viewport.start(slots,getRows),20);
+ viewport.previous();
+ assert.equal(viewport.start(slots,getRows),0);
+});
+test('duration synchronization respects independent starts',()=>{
+ const primary={window:timelineWindow(rows,2,16,10)};
+ const later={window:timelineWindow(rows,25,34,10)};
+ synchronizeWindowFrameCounts([primary,later],()=>rows);
+ assert.equal(later.window.startIndex,25);
+ assert.equal(later.window.observations,15);
 });
