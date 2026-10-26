@@ -37,3 +37,15 @@ test('calendar X coordinates preserve real gaps between disjoint windows',()=>{
  const relative=plotCoordinates(plotted,[{capacity:2,position:0},{capacity:2,position:0}],'relative');
  assert.equal(relative.curves[1].x[0],0);
 });
+
+test('sequential viewport reveals second timeline at unchanged frame width',()=>{
+ const slots=[{id:1},{id:2}];
+ const first=timelineLayout(slots,()=>rows.slice(0,20),'sequential',0);
+ const next=timelineLayout(slots,()=>rows.slice(0,20),'sequential',20);
+ assert.equal(first[0].visibleCount,20);
+ assert.equal(first[1].visibleCount,0);
+ assert.equal(next[0].visibleCount,0);
+ assert.equal(next[1].visibleCount,20);
+ assert.equal(next[1].position,0);
+ assert.equal(next[1].capacity,20);
+});
