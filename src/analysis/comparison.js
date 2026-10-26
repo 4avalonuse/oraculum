@@ -311,7 +311,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const asset=pool.find(x=>x.assetKey===key)||pool[0],slot=makeSlot(asset,index);
      slot.window=startWindow(slot,mainStart,mainEnd,10);return slot;
    });
-   syncComparisonDurations(true);
+   synchronizeWindowFrameCounts(state.timelineSlots,timelineRowsFor);
    if(period!=='full'){
      const common=sharedRows(),end=common.at(-1);
      if(end){
@@ -320,7 +320,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
        const main=state.timelineSlots[0],rows=timelineRowsFor(main);
        const a=rows.findIndex(row=>periodKeyFor(row)===wanted.__periodKey),b=rows.findIndex(row=>periodKeyFor(row)===end.__periodKey);
        if(a>=0&&b>=a)main.window=timelineWindow(rows,a,b,10);
-       syncComparisonDurations(false);
+       synchronizeWindowFrameCounts(state.timelineSlots,timelineRowsFor);
      }
    }
    renderTimelineControls();renderTimelinePanel();
