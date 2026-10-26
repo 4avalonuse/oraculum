@@ -13,3 +13,11 @@ export function resizeWindowByFrames(rows,window,edge,delta,minCount=10){
  const end=edge==='end'?clamp(window.endIndex+Math.round(delta),start+minCount-1,rows.length-1):window.endIndex;
  return timelineWindow(rows,start,end,minCount);
 }
+
+/* Match the primary frame count without replacing this asset's selected era. */
+export function matchWindowFrameCount(rows,window,count,minCount=10){
+ if(!window?.valid||!rows?.length)return window;
+ const n=Math.min(rows.length,Math.max(Math.min(minCount,rows.length),Math.floor(Number(count)||0)));
+ const start=clamp(window.startIndex,0,rows.length-n);
+ return timelineWindow(rows,start,start+n-1,Math.min(minCount,n));
+}
