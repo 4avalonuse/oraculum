@@ -9,6 +9,7 @@ import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
 import {renderComparisonPlot} from '../src/analysis/timeline-chart-view.js';
 import {timelineRowsMarkup} from '../src/analysis/timeline-rows-view.js';
+import {renderTimelineToolbar} from '../src/analysis/timeline-toolbar-view.js';
 import {createTimelinePointerHandlers} from '../src/analysis/timeline-pointer-interactions.js';
 
 const rows=Array.from({length:40},(_,i)=>({timestamp:i*86400000,btc:100+i,other:10+i}));
@@ -140,4 +141,33 @@ test('timeline view renders header and clipped navigation without mutating windo
  assert.match(html,/frames fora da escala/);
  assert.match(html,/data-duplicate-slot="0"/);
  assert.deepEqual(slot.window,original);
+});
+
+test('toolbar owns markup while keeping navigation state outside the view',()=>{
+ const events=new Map();
+ const buttons={};
+ const host={
+   innerHTML:'',
+   querySelector:selector=>{
+     if(!buttons[selector])buttons[selector]={
+       hidden:true,
+       addEventListener:(type,fn)=>events.set(selector+':'+type,fn),
+       setAttribute:()=>{}
+     };
+     return buttons[selector];
+   },
+   querySelectorAll:()=>[]
+ };
+ const viewport=createSequentialViewport();
+ const slots=[{key:'first',window:timelineWindow(rows,0,19,10)},{key:'second',window:timelineWindow(rows,20,39,10)}];
+ let navigations=0;
+ const args={host,catalog:[],modes:{chart:'relative',alignment:'sequential'},viewport,slots,
+   rowsInWindow:()=>rows.slice(0,20),onAlign:()=>{},onPrevious:()=>{},
+   onNext:()=>{navigations++;},onChart:()=>{},onAdd:()=>{}};
+ renderTimelineToolbar(args);
+ assert.match(host.innerHTML,/Próxima/);
+ assert.match(host.innerHTML,/Adicionar ativo/);
+ assert.equal(viewport.page,0);
+ events.get('#cmp-page-next:click')();
+ assert.equal(navigations,1);
 });
