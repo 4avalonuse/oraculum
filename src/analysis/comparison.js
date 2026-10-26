@@ -198,15 +198,20 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const move=ev=>{
      const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
      slot.window=moveWindowByFrames(rows,original,delta);
+     const row=track.closest('.cmp-timeline-row');
+     const label=row?.querySelector('.cmp-timeline-dates');
+     if(label&&slot.window?.valid){label.firstElementChild.textContent=date(slot.window.start);label.lastElementChild.textContent=date(slot.window.end);}
      renderChart();
    };
    const up=()=>{
      window.removeEventListener('pointermove',move);
      window.removeEventListener('pointerup',up);
+     window.removeEventListener('pointercancel',up);
      renderTimelinePanel();renderChart();markTimelinesChanged();
    };
    window.addEventListener('pointermove',move);
    window.addEventListener('pointerup',up,{once:true});
+   window.addEventListener('pointercancel',up,{once:true});
  };
  const beginTimelineResize=(event,edge)=>{
    event.preventDefault();event.stopPropagation();
@@ -217,15 +222,20 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const move=ev=>{
      const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
      slot.window=resizeWindowByFrames(rows,original,edge,delta);
-     syncComparisonDurations();renderChart();
+     syncComparisonDurations();
+     const label=track.closest('.cmp-timeline-row')?.querySelector('.cmp-timeline-dates');
+     if(label&&slot.window?.valid){label.firstElementChild.textContent=date(slot.window.start);label.lastElementChild.textContent=date(slot.window.end);}
+     renderChart();
    };
    const up=()=>{
      window.removeEventListener('pointermove',move);
      window.removeEventListener('pointerup',up);
+     window.removeEventListener('pointercancel',up);
      renderTimelinePanel();renderChart();markTimelinesChanged();
    };
    window.addEventListener('pointermove',move);
    window.addEventListener('pointerup',up,{once:true});
+   window.addEventListener('pointercancel',up,{once:true});
  };
  const renderChart=()=>{
    const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
