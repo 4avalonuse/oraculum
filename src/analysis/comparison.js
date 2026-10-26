@@ -86,7 +86,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
  };
  const visibleTimelineLayout=()=>{
-   const common=sharedRows(),capacity=Math.max(1,common.length-1);
+   const common=sharedRows(),capacity=alignmentMode==='start'?Math.max(1,...state.timelineSlots.map(slot=>rowsInWindow(slot).length-1)):Math.max(1,common.length-1);
    let offset=0;
    return state.timelineSlots.map(slot=>{
      const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1);
@@ -145,7 +145,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!host||!state.timelineSlots.length)return;
    const common=sharedRows();
    const commonStart=Number(common[0]?.timestamp)||0,commonEnd=Number(common.at(-1)?.timestamp)||commonStart;
-   const commonSpan=Math.max(1,common.length-1),layouts=visibleTimelineLayout();
+   const layouts=visibleTimelineLayout(),commonSpan=layouts[0]?.capacity||1;
    host.innerHTML=state.timelineSlots.map((slot,i)=>{
      const w=slot.window,color=assetColor(slot.assetKey,i);
      // Each track is measured in the same shared frames, never in each asset's full native history.
@@ -156,7 +156,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const visible=layout.visibleCount>0;
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
-     const label=(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(i+1);
+     const label=(slot.symbol||slot.name||slot.assetKey)+' '+(i+1);
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range=visible?'<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(0,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0" title="'+(incomplete?'Janela parcialmente visível; duração preservada':'Janela completa')+'"></div>': '<span class="cmp-timeline-duration" title="Janela fora da área visível">↗ Continua fora da escala</span>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
@@ -165,7 +165,9 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    host.querySelectorAll('[data-duplicate-slot]').forEach(button=>button.addEventListener('click',()=>{
      const original=state.timelineSlots[Number(button.dataset.duplicateSlot)];
      if(!original)return;
-     const duplicate={...original,key:'timeline-'+Date.now()+'-'+state.timelineSlots.length,slotIndex:state.timelineSlots.length,active:true,window:{...original.window}};
+     const duplicate=makeSlot(original,Date.now());
+     duplicate.slotIndex=state.timelineSlots.length;
+     duplicate.window={...original.window};
      state.timelineSlots.push(duplicate);
      renderTimelinePanel();renderChart();markTimelinesChanged();
    }));
@@ -208,9 +210,12 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const deltaSteps=Math.round((ev.clientX-startX)/Math.max(1,rect.width)*Math.max(1,common.length-1));
      const start=clamp(baseStart+deltaSteps,0,maxStart),from=nearestTimelineIndex(rows,common[start].timestamp),to=nearestTimelineIndex(rows,common[Math.min(common.length-1,start+count-1)].timestamp);
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
-     renderTimelinePanel();renderChart();
+     const layout=visibleTimelineLayout()[index];
+     const range=track.querySelector('.cmp-timeline-range');
+     if(range&&layout){range.style.left=(100*layout.position/layout.capacity)+'%';range.style.width=(100*layout.visibleCount/layout.capacity)+'%';}
+     renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);renderTimelinePanel();renderChart();markTimelinesChanged()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
  const beginTimelineResize=(event,edge)=>{
@@ -229,9 +234,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const from=nearestTimelineIndex(rows,common[a].timestamp),to=nearestTimelineIndex(rows,common[b].timestamp);
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,10);
      syncComparisonDurations();
-     renderTimelinePanel();renderChart();
+     const layout=visibleTimelineLayout()[0],range=track.querySelector('.cmp-timeline-range');
+     if(range&&layout){range.style.left=(100*layout.position/layout.capacity)+'%';range.style.width=(100*layout.visibleCount/layout.capacity)+'%';}
+     renderChart();
    };
-   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);markTimelinesChanged()};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);renderTimelinePanel();renderChart();markTimelinesChanged()};
    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up,{once:true});
  };
  const renderChart=()=>{
