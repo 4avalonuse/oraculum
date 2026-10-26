@@ -8,6 +8,7 @@ import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from '../
 import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
 import {renderComparisonPlot} from '../src/analysis/timeline-chart-view.js';
+import {createTimelinePointerHandlers} from '../src/analysis/timeline-pointer-interactions.js';
 
 const rows=Array.from({length:40},(_,i)=>({timestamp:i*86400000,btc:100+i,other:10+i}));
 test('chart and alignment toggles are independent',()=>{
@@ -99,4 +100,30 @@ test('dedicated chart view labels calendar and relative axes without changing sa
  renderComparisonPlot({...args,mode:'relative'});
  assert.match(host.innerHTML,/Início relativo/);
  assert.equal(input[0].btc,100);
+});
+
+test('pointer module handles drag and completes without global listeners',()=>{
+ const listeners=new Map();
+ const label={firstElementChild:{textContent:''},lastElementChild:{textContent:''}};
+ const track={getBoundingClientRect:()=>({width:100}),closest:()=>({querySelector:()=>label})};
+ const target={
+   closest:()=>track,
+   addEventListener:(type,fn)=>listeners.set(type,fn),
+   removeEventListener:type=>listeners.delete(type),
+   setPointerCapture:()=>{},
+   hasPointerCapture:()=>true,
+   releasePointerCapture:()=>{}
+ };
+ const slot={window:timelineWindow(rows,5,14,10)};
+ let completed=0;
+ const handlers=createTimelinePointerHandlers({
+   slots:()=>[slot],rowsForSlot:()=>rows,renderChart:()=>{},
+   renderPanel:()=>{},markChanged:()=>{completed++},formatDate:String
+ });
+ handlers.drag({button:0,pointerId:3,clientX:10,currentTarget:target,preventDefault:()=>{}},0);
+ listeners.get('pointermove')({pointerId:3,clientX:40});
+ assert.equal(slot.window.startIndex,8);
+ listeners.get('pointerup')({pointerId:3});
+ assert.equal(completed,1);
+ assert.equal(listeners.size,0);
 });
