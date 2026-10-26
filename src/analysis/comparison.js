@@ -14,11 +14,10 @@ import {buildScientificReading} from './scientific-reading.js';
 import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
 import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
-import {comparisonPlotSeries,activePlotSeries} from './timeline-plot-series.js';
+import {renderComparisonPlot} from './timeline-chart-view.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {createSequentialViewport} from './timeline-viewport.js';
-import {plotCoordinates} from './timeline-plot-coordinates.js';
 import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
 import {synchronizeWindowFrameCounts} from './timeline-duration-sync.js';
 
@@ -230,20 +229,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    window.addEventListener('pointerup',up,{once:true});
    window.addEventListener('pointercancel',up,{once:true});
  };
- const renderChart=()=>{
-   const host=$('#comparison-chart');if(!host||!state.timelineSlots.length)return;
-   const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:20,b:34};
-   const layouts=visibleTimelineLayout();
-   const plotted=comparisonPlotSeries(state.timelineSlots,slot=>layouts[slot.slotIndex]?.rows||[]);
-   if(!plotted.length){host.innerHTML='<p class="analysis-layer-note">Não há observações suficientes para desenhar a comparação.</p>';return}
-   const {curves:normalized,capacity:plotCapacity}=plotCoordinates(plotted,layouts,viewModes.chart);
-   const all=activePlotSeries(normalized).flatMap(x=>x.values);if(!all.length){host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';return}
-   const lo=Math.log(Math.min(...all)),hi=Math.log(Math.max(...all));
-   const line=(values,positions)=>values.map((v,i)=>{const x=p.l+positions[i]*(w-p.l-p.r),y=h-p.b-(Math.log(Math.max(.0001,v))-lo)/(hi-lo||1)*(h-p.t-p.b);return x.toFixed(2)+','+y.toFixed(2)}).join(' ');
-   const polylines=normalized.map(x=>'<polyline points="'+line(x.values,x.x)+'" class="cmp-line" style="stroke:'+assetColor(x.slot.assetKey,x.slot.slotIndex)+';opacity:'+(x.reference?'0.27':'1')+';stroke-dasharray:'+(x.reference?'5 6':'none')+'"/>').join('');
-   host.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" aria-label="Comparação de séries em base 100"><line x1="'+p.l+'" x2="'+p.l+'" y1="'+p.t+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h-p.b)+'" y2="'+(h-p.b)+'" class="cmp-axis"/><line x1="'+p.l+'" x2="'+(w-p.r)+'" y1="'+(h/2)+'" y2="'+(h/2)+'" class="cmp-grid"/>'+polylines+'<text x="'+p.l+'" y="'+(h-8)+'">Início relativo</text><text x="'+(w-p.r)+'" y="'+(h-8)+'" text-anchor="end">Fim relativo</text><text x="'+(p.l+6)+'" y="'+(h/2-6)+'">Base 100 · '+ (viewModes.chart==='relative'?'início de cada janela':'referência temporal') +'</text></svg>';
-   const legend=$('#comparison-legend');if(legend)legend.innerHTML=normalized.map(({slot,rows})=>'<span class="cmp-series-label"><span aria-hidden="true" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+assetColor(slot.assetKey,slot.slotIndex)+';margin-right:6px"></span>'+(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(slot.slotIndex+1)+(normalized.find(x=>x.slot===slot)?.reference?' · referência (fora da análise)':' · ativa')+' ('+date(rows[0].timestamp)+' → '+date(rows.at(-1).timestamp)+')</span>').join(' · ');
- };
+ const renderChart=()=>renderComparisonPlot({
+   host:$('#comparison-chart'),legend:$('#comparison-legend'),
+   slots:state.timelineSlots,layouts:visibleTimelineLayout(),
+   mode:viewModes.chart,assetColor,date
+ });
  const sameWindowDates=slots=>slots.every(slot=>{
    const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1),main=rowsInWindow(slots[0]);
    return first&&last&&main[0]&&main.at(-1)&&periodKeyFor(first)===periodKeyFor(main[0])&&periodKeyFor(last)===periodKeyFor(main.at(-1));
