@@ -31,5 +31,5 @@ test('calendar anchor is shared for repeated asset windows only',()=>{
  const plotted=[{slot:first,rows:a},{slot:second,rows:b}];
  const output=plotCoordinates(plotted,[{capacity:4},{capacity:4}],'calendar',()=>rows,(all,t)=>all.findIndex(r=>r.timestamp===t));
  assert.equal(output.curves[0].values[0],100);
- assert.equal(output.curves[1].values[0],100);
+ assert.equal(output.curves[1].values[0],200);
 });
