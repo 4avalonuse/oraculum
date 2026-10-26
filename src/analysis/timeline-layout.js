@@ -9,7 +9,7 @@ export function timelineLayout(slots, rowsForSlot, alignment) {
     if (alignment === 'sequential') offset += durations[index];
     const visibleCount = Math.max(0, Math.min(rows.length, capacity - position));
     return {
-      position, duration: rows.length, capacity, visibleCount,
+      position, duration: rows.length, capacity, visibleCount, hiddenCount: rows.length-visibleCount,
       rows: rows.slice(0, visibleCount), incomplete: visibleCount < rows.length
     };
   });
