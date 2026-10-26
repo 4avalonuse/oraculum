@@ -18,7 +18,8 @@ import {renderComparisonPlot} from './timeline-chart-view.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {createSequentialViewport} from './timeline-viewport.js';
-import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
+import {moveWindowByFrames} from './timeline-window-movement.js';
+import {createTimelinePointerHandlers} from './timeline-pointer-interactions.js';
 import {synchronizeWindowFrameCounts} from './timeline-duration-sync.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
@@ -181,54 +182,13 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const slot=state.timelineSlots[index];
    if(slot?.window?.valid)slot.window=moveWindowByFrames(timelineRowsFor(slot),slot.window,steps);
  };
- const beginTimelineDrag=(event,index)=>{
-   event.preventDefault();
-   const slot=state.timelineSlots[index];if(!slot?.window?.valid)return;
-   const rows=timelineRowsFor(slot),original={...slot.window};
-   const startX=event.clientX,track=event.currentTarget.closest('.cmp-timeline-track');
-   const width=Math.max(1,track.getBoundingClientRect().width);
-   const move=ev=>{
-     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
-     slot.window=moveWindowByFrames(rows,original,delta);
-     const row=track.closest('.cmp-timeline-row');
-     const label=row?.querySelector('.cmp-timeline-dates');
-     if(label&&slot.window?.valid){label.firstElementChild.textContent=date(slot.window.start);label.lastElementChild.textContent=date(slot.window.end);}
-     renderChart();
-   };
-   const up=()=>{
-     window.removeEventListener('pointermove',move);
-     window.removeEventListener('pointerup',up);
-     window.removeEventListener('pointercancel',up);
-     renderTimelinePanel();renderChart();markTimelinesChanged();
-   };
-   window.addEventListener('pointermove',move);
-   window.addEventListener('pointerup',up,{once:true});
-   window.addEventListener('pointercancel',up,{once:true});
- };
- const beginTimelineResize=(event,edge)=>{
-   event.preventDefault();event.stopPropagation();
-   const slot=state.timelineSlots[0];if(!slot?.window?.valid)return;
-   const rows=timelineRowsFor(slot),original={...slot.window};
-   const track=event.currentTarget.closest('.cmp-timeline-track');
-   const width=Math.max(1,track.getBoundingClientRect().width),startX=event.clientX;
-   const move=ev=>{
-     const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
-     slot.window=resizeWindowByFrames(rows,original,edge,delta);
-     synchronizeWindowFrameCounts(state.timelineSlots,timelineRowsFor);
-     const label=track.closest('.cmp-timeline-row')?.querySelector('.cmp-timeline-dates');
-     if(label&&slot.window?.valid){label.firstElementChild.textContent=date(slot.window.start);label.lastElementChild.textContent=date(slot.window.end);}
-     renderChart();
-   };
-   const up=()=>{
-     window.removeEventListener('pointermove',move);
-     window.removeEventListener('pointerup',up);
-     window.removeEventListener('pointercancel',up);
-     renderTimelinePanel();renderChart();markTimelinesChanged();
-   };
-   window.addEventListener('pointermove',move);
-   window.addEventListener('pointerup',up,{once:true});
-   window.addEventListener('pointercancel',up,{once:true});
- };
+ const pointerHandlers=createTimelinePointerHandlers({
+   slots:()=>state.timelineSlots,rowsForSlot:timelineRowsFor,
+   renderChart:()=>renderChart(),renderPanel:()=>renderTimelinePanel(),
+   markChanged:markTimelinesChanged,formatDate:date
+ });
+ const beginTimelineDrag=(event,index)=>pointerHandlers.drag(event,index);
+ const beginTimelineResize=(event,edge)=>pointerHandlers.resize(event,edge);
  const renderChart=()=>renderComparisonPlot({
    host:$('#comparison-chart'),legend:$('#comparison-legend'),
    slots:state.timelineSlots,layouts:visibleTimelineLayout(),
