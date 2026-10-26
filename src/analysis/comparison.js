@@ -79,7 +79,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,Math.min(10,frameCount));
    }
  };
- const alignmentModes=['calendar','start','sequential'];
+ const alignmentModes=['calendar','start'];
  let alignmentMode='calendar';
  const alignAllTimelines=()=>{
    alignmentMode=alignmentModes[(alignmentModes.indexOf(alignmentMode)+1)%alignmentModes.length];
@@ -134,7 +134,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const categories={};
    state.assetCatalog.forEach(asset=>{const category=asset.category||'other';(categories[category]||(categories[category]=[])).push(asset)});
    const menu=Object.entries(categories).map(([category,list])=>'<details class="cmp-add-category"><summary>'+ (categoryLabels[category]||category) +'<span>'+list.length+'</span></summary><div class="cmp-add-category-list">'+list.map(asset=>'<div class="cmp-add-option"><span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span><button type="button" class="cmp-add-series" data-add-asset="'+asset.assetKey+'" aria-label="Adicionar '+asset.symbol+'" title="Adicionar '+asset.name+'">+</button></div>').join('')+'</div></details>').join('');
-   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alternar disposição visual sem alterar as datas ou os cálculos">↔ '+({calendar:"Calendário",start:"Mesmo início",sequential:"Sequencial"}[alignmentMode])+'</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
+   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alternar entre comparação relativa e calendário">↔ '+({calendar:"Calendário",start:"Comparação relativa"}[alignmentMode])+'</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
    const toggle=host.querySelector('#cmp-add-toggle'),panel=host.querySelector('#cmp-add-menu');
    toggle?.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});
    host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
@@ -160,8 +160,21 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
      const range=visible?'<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(0,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0" title="'+(incomplete?'Janela parcialmente visível; duração preservada':'Janela completa')+'"></div>': '<span class="cmp-timeline-duration" title="Janela fora da área visível">↗ Continua fora da escala</span>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
-     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+';opacity:'+(slot.active===false?'0.45':'1')+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div><button type="button" class="cmp-mode-toggle cmp-timeline-active" data-active-slot="'+i+'" aria-pressed="'+(slot.active!==false)+'" '+(i===0?'disabled title="A referência principal permanece ativa"':'title="Alternar participação desta timeline na análise"')+'>'+(slot.active===false?'○ Referência':'● Ativa')+'</button></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
+     return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+';opacity:'+(slot.active===false?'0.45':'1')+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div><button type="button" class="cmp-mode-toggle cmp-timeline-active" data-active-slot="'+i+'" aria-pressed="'+(slot.active!==false)+'" '+(i===0?'disabled title="A referência principal permanece ativa"':'title="Alternar participação desta timeline na análise"')+'>'+(slot.active===false?'○ Referência':'● Ativa')+'</button><button type="button" class="cmp-mode-toggle" data-duplicate-slot="'+i+'" title="Duplicar ativo em nova janela" aria-label="Duplicar '+label+'">↓</button><button type="button" class="cmp-mode-toggle" data-remove-slot="'+i+'" '+(state.timelineSlots.length===1?'disabled ':'')+'title="Remover janela" aria-label="Remover '+label+'">×</button></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
    }).join('');
+   host.querySelectorAll('[data-duplicate-slot]').forEach(button=>button.addEventListener('click',()=>{
+     const original=state.timelineSlots[Number(button.dataset.duplicateSlot)];
+     if(!original)return;
+     const duplicate={...original,key:'timeline-'+Date.now()+'-'+state.timelineSlots.length,slotIndex:state.timelineSlots.length,active:true,window:{...original.window}};
+     state.timelineSlots.push(duplicate);
+     renderTimelinePanel();renderChart();markTimelinesChanged();
+   }));
+   host.querySelectorAll('[data-remove-slot]').forEach(button=>button.addEventListener('click',()=>{
+     if(state.timelineSlots.length<=1)return;
+     state.timelineSlots.splice(Number(button.dataset.removeSlot),1);
+     state.timelineSlots.forEach((slot,index)=>{slot.slotIndex=index;if(index===0)slot.active=true;});
+     renderTimelinePanel();renderChart();markTimelinesChanged();
+   }));
    host.querySelectorAll('[data-active-slot]').forEach(button=>button.addEventListener('click',()=>{
      const index=Number(button.dataset.activeSlot);
      state.timelineSlots=toggleTimelineActive(state.timelineSlots,index);
