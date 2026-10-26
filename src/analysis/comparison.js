@@ -79,9 +79,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,Math.min(10,frameCount));
    }
  };
+ const alignmentModes=['calendar','start','sequential'];
+ let alignmentMode='calendar';
  const alignAllTimelines=()=>{
-   syncComparisonDurations();
-   renderTimelinePanel();renderChart();markTimelinesChanged();
+   alignmentMode=alignmentModes[(alignmentModes.indexOf(alignmentMode)+1)%alignmentModes.length];
+   renderTimelineControls();renderTimelinePanel();
  };
  const categoryLabels={crypto:'Cripto',stock:'Ações',index:'Índices',commodity:'Commodities',rates:'Juros', 'btc-etf':'ETFs',test:'Validação'};
  const addCatalogAsset=async(assetKey)=>{
@@ -118,7 +120,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const categories={};
    state.assetCatalog.forEach(asset=>{const category=asset.category||'other';(categories[category]||(categories[category]=[])).push(asset)});
    const menu=Object.entries(categories).map(([category,list])=>'<details class="cmp-add-category"><summary>'+ (categoryLabels[category]||category) +'<span>'+list.length+'</span></summary><div class="cmp-add-category-list">'+list.map(asset=>'<div class="cmp-add-option"><span><strong>'+asset.symbol+'</strong><small>'+asset.name+'</small></span><button type="button" class="cmp-add-series" data-add-asset="'+asset.assetKey+'" aria-label="Adicionar '+asset.symbol+'" title="Adicionar '+asset.name+'">+</button></div>').join('')+'</div></details>').join('');
-   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alinhar todas as timelines ao período principal">↔ Alinhar todas</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
+   host.innerHTML='<button type="button" id="cmp-add-toggle" class="cmp-mode-toggle" aria-expanded="false">＋ Adicionar ativo</button><button type="button" id="cmp-align-all" class="cmp-mode-toggle" title="Alternar disposição visual sem alterar as datas ou os cálculos">↔ '+({calendar:"Calendário",start:"Mesmo início",sequential:"Sequencial"}[alignmentMode])+'</button><div id="cmp-add-menu" class="cmp-add-menu" hidden><div class="cmp-add-menu-head"><strong>ADICIONAR À INVESTIGAÇÃO</strong><small>Toque em + para criar uma nova timeline. Repetir ativos é permitido.</small></div>'+menu+'</div>';
    const toggle=host.querySelector('#cmp-add-toggle'),panel=host.querySelector('#cmp-add-menu');
    toggle?.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));});
    host.querySelector('#cmp-align-all')?.addEventListener('click',alignAllTimelines);
@@ -135,13 +137,19 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      // Each track is measured in the same shared frames, never in each asset's full native history.
      const frameStart=w?.valid?clamp(nearestTimelineIndex(common,Number(w.start)),0,common.length-1):0;
      const frameEnd=w?.valid?clamp(nearestTimelineIndex(common,Number(w.end)),0,common.length-1):common.length-1;
-     const left=clamp(Math.min(frameStart,frameEnd)/commonSpan*100,0,100);
-     const right=clamp(Math.max(frameStart,frameEnd)/commonSpan*100,0,100);
+     const duration=Math.max(1,Math.abs(frameEnd-frameStart)+1);
+     const sequentialOffset=state.timelineSlots.slice(0,i).reduce((sum,prior)=>sum+Math.max(1,Math.abs(nearestTimelineIndex(common,prior.window?.end)-nearestTimelineIndex(common,prior.window?.start))+1),0);
+     const rawStart=alignmentMode==='start'?0:alignmentMode==='sequential'?sequentialOffset:Math.min(frameStart,frameEnd);
+     const rawEnd=rawStart+duration;
+     const left=clamp(rawStart/commonSpan*100,0,100);
+     const right=clamp(rawEnd/commonSpan*100,0,100);
+     const incomplete=rawEnd>commonSpan;
+     const visible=rawStart<commonSpan;
      const days=Math.max(1,Math.round((Number(w?.durationMs)||0)/86400000)+1);
      const durationLabel=days>=1?days+' '+(days===1?'dia':'dias'):(w?.observations||0)+' candles';
      const label=(slot.symbol||slot.name||slot.assetKey)+' · Janela '+(i+1);
      const intervalLabel=w?.valid?date(w.start)+' — '+date(w.end)+' · '+durationLabel:'Período indisponível';
-     const range='<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(1,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0"></div>';
+     const range=visible?'<div class="cmp-timeline-range" data-slot="'+i+'" style="--timeline-color:'+color+';left:'+left+'%;width:'+Math.max(0,right-left)+'%" role="slider" aria-label="Mover janela de '+label+'" aria-valuetext="'+intervalLabel+'" tabindex="0" title="'+(incomplete?'Janela parcialmente visível; duração preservada':'Janela completa')+'"></div>': '<span class="cmp-timeline-duration" title="Janela fora da área visível">↗ Continua fora da escala</span>';
      const handles=i===0?'<button type="button" class="cmp-timeline-handle handle-start" data-slot="0" data-edge="start" style="left:clamp(12px,'+left+'%,calc(100% - 12px))" aria-label="Ajustar data inicial do ativo principal" title="Arraste para ajustar o início"></button><button type="button" class="cmp-timeline-handle handle-end" data-slot="0" data-edge="end" style="left:clamp(12px,'+right+'%,calc(100% - 12px))" aria-label="Ajustar data final do ativo principal" title="Arraste para ajustar o fim"></button>':'';
      return '<section class="cmp-timeline-row" data-timeline-row="'+i+'" style="--timeline-color:'+color+';opacity:'+(slot.active===false?'0.45':'1')+'" aria-label="Linha temporal '+(i+1)+'"><div class="cmp-timeline-head"><div class="cmp-timeline-title"><span class="cmp-timeline-color" aria-hidden="true"></span><strong>'+label+'</strong></div><button type="button" class="cmp-mode-toggle cmp-timeline-active" data-active-slot="'+i+'" aria-pressed="'+(slot.active!==false)+'" '+(i===0?'disabled title="A referência principal permanece ativa"':'title="Alternar participação desta timeline na análise"')+'>'+(slot.active===false?'○ Referência':'● Ativa')+'</button></div><div class="cmp-timeline-track" data-track="'+i+'"><div class="cmp-timeline-rail"></div>'+range+handles+'</div><div class="cmp-timeline-dates" aria-label="'+intervalLabel+'"><span>'+ (w?.valid?date(w.start):'—') +'</span><span class="cmp-timeline-duration">'+(w?.valid?durationLabel:'')+'</span><span>'+ (w?.valid?date(w.end):'—') +'</span></div></section>';
    }).join('');
