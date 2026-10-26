@@ -23,7 +23,7 @@ test('sequential layout clips windows without changing original samples',()=>{
  assert.equal(layout[0].visibleCount,30);assert.equal(layout[1].visibleCount,0);
  assert.equal(rows.length,40);
 });
-test('calendar anchor is shared for repeated asset windows only',()=>{
+test('disjoint calendar windows normalize independently when no shared quote exists',()=>{
  const first={key:'btc1',assetKey:'BTC',slotIndex:0};
  const second={key:'btc2',assetKey:'BTC',slotIndex:1};
  const a=[{timestamp:0,btc1:100},{timestamp:86400000,btc1:120}];
@@ -31,5 +31,5 @@ test('calendar anchor is shared for repeated asset windows only',()=>{
  const plotted=[{slot:first,rows:a},{slot:second,rows:b}];
  const output=plotCoordinates(plotted,[{capacity:4},{capacity:4}],'calendar',()=>rows,(all,t)=>all.findIndex(r=>r.timestamp===t));
  assert.equal(output.curves[0].values[0],100);
- assert.equal(output.curves[1].values[0],200);
+ assert.equal(output.curves[1].values[0],100);
 });
