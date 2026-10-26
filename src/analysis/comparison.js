@@ -19,7 +19,8 @@ import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {createSequentialViewport} from './timeline-viewport.js';
 import {plotCoordinates} from './timeline-plot-coordinates.js';
-import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from './timeline-window-movement.js';
+import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
+import {synchronizeWindowFrameCounts} from './timeline-duration-sync.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -70,14 +71,6 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      slot.window=a>=0&&b>=a?timelineWindow(rows,a,b,10):timelineWindow([],0,0,10);
    }
  };
- const syncComparisonDurations=()=>{
-   const primary=state.timelineSlots[0];
-   if(!primary?.window?.valid)return;
-   const frameCount=primary.window.observations;
-   for(const slot of state.timelineSlots.slice(1)){
-     slot.window=matchWindowFrameCount(timelineRowsFor(slot),slot.window,frameCount);
-   }
- };
  const viewModes=createTimelineViewModes();
  const viewport=createSequentialViewport();
  const alignAllTimelines=()=>{
@@ -108,7 +101,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      const primary=state.timelineSlots[0];
      slot.window=startWindow(slot,primary?.window?.start??timelineRowsFor(slot)[0]?.timestamp,primary?.window?.end??timelineRowsFor(slot).at(-1)?.timestamp,10);
      state.timelineSlots.push(slot);
-     syncComparisonDurations();
+     synchronizeWindowFrameCounts(state.timelineSlots,timelineRowsFor);
      renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
    }catch(error){
      console.error('[ORACULUM ADD ASSET]',error);
@@ -222,7 +215,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const move=ev=>{
      const delta=Math.round((ev.clientX-startX)/width*Math.max(1,original.endIndex-original.startIndex+1));
      slot.window=resizeWindowByFrames(rows,original,edge,delta);
-     syncComparisonDurations();
+     synchronizeWindowFrameCounts(state.timelineSlots,timelineRowsFor);
      const label=track.closest('.cmp-timeline-row')?.querySelector('.cmp-timeline-dates');
      if(label&&slot.window?.valid){label.firstElementChild.textContent=date(slot.window.start);label.lastElementChild.textContent=date(slot.window.end);}
      renderChart();
