@@ -7,6 +7,7 @@ import {synchronizeWindowFrameCounts} from '../src/analysis/timeline-duration-sy
 import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from '../src/analysis/timeline-window-movement.js';
 import {timelineWindow} from '../src/analysis/timeline-state.js';
 import {plotCoordinates} from '../src/analysis/timeline-plot-coordinates.js';
+import {renderComparisonPlot} from '../src/analysis/timeline-chart-view.js';
 
 const rows=Array.from({length:40},(_,i)=>({timestamp:i*86400000,btc:100+i,other:10+i}));
 test('chart and alignment toggles are independent',()=>{
@@ -83,4 +84,19 @@ test('duration synchronization respects independent starts',()=>{
  synchronizeWindowFrameCounts([primary,later],()=>rows);
  assert.equal(later.window.startIndex,25);
  assert.equal(later.window.observations,15);
+});
+
+test('dedicated chart view labels calendar and relative axes without changing samples',()=>{
+ const slot={key:'btc',assetKey:'BTC',slotIndex:0,symbol:'BTC',active:true};
+ const input=[{timestamp:0,btc:100},{timestamp:86400000,btc:120}];
+ const layouts=[{rows:input,capacity:2,position:0}];
+ const host={clientWidth:400,innerHTML:''},legend={innerHTML:''};
+ const args={host,legend,slots:[slot],layouts,assetColor:()=>'#ffffff',date:t=>String(t)};
+ renderComparisonPlot({...args,mode:'calendar'});
+ assert.match(host.innerHTML,/Primeira data/);
+ assert.match(host.innerHTML,/Última data/);
+ assert.match(legend.innerHTML,/BTC/);
+ renderComparisonPlot({...args,mode:'relative'});
+ assert.match(host.innerHTML,/Início relativo/);
+ assert.equal(input[0].btc,100);
 });
