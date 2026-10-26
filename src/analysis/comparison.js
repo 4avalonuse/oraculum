@@ -18,7 +18,7 @@ import {comparisonPlotSeries,activePlotSeries} from './timeline-plot-series.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
 import {plotCoordinates} from './timeline-plot-coordinates.js';
-import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
+import {moveWindowByFrames,resizeWindowByFrames,matchWindowFrameCount} from './timeline-window-movement.js';
 
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
@@ -70,17 +70,11 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    }
  };
  const syncComparisonDurations=()=>{
-   const slots=state.timelineSlots,primary=slots[0],common=sharedRows();
-   if(!primary?.window?.valid||!common.length)return;
-   const first=Number(common[0].timestamp),last=Number(common.at(-1).timestamp);
-   const startTime=clamp(Number(primary.window.start),first,last),endTime=clamp(Number(primary.window.end),first,last);
-   const a=nearestTimelineIndex(common,startTime),b=nearestTimelineIndex(common,endTime);
-   const startIndex=Math.min(a,b),endIndex=Math.max(a,b),frameCount=endIndex-startIndex+1;
-   const start=Number(common[startIndex].timestamp),end=Number(common[endIndex].timestamp);
-   for(const slot of slots){
-     const rows=timelineRowsFor(slot);
-     const from=nearestTimelineIndex(rows,start),to=nearestTimelineIndex(rows,end);
-     if(from>=0&&to>=from)slot.window=timelineWindow(rows,from,to,Math.min(10,frameCount));
+   const primary=state.timelineSlots[0];
+   if(!primary?.window?.valid)return;
+   const frameCount=primary.window.observations;
+   for(const slot of state.timelineSlots.slice(1)){
+     slot.window=matchWindowFrameCount(timelineRowsFor(slot),slot.window,frameCount);
    }
  };
  const viewModes=createTimelineViewModes();
