@@ -259,7 +259,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!state.timelineSlots.length)return;
    const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=activeTimelineSlots(state.timelineSlots);
    const layouts=visibleTimelineLayout();
-   const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,layouts[slot.slotIndex]?.rows||[]]));
+   // Scientific samples use the full selected windows; viewport clipping is presentation only.
+    const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
    const sampleCheck=inspectWindowSamples(slots.map(slot=>timelineRows[slot.key]));
    if(sampleCheck.status===ScientificStatus.BLOCKED){
      const issue=sampleCheck.issues[0];
