@@ -42,3 +42,20 @@ test('scientific runner does not mutate the supplied timeline rows',()=>{
   analyzeTimelineWindows({slots:[slot],timelineRows:{'btc-a':rows},interval:'1d',returnMode:'log',rollingWindow:5,layouts:[{visibleCount:15,duration:15,hiddenCount:0}],alignment:'start',chartMode:'relative',sameWindowDates:()=>true});
   assert.deepEqual(rows,before);
 });
+
+test('distinct assets in non-overlapping calendar windows cannot produce artificial cross-series inference',()=>{
+  const output=run([makeSlot('btc-a','BTC'),makeSlot('eth-a','ETH',30)]);
+  assert.equal(output.result.alignedObservations,0);
+  assert.equal(output.result.relations.length,0);
+  assert.equal(output.result.explanatoryModel.available,false);
+  assert.equal(output.result.modelValidation.status,'NOT_CHECKED');
+  assert.equal(output.result.temporal.sharedRows,0);
+});
+
+test('distinct assets with matching dates preserve calendar-based cross-series observations',()=>{
+  const output=run([makeSlot('btc-a','BTC'),makeSlot('eth-a','ETH')]);
+  assert.equal(output.result.observations,15);
+  assert.equal(output.result.alignedObservations,15);
+  assert.equal(output.result.temporal.sharedRows,15);
+  assert.equal(output.commonSeries.length,2);
+});
