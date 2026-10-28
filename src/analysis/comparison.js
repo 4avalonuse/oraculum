@@ -51,7 +51,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    viewport.reset();
    renderTimelineControls();renderTimelinePanel();renderChart();markTimelinesChanged();
  };
- const visibleTimelineLayout=()=>timelineLayout(state.timelineSlots,rowsInWindow,viewModes.alignment,viewport.start(state.timelineSlots,rowsInWindow));
+ const visibleTimelineLayout=()=>timelineLayout(state.timelineSlots,timelineRowsFor,viewModes.alignment,viewport.start(state.timelineSlots,timelineRowsFor));
  const addCatalogAsset=async(assetKey)=>{
    const meta=assets[assetKey];if(!meta)return;
    const status=$('#analysis-status');
@@ -85,7 +85,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    modes:viewModes,viewport,slots:state.timelineSlots,rowsInWindow,
    onAlign:alignAllTimelines,
    onPrevious:()=>{viewport.previous();renderTimelineControls();renderTimelinePanel();renderChart();},
-   onNext:()=>{viewport.next(state.timelineSlots,rowsInWindow);renderTimelineControls();renderTimelinePanel();renderChart();},
+   onNext:()=>{viewport.next(state.timelineSlots,timelineRowsFor);renderTimelineControls();renderTimelinePanel();renderChart();},
    onChart:()=>{viewModes.toggleChart();renderTimelineControls();renderChart();markTimelinesChanged();},
    onAdd:addCatalogAsset
  });
@@ -128,9 +128,28 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    const slot=state.timelineSlots[index];
    if(slot?.window?.valid)slot.window=moveWindowByFrames(timelineRowsFor(slot),slot.window,steps);
  };
+ const updateTimelineSelectionVisuals=()=>{
+   const host=$('#comparison-timelines');
+   if(!host)return;
+   const layouts=visibleTimelineLayout(),capacity=layouts[0]?.capacity||1;
+   layouts.forEach((layout,index)=>{
+     const row=host.querySelector('[data-timeline-row="'+index+'"]');
+     if(!row)return;
+     const left=Math.max(0,Math.min(100,layout.position/capacity*100));
+     const right=Math.max(0,Math.min(100,(layout.position+layout.visibleCount)/capacity*100));
+     const range=row.querySelector('.cmp-timeline-range');
+     if(range){range.style.left=left+'%';range.style.width=Math.max(0,right-left)+'%';}
+     if(index===0){
+       const a=row.querySelector('.handle-start'),b=row.querySelector('.handle-end');
+       if(a)a.style.left='clamp(12px,'+left+'%,calc(100% - 12px))';
+       if(b)b.style.left='clamp(12px,'+right+'%,calc(100% - 12px))';
+     }
+   });
+ };
  const pointerHandlers=createTimelinePointerHandlers({
    slots:()=>state.timelineSlots,rowsForSlot:timelineRowsFor,
    renderChart:()=>renderChart(),renderPanel:()=>renderTimelinePanel(),
+   renderSelection:()=>updateTimelineSelectionVisuals(),
    markChanged:markTimelinesChanged,formatDate:date
  });
  const beginTimelineDrag=(event,index)=>pointerHandlers.drag(event,index);
