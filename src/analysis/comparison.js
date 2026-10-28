@@ -2,7 +2,7 @@ import {buildExplanatoryModelMarkup} from './explanatory-model-view.js';
 import {buildNumericalValidationMarkup} from './numerical-validation-view.js';
 import {buildComparisonMetricSections} from './comparison-metrics-view.js';
 import {comparisonContextMarkup} from './comparison-context-view.js';
-import {timelineRowsFor as slotRowsFor,rowsInWindow as windowRows,periodKeyFor as timelinePeriodKey,makeTimelineSlot,startTimelineWindow,sharedTimelineRows,setSharedTimelineWindow} from './timeline-window-data.js';
+import {timelineRowsFor as slotRowsFor,rowsInWindow as windowRows,periodKeyFor as timelinePeriodKey,makeTimelineSlot,startTimelineWindow,sharedTimelineRows} from './timeline-window-data.js';
 /* ORACULUM — análise investigativa sob demanda */
 import {alignSeries} from './engine.js';
 import {analyzeTimelineWindows} from './analysis-runner.js';
@@ -13,9 +13,9 @@ import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
-import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpretation.js';
+import {buildMetricEducation,wireReportButtons} from './interpretation.js';
 import {buildScientificReading} from './scientific-reading.js';
-import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
+import {nearestTimelineIndex,timelineWindow,timelineAssetKeys} from './timeline-state.js';
 import {ScientificStatus,inspectWindowSamples} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
 import {renderComparisonPlot} from './timeline-chart-view.js';
@@ -31,7 +31,6 @@ import {synchronizeWindowFrameCounts} from './timeline-duration-sync.js';
 export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles,getInterval,getActiveSymbol,assets}){
  wireMetricHelp(document);
  const $=s=>document.querySelector(s),state={rows:null,result:null,selected:[],series:[],assetPool:[],assetCatalog:[],timelineRows:{},commonSeries:[],timelineSlots:[],markers:{start:0,base:0,end:0},interval:'1d',independentTimelines:false,timelineMode:'common',addAssetKey:'',prepared:false};
- const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  const markTimelinesChanged=()=>{
    $('#analysis-results')?.classList.add('is-hidden');
    $('#full-analysis')?.classList.add('is-hidden');
@@ -49,7 +48,6 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const makeSlot=(asset,index)=>makeTimelineSlot(asset,index,state.interval);
  const startWindow=startTimelineWindow;
  const sharedRows=()=>sharedTimelineRows(state.timelineSlots,state.interval);
- const setCommonWindow=(startIndex,count)=>setSharedTimelineWindow(state.timelineSlots,state.interval,startIndex,count);
  const viewModes=createTimelineViewModes();
  const viewport=createSequentialViewport();
  const alignAllTimelines=()=>{
