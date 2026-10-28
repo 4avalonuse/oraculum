@@ -1,19 +1,17 @@
 /* ORACULUM — análise investigativa sob demanda */
-import {analyzeSeries,alignSeries} from './engine.js';
+import {alignSeries} from './engine.js';
+import {analyzeTimelineWindows} from './analysis-runner.js';
 import {buildAuditReport} from './audit-report.js';
 import {openInfo} from './explanations.js';
 import {openDataTable} from './data-table.js';
 import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
-import {runExplanatoryModel} from './explanatory-model.js';
-import {diagnoseModel} from './model-diagnostics.js';
-import {validateModelTwoWays,validateResidualDiagnostics} from './model-validation.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
 import {buildConclusion,buildMetricEducation,wireReportButtons} from './interpretation.js';
 import {buildScientificReading} from './scientific-reading.js';
 import {nearestTimelineIndex,timelineWindow,shiftTimelineWindow,resizeTimelineWindow,resizeTimelineDuration,timelineAssetKeys} from './timeline-state.js';
-import {ScientificStatus,inspectWindowSamples,inspectCalendarInference} from './validation/sample-quality.js';
+import {ScientificStatus,inspectWindowSamples} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
 import {renderComparisonPlot} from './timeline-chart-view.js';
 import {timelineRowsMarkup} from './timeline-rows-view.js';
@@ -178,8 +176,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    if(!state.timelineSlots.length)return;
    const returnMode=$('#analysis-return')?.value||'log',rollingWindow=Number($('#analysis-window')?.value||30),interval=state.interval||'1d',slots=activeTimelineSlots(state.timelineSlots);
    const layouts=visibleTimelineLayout();
-   // Scientific samples use the full selected windows; viewport clipping is presentation only.
-    const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
+   const timelineRows=Object.fromEntries(slots.map(slot=>[slot.key,rowsInWindow(slot)]));
    const sampleCheck=inspectWindowSamples(slots.map(slot=>timelineRows[slot.key]));
    if(sampleCheck.status===ScientificStatus.BLOCKED){
      const issue=sampleCheck.issues[0];
@@ -188,40 +185,10 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
      return;
    }
    state.timelineRows=timelineRows;state.series=slots;state.selected=slots.map(slot=>slot.key);
-   const windowedSeries=slots.map(slot=>{const rows=timelineRows[slot.key];return {...slot,candles:slot.candles.filter(c=>rows.some(row=>Number(row.timestamp)===Number(c.timestamp)))};});
-   // A repeated asset is valid for period-to-period comparison, but must not enter a multivariate model twice.
-   const modelSeries=windowedSeries.filter((slot,index)=>windowedSeries.findIndex(other=>other.assetKey===slot.assetKey)===index);
-   const commonRows=alignSeries(modelSeries,interval),calendarCheck=inspectCalendarInference({seriesCount:modelSeries.length,alignedRows:commonRows}),hasCommon=calendarCheck.status===ScientificStatus.APPROVED;
-   const commonResult=hasCommon?analyzeSeries(commonRows,modelSeries,interval,{returnMode,rollingWindow}):null;
-   const individualResults=slots.map(slot=>({slot,result:analyzeSeries(timelineRows[slot.key],[slot],interval,{returnMode,rollingWindow})}));
-   const primaryRows=timelineRows[slots[0].key],primaryResult=individualResults[0].result;
-   let result;
-   if(hasCommon){
-     result=commonResult;
-     result.relations=commonResult.relations;
-     result.explanatoryModel=runExplanatoryModel(commonRows,modelSeries,{returnMode});
-     result.modelDiagnostics=diagnoseModel(result.explanatoryModel);result.modelValidation=validateModelTwoWays(result.explanatoryModel);result.residualValidation=validateResidualDiagnostics(result.explanatoryModel,result.modelDiagnostics);
-     state.rows=commonRows;state.commonSeries=modelSeries;state.independentTimelines=!sameWindowDates(slots);
-   }else{
-     result={...primaryResult,relations:[],temporal:{method:slots.length<2?'single selected series; no cross-series inference requested':'individual selected windows; no common calendar sample with enough observations for cross-series inference',sharedRows:0,firstBucket:null,lastBucket:null,gaps:0},alignedObservations:0};
-     result.explanatoryModel={available:false,reason:slots.length<2?'Selecione outra série temporal para comparar ativos.':modelSeries.length<2?'Há apenas um ativo distinto; séries repetidas podem ser comparadas por período, mas não são duplicadas no modelo multivariado.':'As janelas selecionadas não têm pelo menos 10 observações em datas comuns; o modelo multivariado foi omitido para evitar pareamento artificial.'};
-     result.modelDiagnostics={available:false,heteroskedasticity:{available:false}};
-     result.modelValidation={status:'NOT_CHECKED',passed:0,total:0,checks:[],message:'Não aplicável sem amostra comum suficiente.'};
-     result.residualValidation={status:'NOT_CHECKED',passed:0,total:0,checks:[],reason:'Modelo multivariado não estimado.'};
-     state.rows=primaryRows;state.commonSeries=[slots[0]];state.independentTimelines=true;
-   }
-   result.series={};
-   for(const {slot,result:individual} of individualResults)result.series[slot.key]=individual.series[slot.key];
-   if(hasCommon){
-     result.audit={...commonResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:commonResult.audit?.relations||[]};
-   }else result.audit={...primaryResult.audit,series:Object.assign({},...individualResults.map(x=>x.result.audit?.series||{})),relations:[]};
-   result.timelineVisibility=layouts.map((x,i)=>({slotIndex:i,visible:x.visibleCount,total:x.duration,hidden:x.hiddenCount})).filter(x=>x.hidden>0);
-   result.timelineAlignment=viewModes.alignment;result.chartMode=viewModes.chart;
-   result.interval=interval;result.returnMode=returnMode;result.rollingWindow=rollingWindow;result.observations=primaryRows.length;result.alignedObservations=hasCommon?commonRows.length:0;
-   result.rowsStart=primaryRows[0].timestamp;result.rowsEnd=primaryRows.at(-1).timestamp;result.periodDays=(result.rowsEnd-result.rowsStart)/86400000;
-   result.temporal={...(result.temporal||{}),method:hasCommon?'individual native-window statistics; cross-series inference on shared calendar buckets within selected windows':slots.length<2?'single selected series; no cross-series inference requested':modelSeries.length<2?'only one distinct asset; repeated periods excluded from multivariate inference':'individual selected windows; no valid shared sample for cross-series inference',sharedRows:hasCommon?commonRows.length:0};
-   state.result=result;state.markers={start:0,base:0,end:Math.max(0,(state.rows?.length||1)-1)};
-   render(result,slots);
+   const output=analyzeTimelineWindows({slots,timelineRows,interval,returnMode,rollingWindow,layouts,alignment:viewModes.alignment,chartMode:viewModes.chart,sameWindowDates});
+   state.rows=output.rows;state.commonSeries=output.commonSeries;state.independentTimelines=output.independentTimelines;
+   state.result=output.result;state.markers={start:0,base:0,end:Math.max(0,(state.rows?.length||1)-1)};
+   render(output.result,slots);
  };
  const initializeTimelineSlots=(pool,reference,interval,period)=>{
    state.interval=interval;state.assetPool=pool;state.assetCatalog=Object.entries(assets).map(([key,meta])=>({key,assetKey:key,symbol:meta.symbol||key,name:meta.name||key,category:meta.category}));const mainRows=alignSeries([pool.find(x=>x.assetKey===reference)||pool[0]],interval);
