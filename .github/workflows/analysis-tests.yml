@@ -2,8 +2,10 @@ name: Analysis core tests
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - 'src/analysis/**/*.js'
+      - 'src/data/**/*.js'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/analysis-tests.yml'
