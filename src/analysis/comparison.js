@@ -19,6 +19,7 @@ import {timelineRowsMarkup} from './timeline-rows-view.js';
 import {renderTimelineToolbar} from './timeline-toolbar-view.js';
 import {createTimelineViewModes} from './timeline-view-modes.js';
 import {timelineLayout} from './timeline-layout.js';
+import {alignTimelineWindows} from './timeline-auto-alignment.js';
 import {createSequentialViewport} from './timeline-viewport.js';
 import {moveWindowByFrames} from './timeline-window-movement.js';
 import {createTimelinePointerHandlers} from './timeline-pointer-interactions.js';
@@ -83,7 +84,8 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderTimelineControls=()=>renderTimelineToolbar({
    host:$('#comparison-timeline-controls'),catalog:state.assetCatalog,
    modes:viewModes,viewport,slots:state.timelineSlots,rowsInWindow,
-   onAlign:alignAllTimelines,
+   onAlignStart:()=>alignAllTimelines('start'),
+   onAlignSequential:()=>alignAllTimelines('sequential'),
    onPrevious:()=>{viewport.previous();renderTimelineControls();renderTimelinePanel();renderChart();},
    onNext:()=>{viewport.next(state.timelineSlots,timelineRowsFor);renderTimelineControls();renderTimelinePanel();renderChart();},
    onChart:()=>{viewModes.toggleChart();renderTimelineControls();renderChart();markTimelinesChanged();},
@@ -157,7 +159,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderChart=()=>renderComparisonPlot({
    host:$('#comparison-chart'),legend:$('#comparison-legend'),
    slots:state.timelineSlots,layouts:visibleTimelineLayout(),
-   mode:viewModes.chart,alignment:viewModes.alignment,assetColor,date
+   mode:viewModes.chart,alignment:'start',assetColor,date
  });
  const sameWindowDates=slots=>slots.every(slot=>{
    const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1),main=rowsInWindow(slots[0]);
