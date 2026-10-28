@@ -6,7 +6,7 @@ export function alignTimelineWindows(slots,rowsForSlot,kind){
  if(!Array.isArray(slots)||!slots.length||!['start','sequential'].includes(kind))return;
  const first=slots[0];
  if(!first?.window?.valid)return;
- let nextStart=first.window.startIndex;
+ let nextStart=first.window.endIndex+1;
  for(let i=1;i<slots.length;i++){
   const slot=slots[i],window=slot.window,rows=rowsForSlot(slot);
   if(!window?.valid||!rows?.length)continue;
@@ -28,7 +28,7 @@ export function alignTimelineWindows(slots,rowsForSlot,kind){
    if(slot.active!==false){slot.active=false;slot.autoAlignmentInactive=true;}
   }else{
    // A manually inactive slot remains a ghost unless the user reactivates it.
-   if(slot.autoAlignmentInactive){slot.active=true;slot.autoAlignmentInactive=false;}
+   slot.active=true;slot.autoAlignmentInactive=false;
   }
   if(kind==='sequential')nextStart=target+count;
  }
