@@ -1,3 +1,4 @@
+import {mountComparisonResults} from './comparison-results-controller.js';
 import {buildScientificExplanationMarkup} from './scientific-explanation-view.js';
 import {buildExplanatoryModelMarkup} from './explanatory-model-view.js';
 import {buildNumericalValidationMarkup} from './numerical-validation-view.js';
@@ -7,14 +8,9 @@ import {timelineRowsFor as slotRowsFor,rowsInWindow as windowRows,periodKeyFor a
 /* ORACULUM — análise investigativa sob demanda */
 import {alignSeries} from './engine.js';
 import {analyzeTimelineWindows} from './analysis-runner.js';
-import {buildAuditReport} from './audit-report.js';
-import {openInfo} from './explanations.js';
-import {openDataTable} from './data-table.js';
 import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
-import {wireSummaryCopy} from './view/copy-results.js';
-import {wireReportButtons} from './interpretation.js';
 import {nearestTimelineIndex,timelineWindow,timelineAssetKeys} from './timeline-state.js';
 import {ScientificStatus,inspectWindowSamples} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
@@ -210,7 +206,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    html+=buildNumericalValidationMarkup(result);
 
    html+=buildScientificExplanationMarkup(result,series);
-   $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');$('#analysis-results').querySelectorAll('[data-science-target]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer'),target=$('#'+link.dataset.scienceTarget);if(layer)layer.open=true;target?.scrollIntoView({behavior:'smooth',block:'start'});if(target){target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}}));$('#analysis-results').querySelectorAll('a[href="#scientific-reading-layer"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer');if(layer){layer.open=true;layer.scrollIntoView({behavior:'smooth',block:'start'});}}));wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context'),auditText:()=>buildAuditReport(state.result,state.series,state.rows,state.markers,{timelineRows:state.timelineRows,timelineSlots:state.timelineSlots})});wireReportButtons($('#analysis-results'),state.result,state.series);$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>{const tableAssets={...assets};for(const slot of state.commonSeries||[])tableAssets[slot.key]=assets[slot.assetKey]||slot;openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:(state.commonSeries||[]).map(slot=>slot.key),assets:tableAssets,fmt,date})});document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
+   mountComparisonResults({html,state,assets});
  };
 
   async function prepare(){
