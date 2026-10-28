@@ -2,7 +2,7 @@
 import {comparisonPlotSeries,activePlotSeries} from './timeline-plot-series.js';
 import {plotCoordinates} from './timeline-plot-coordinates.js';
 
-export function renderComparisonPlot({host,legend,slots,layouts,mode,assetColor,date}){
+export function renderComparisonPlot({host,legend,slots,layouts,mode,alignment='start',assetColor,date}){
  if(!host||!slots.length)return;
  const w=Math.max(320,host.clientWidth||800),h=280,p={l:48,r:18,t:20,b:34};
  const plotted=comparisonPlotSeries(slots,slot=>layouts[slot.slotIndex]?.rows||[]);
@@ -11,7 +11,7 @@ export function renderComparisonPlot({host,legend,slots,layouts,mode,assetColor,
    if(legend)legend.innerHTML='';
    return;
  }
- const {curves}=plotCoordinates(plotted,layouts,mode);
+ const {curves}=plotCoordinates(plotted,layouts,mode,alignment);
  const all=activePlotSeries(curves).flatMap(x=>x.values);
  if(!all.length){
    host.innerHTML='<p class="analysis-layer-note">Preços inválidos para normalização em base 100.</p>';
