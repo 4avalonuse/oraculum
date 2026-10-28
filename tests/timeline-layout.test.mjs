@@ -23,7 +23,8 @@ test('moving a window moves the visual selection along its full history',()=>{
 });
 test('sequential timelines use full-history offsets while preserving selected samples',()=>{
  const layouts=timelineLayout([slot(10,19),slot(20,29)],rows,'sequential',100);
- assert.equal(layouts[0].visibleCount,0);
- assert.equal(layouts[1].position,20);
+ assert.equal(layouts[0].visibleCount,10);
+ assert.equal(layouts[1].position,120);
  assert.equal(layouts[1].visibleCount,10);
+ assert.equal(layouts[0].capacity,200);
 });
