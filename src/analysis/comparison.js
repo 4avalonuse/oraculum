@@ -157,7 +157,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
  const renderChart=()=>renderComparisonPlot({
    host:$('#comparison-chart'),legend:$('#comparison-legend'),
    slots:state.timelineSlots,layouts:visibleTimelineLayout(),
-   mode:viewModes.chart,assetColor,date
+   mode:viewModes.chart,alignment:viewModes.alignment,assetColor,date
  });
  const sameWindowDates=slots=>slots.every(slot=>{
    const rows=rowsInWindow(slot),first=rows[0],last=rows.at(-1),main=rowsInWindow(slots[0]);
