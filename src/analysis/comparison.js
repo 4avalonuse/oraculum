@@ -1,3 +1,4 @@
+import {buildNumericalValidationMarkup} from './numerical-validation-view.js';
 import {buildComparisonMetricSections} from './comparison-metrics-view.js';
 import {comparisonContextMarkup} from './comparison-context-view.js';
 import {timelineRowsFor as slotRowsFor,rowsInWindow as windowRows,periodKeyFor as timelinePeriodKey,makeTimelineSlot,startTimelineWindow,sharedTimelineRows,setSharedTimelineWindow} from './timeline-window-data.js';
@@ -207,16 +208,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    renderContext(result,series);renderChart();renderTimelineControls();renderTimelinePanel();
    const primary=result.series[series[0].key],relations=result.relations;
    let html=buildComparisonMetricSections(result,series,state.independentTimelines);
-   const validation=result.modelValidation||{status:'NOT_CHECKED',passed:0,total:0,checks:[]};
-   const validationState=validation.status==='BOTH_PATHS_AGREE'?'consistent':validation.status==='ALERT'?'alert':'pending';
-   const validationLabel=validationState==='consistent'?'Conferência numérica consistente':validationState==='alert'?'Divergência numérica — investigar':'Conferência numérica pendente';
-   const validationMessage=validation.message||(validationState==='consistent'?'As implementações comparadas produziram resultados compatíveis. Isso não confirma, por si só, a validade econômica do modelo.':validationState==='alert'?'Há uma divergência que precisa ser examinada antes de confiar neste resultado.':'Esta conferência ainda não foi concluída para o modelo atual.');
-   const validationAction=validationState==='alert'
-     ?'Próximo passo: abra os detalhes, localize as verificações marcadas como FAIL e investigue a divergência antes de interpretar o modelo.'
-     :validationState==='pending'
-       ?(result.explanatoryModel?.reason||'Próximo passo: confirme se há amostra comum suficiente e se o modelo pôde ser estimado antes de tirar conclusões multivariadas.')
-       :'Próximo passo: use a leitura científica para revisar pressupostos, resíduos e limites; concordância numérica não comprova validade econômica.';
-   html+='<section class="analysis-validation is-'+validationState+'" role="status" aria-label="Conferência numérica"><div class="analysis-validation__head"><span class="analysis-validation__marker" aria-hidden="true">'+(validationState==='consistent'?'✓':validationState==='alert'?'!':'…')+'</span><div class="analysis-validation__summary"><strong>'+validationLabel+'</strong><span>'+validation.passed+'/'+validation.total+' verificações numéricas</span></div><details class="analysis-validation__details"><summary>Detalhes e limites</summary><p>'+validationMessage+'</p><ul>'+(validation.checks||[]).map(item=>'<li><span class="analysis-validation__check">'+item.status+'</span> · '+item.name+'</li>').join('')+'</ul><small>Esta é uma conferência entre implementações, não um benchmark externo independente. Ela não comprova validade econômica, causalidade nem adequação do modelo.</small></details><p class="analysis-validation__next-step">'+validationAction+' <a href="#scientific-reading-layer">Abrir leitura científica contextual ↗</a></p></div></section>';
+   html+=buildNumericalValidationMarkup(result);
 
    const scientificReading=buildScientificReading(result,{fmt,pct,date});
    if(scientificReading)html+='<details id="scientific-reading-layer" class="scientific-reading-layer"><summary><span><b>INVESTIGAR</b><strong>Leitura científica contextual</strong><small>O que os dados mostram, pressupostos e limites da conclusão</small></span><span class="scientific-reading-layer__symbol" aria-hidden="true">＋</span></summary>'+scientificReading+'</details>';
