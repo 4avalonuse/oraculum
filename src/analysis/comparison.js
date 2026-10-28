@@ -1,3 +1,4 @@
+import {timelineRowsFor as slotRowsFor,rowsInWindow as windowRows,periodKeyFor as timelinePeriodKey,makeTimelineSlot,startTimelineWindow,sharedTimelineRows,setSharedTimelineWindow} from './timeline-window-data.js';
 /* ORACULUM — análise investigativa sob demanda */
 import {alignSeries} from './engine.js';
 import {analyzeTimelineWindows} from './analysis-runner.js';
@@ -38,40 +39,13 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
 
  const markerDate=(rows,i)=>rows[i]?date(rows[i].timestamp):'—';
  const assetColor=(assetKey,indexOverride)=>{const palette=['#3984ff','#f5a742','#35c780','#8b5cf6','#e0528d','#17a2b8','#f97316','#a3a3a3'];const found=indexOverride??state.timelineSlots.findIndex(slot=>slot.assetKey===assetKey);return palette[Math.max(0,found)%palette.length]};
- const timelineRowsFor=slot=>Array.isArray(slot?.timelineRows)?slot.timelineRows:[];
- const rowsInWindow=slot=>{
-   const w=slot?.window,rows=timelineRowsFor(slot);
-   if(!w?.valid)return [];
-   const start=Math.max(0,Number(w.startIndex)||0),end=Math.min(rows.length-1,Number(w.endIndex)||0);
-   return rows.slice(start,end+1);
- };
- const periodKeyFor=row=>row?.__periodKey||row?.timestamp;
- const makeSlot=(asset,index)=>{
-   const slot={...asset,key:'timeline-'+index,assetKey:asset.assetKey||asset.key,slotIndex:index,active:true};
-   slot.timelineRows=alignSeries([slot],state.interval);
-   return slot;
- };
- const startWindow=(slot,start,end,min=10)=>{
-   const rows=timelineRowsFor(slot);
-   if(!rows.length)return timelineWindow(rows,0,0,min);
-   const a=nearestTimelineIndex(rows,start),b=nearestTimelineIndex(rows,end);
-   return timelineWindow(rows,a<0?0:a,b<0?rows.length-1:b,min);
- };
- const sharedRows=()=>state.timelineSlots.length>1
-   ?alignSeries(state.timelineSlots.map(slot=>({...slot,key:slot.key})),state.interval)
-   :timelineRowsFor(state.timelineSlots[0]);
- const setCommonWindow=(startIndex,count)=>{
-   const slots=state.timelineSlots,common=sharedRows();
-   if(!slots.length||!common.length)return;
-   const size=Math.min(common.length,Math.max(10,Math.floor(count||common.length)));
-   const start=clamp(Math.floor(startIndex||0),0,Math.max(0,common.length-size));
-   const startKey=periodKeyFor(common[start]),endKey=periodKeyFor(common[start+size-1]);
-   for(const slot of slots){
-     const rows=timelineRowsFor(slot);
-     const a=rows.findIndex(row=>periodKeyFor(row)===startKey),b=rows.findIndex(row=>periodKeyFor(row)===endKey);
-     slot.window=a>=0&&b>=a?timelineWindow(rows,a,b,10):timelineWindow([],0,0,10);
-   }
- };
+ const timelineRowsFor=slotRowsFor;
+ const rowsInWindow=windowRows;
+ const periodKeyFor=timelinePeriodKey;
+ const makeSlot=(asset,index)=>makeTimelineSlot(asset,index,state.interval);
+ const startWindow=startTimelineWindow;
+ const sharedRows=()=>sharedTimelineRows(state.timelineSlots,state.interval);
+ const setCommonWindow=(startIndex,count)=>setSharedTimelineWindow(state.timelineSlots,state.interval,startIndex,count);
  const viewModes=createTimelineViewModes();
  const viewport=createSequentialViewport();
  const alignAllTimelines=()=>{
