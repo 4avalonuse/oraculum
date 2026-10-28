@@ -1,0 +1,10 @@
+import {date} from './view/formatters.js';
+
+/* Apresentação do contexto e dos limites das comparações científicas. */
+export function comparisonContextMarkup(result,series){
+   const primary=series[0],targets=series.slice(1).map(s=>s.symbol).join(' + ')||'nenhum alvo selecionado';
+   const windows=series.map(s=>s.symbol+': '+date(s.window?.start??result.rowsStart)+' → '+date(s.window?.end??result.rowsEnd)).join(' · ');
+   const common=result.temporal?.sharedRows??0;
+   const relationText=common>=10?'Relações, beta e regressão usam somente buckets de calendário comuns dentro das janelas selecionadas ('+common+' observações).':new Set(series.map(s=>s.assetKey)).size<2?'Há apenas um ativo distinto. Séries repetidas podem ser comparadas por período, mas não são tratadas como ativos independentes em correlações ou regressões.':'As janelas não têm amostra comum suficiente; correlações, beta e regressão ficam indisponíveis para evitar pareamento artificial.';
+   return '<div class="context-row"><div><span>ATIVO INVESTIGADO</span><strong>'+primary.symbol+'</strong></div><div><span>COMPARAÇÕES</span><strong>'+targets+'</strong></div><div><span>PERÍODO PRINCIPAL</span><strong>'+date(result.rowsStart)+' → '+date(result.rowsEnd)+'</strong></div><div><span>INTERVALO</span><strong>'+result.interval+'</strong></div><div><span>OBSERVAÇÕES PRINCIPAIS</span><strong>'+result.observations+'</strong></div></div><div class="context-method"><div><b>JANELAS SELECIONADAS</b><span>'+windows+'</span></div><button id="show-data-table" type="button">'+(common>=10?'VER DADOS COMUNS ↗':'VER DADOS DO ATIVO PRINCIPAL ↗')+'</button><button id="show-method" type="button">MÉTODO ?</button></div><div class="context-note"><b>Desenho científico:</b> as estatísticas individuais usam a janela escolhida para cada série. '+relationText+' A comparação visual usa tempo relativo, normalizando cada janela em 100 no seu primeiro preço; portanto, deslocar uma janela compara épocas diferentes, não retornos simultâneos. Associação não implica causalidade.</div>';
+}
