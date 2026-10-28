@@ -1,3 +1,4 @@
+import {buildScientificExplanationMarkup} from './scientific-explanation-view.js';
 import {buildExplanatoryModelMarkup} from './explanatory-model-view.js';
 import {buildNumericalValidationMarkup} from './numerical-validation-view.js';
 import {buildComparisonMetricSections} from './comparison-metrics-view.js';
@@ -13,8 +14,7 @@ import {openModal} from './analysis-modal.js';
 import {wireMetricHelp} from './metric-help.js';
 import {fmt,pct,date,metric,statBlock} from './view/formatters.js';
 import {wireSummaryCopy} from './view/copy-results.js';
-import {buildMetricEducation,wireReportButtons} from './interpretation.js';
-import {buildScientificReading} from './scientific-reading.js';
+import {wireReportButtons} from './interpretation.js';
 import {nearestTimelineIndex,timelineWindow,timelineAssetKeys} from './timeline-state.js';
 import {ScientificStatus,inspectWindowSamples} from './validation/sample-quality.js';
 import {activeTimelineSlots,toggleTimelineActive} from './timeline-activation.js';
@@ -209,11 +209,7 @@ export function attachComparisonAnalysis({dataClient,normalizeCandles,getCandles
    let html=buildComparisonMetricSections(result,series,state.independentTimelines);
    html+=buildNumericalValidationMarkup(result);
 
-   const scientificReading=buildScientificReading(result,{fmt,pct,date});
-   if(scientificReading)html+='<details id="scientific-reading-layer" class="scientific-reading-layer"><summary><span><b>INVESTIGAR</b><strong>Leitura científica contextual</strong><small>O que os dados mostram, pressupostos e limites da conclusão</small></span><span class="scientific-reading-layer__symbol" aria-hidden="true">＋</span></summary>'+scientificReading+'</details>';
-   html+=buildMetricEducation(result,series);
-   html+='<div class="analysis-section-label">AVANÇADO</div><div class="advanced-teaser"><span>Mediana, melhor/pior período, covariância, alpha, correlação móvel e diagnóstico de lead/lag.</span><button id="advanced-analysis">VER ESTATÍSTICAS AVANÇADAS ↗</button></div>';
-   html+=buildExplanatoryModelMarkup(result,series);
+   html+=buildScientificExplanationMarkup(result,series);
    $('#analysis-results').innerHTML=html;$('#analysis-results').classList.remove('is-hidden');$('#analysis-results').querySelectorAll('[data-science-target]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer'),target=$('#'+link.dataset.scienceTarget);if(layer)layer.open=true;target?.scrollIntoView({behavior:'smooth',block:'start'});if(target){target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}}));$('#analysis-results').querySelectorAll('a[href="#scientific-reading-layer"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();const layer=$('#scientific-reading-layer');if(layer){layer.open=true;layer.scrollIntoView({behavior:'smooth',block:'start'});}}));wireSummaryCopy($('#analysis-results'),{context:$('#analysis-context'),auditText:()=>buildAuditReport(state.result,state.series,state.rows,state.markers,{timelineRows:state.timelineRows,timelineSlots:state.timelineSlots})});wireReportButtons($('#analysis-results'),state.result,state.series);$('#full-analysis').classList.remove('is-hidden');$('#advanced-analysis').onclick=()=>openModal({focusAdvanced:true,result:state.result,metric,statBlock,pct,fmt,date});wireMetricHelp($('#analysis-results'));document.querySelector('#show-data-table')?.addEventListener('click',()=>{const tableAssets={...assets};for(const slot of state.commonSeries||[])tableAssets[slot.key]=assets[slot.assetKey]||slot;openDataTable({rows:state.rows?.slice(state.markers.start,state.markers.end+1)||[],keys:(state.commonSeries||[]).map(slot=>slot.key),assets:tableAssets,fmt,date})});document.querySelector('#show-method')?.addEventListener('click',()=>openInfo('MÉTODO'));
  };
 
