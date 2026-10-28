@@ -13,7 +13,7 @@ export function plotCoordinates(plotted, layouts, mode, alignment='start') {
     curves:plotted.map(({slot,rows,reference})=>{
       const position=calendar?0:(sequential?offset:0);
       if(sequential)offset+=rows.length;
-      const firstPrice=Number(rows[0]?.[slot.key]);
+      const firstPrice=Number((calendar?slot.timelineRows?.[0]:rows[0])?.[slot.key]);
       const values=rows.map(row=>100*Number(row[slot.key])/firstPrice);
       const x=rows.map((row,i)=>calendar?(Number(row.timestamp)-start)/capacity:(position+i)/capacity);
       return {slot,rows,reference,position,values,x};
