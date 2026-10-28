@@ -2,8 +2,8 @@
  * Chart samples remain restricted to each selected window. */
 export function timelineLayout(slots,rowsForSlot,alignment,viewportStart=0){
  const lengths=slots.map(slot=>rowsForSlot(slot).length);
- const capacity=Math.max(1,...lengths);
- const start=alignment==='sequential'?Math.max(0,Math.floor(viewportStart)):0;
+ const capacity=alignment==='sequential'?Math.max(1,lengths.reduce((total,length)=>total+length,0)):Math.max(1,...lengths);
+ const start=0; // Sequential view spans all historical tracks without clipping later assets.
  let offset=0;
  return slots.map((slot,index)=>{
    const source=rowsForSlot(slot);
