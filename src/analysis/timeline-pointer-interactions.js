@@ -2,7 +2,7 @@
 import {moveWindowByFrames,resizeWindowByFrames} from './timeline-window-movement.js';
 import {synchronizeWindowFrameCounts} from './timeline-duration-sync.js';
 
-export function createTimelinePointerHandlers({slots,rowsForSlot,renderChart,renderPanel,markChanged,formatDate}) {
+export function createTimelinePointerHandlers({slots,rowsForSlot,renderChart,renderPanel,renderSelection,markChanged,formatDate}) {
  const begin=(event,index,edge=null)=>{
    if(event.button!==undefined&&event.button!==0)return;
    const slot=slots()[index];
@@ -20,7 +20,7 @@ export function createTimelinePointerHandlers({slots,rowsForSlot,renderChart,ren
    if(target.setPointerCapture&&pointerId!==undefined)target.setPointerCapture(pointerId);
    const move=ev=>{
      if(pointerId!==undefined&&ev.pointerId!==pointerId)return;
-     const frames=Math.max(1,original.observations);
+     const frames=Math.max(1,...slots().map(s=>rowsForSlot(s).length));
      const delta=Math.round((ev.clientX-startX)/width*frames);
      slot.window=edge?resizeWindowByFrames(rows,original,edge,delta):moveWindowByFrames(rows,original,delta);
      if(edge)synchronizeWindowFrameCounts(slots(),rowsForSlot);
@@ -29,7 +29,7 @@ export function createTimelinePointerHandlers({slots,rowsForSlot,renderChart,ren
        label.firstElementChild.textContent=formatDate(slot.window.start);
        label.lastElementChild.textContent=formatDate(slot.window.end);
      }
-     renderChart();
+     renderSelection?.();renderChart();
    };
    const finish=ev=>{
      if(pointerId!==undefined&&ev.pointerId!==pointerId)return;
